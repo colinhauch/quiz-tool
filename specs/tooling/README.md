@@ -1,5 +1,7 @@
 # Tooling
 
+> **[UNREVIEWED]** — Stub, but not empty: the two constraints below are real claims about why shipped decisions exist. Worth confirming they're the actual reasons and not a tidy story told after the fact.
+
 **Stub.** Built post-MVP — but it constrains the pack format today, so the constraint is recorded here.
 
 Pack authoring and the import pipeline. Packs are meant to be **built by ETL, not hand-authored**; the MVP's single hand-built pack is a bootstrap, not the model.

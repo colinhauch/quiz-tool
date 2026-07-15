@@ -1,5 +1,7 @@
 # Open Questions — Question Generation
 
+> **[UNREVIEWED]** — Questions are the author's; the reasoning under each is the agent's. Notably unverified: that loose matching corrupts the insight aggregates rather than just the one question, and that comparison questions may be "the first real crack" in the uniform model.
+
 ## How fuzzy should text-input matching be?
 
 Text input needs to accept "Sao Paulo" for "São Paulo" and probably "St. Petersburg" for "Saint Petersburg". Aliases are already stored per language, so the matching pool exists — the question is normalization aggressiveness.

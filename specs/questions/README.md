@@ -1,5 +1,7 @@
 # Question Generation
 
+> **[UNREVIEWED]** — The agent's editorializing needs a check, particularly the argument that exact numeric recall "is not knowledge worth having" and the claim that difficulty being composed (rather than stored) is what lets it escalate as a learner improves. Both read as the author's intent but are stated more strongly here than in the source.
+
 Turning facts into things worth being asked. This concept sits between the graph and the learner: [../learning/](../learning/) decides *which fact* to ask about, and this decides *what the question looks like*.
 
 ## Templates are declarative recipes attached to relation types
@@ -37,4 +39,5 @@ Composing it this way means difficulty can *escalate for the same fact* as the l
 ## Deeper
 
 - [distractors.md](distractors.md) — why wrong answers are the hard part.
-- [open-questions.md](open-questions.md) — text input matching, difficulty sourcing.
+- [template-shape.md](template-shape.md) — *reference.* The proposed template shape, the strategy registry, and the numeric/temporal template list.
+- [open-questions.md](open-questions.md) — text input matching, difficulty sourcing, the comparison-card strain.

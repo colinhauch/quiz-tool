@@ -1,5 +1,7 @@
 # Knowledge Graph
 
+> **[UNREVIEWED]** — The model itself is the author's. The stated *reasons* for it — the cost/benefit framing of uniformity, the argument for thin entities, the claim that reification makes "no schema changes" credible — are an agent's reconstruction and need a human's confirmation.
+
 The fact model everything else stands on. If you are adding a new kind of content to the app, this is the concept you need first.
 
 ## The core bet
@@ -43,3 +45,5 @@ The app deals only in conceptual facts and literal attributes. This keeps a GIS 
 - [statements.md](statements.md) — the atomic unit, the object union, and the reasons behind the field-level choices.
 - [identity.md](identity.md) — why Wikidata Q-IDs, and how packs merge when two define the same entity.
 - [rank-and-time.md](rank-and-time.md) — how the graph represents change without deleting history.
+- [shapes.md](shapes.md) — *reference.* The proposed record shapes and worked examples. Read the above first; this is the sketch, not the argument.
+- [open-questions.md](open-questions.md) — statement ID stability, which blocks the import pipeline.

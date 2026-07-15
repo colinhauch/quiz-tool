@@ -16,6 +16,20 @@ Start at [specs/README.md](specs/README.md) — it is both the index and the edi
 
 Don't read it for work that isn't architectural. Version control, discussion, small maintenance — skip it.
 
+## Specs are not all reviewed
+
+**Most specs were drafted by an agent and have not been reviewed by a human.** They are plausible accounts of decisions, and some of the reasoning in them is reconstructed rather than recorded. Unreviewed does not mean wrong — it means unverified, and it sounds exactly as confident either way.
+
+Unreviewed files and sections carry a marker: `> **[UNREVIEWED]**`, with a line on what specifically needs checking. Find them all with:
+
+```
+grep -rn "\[UNREVIEWED\]" specs/
+```
+
+**If you're relying on an unreviewed claim for something that matters, say so rather than proceeding quietly.** An absent marker means a human vouched for it.
+
+Reviewing marks it done by **deleting the marker**. When you substantively edit a reviewed spec — the claim changed, not just the wording — **add the marker back and say so in your response**.
+
 ## Updating the specs
 
 **When a decision gets made or something is learned that changes future work, record it.** Read [specs/README.md](specs/README.md) first — it has the rules for where things go and when a concept earns its own file — then edit the relevant leaf in place. Specs are edited, not versioned; git holds the history.

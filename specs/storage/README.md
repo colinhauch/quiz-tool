@@ -1,5 +1,7 @@
 # Storage
 
+> **[UNREVIEWED]** — **The weakest file in the tree.** The source document said "SQLite, behind repos, swappable" and little more; nearly every *reason* here is the agent's invention — the four arguments for SQLite, the list of what we gave up, and the claim that the answer log would stay relational even after a graph-store migration. This is exactly the file you asked the flag to protect you from: it reads like a decision record and is mostly reconstruction.
+
 Where the data lives, why we picked it, and what would make us leave.
 
 ## Everything is behind repository interfaces
@@ -31,3 +33,7 @@ Move `StatementRepo` to a Cypher-speaking store (Kùzu, Neo4j) **when traversals
 That is a repo swap, not a redesign, and stating the trigger now is the point of writing this down: it means the migration is a planned response to an observed signal rather than an anxious rewrite. It also means nobody needs to pre-optimize for it today.
 
 Note that the answer log and cards would likely *stay* relational even then — they are flat, append-heavy, and aggregate-scanned, which is the opposite of what a graph store is for. The exit is partial by default.
+
+## Deeper
+
+- [sql-examples.md](sql-examples.md) — *reference.* The proposed SQLite schema, never executed. A sketch, not a migration.

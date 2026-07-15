@@ -1,5 +1,7 @@
 # Distractors
 
+> **[UNREVIEWED]** — The central claim of this file is the agent's, not the source's: that distractor selection is where a question's difficulty *mostly* comes from, more than option count or input mode, and that lazy distractors cause the answer log to record a skill the learner doesn't have. If that's right it's the most important thing here. If it's an overstatement, the file needs rebalancing.
+
 Wrong answers are where multiple-choice questions are actually made or ruined, and they get their own file because the reasoning is not obvious from the code.
 
 ## Distractors come from the graph

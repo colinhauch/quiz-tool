@@ -40,6 +40,20 @@ A concept and its code are usually in different places, and that is the point: c
 
 **Record the "why" while you still remember it.** The single highest-value moment to write is right after a decision, especially one that was hard or reversed an earlier choice. That reasoning is unrecoverable later.
 
+### Reference files
+
+A few specs have a companion marked *reference* — `shapes.md`, `format.md`, `sql-examples.md`, `template-shape.md`, `interfaces.md`. These hold concrete proposed detail: record shapes, schemas, interfaces.
+
+They exist for a specific and temporary reason. **This system was designed before the code, so the proposals are currently all we have** — and once the code exists, they become a record of the *first attempt*. If the implementation diverges, that divergence is a decision worth seeing, and it's easier to see with the original beside it.
+
+They are second-class on purpose. Reference files are the exception to "don't restate the shape," and they are the files most likely to rot. Rules for them:
+
+- **The concept README is the real spec.** Reference is the appendix; it never carries the argument.
+- **Once code exists, the code wins** — without exception, and the reference file is history, not a claim.
+- **Don't add more.** New reference files should be rare and deliberate. If you're tempted, ask whether the code could express it instead.
+
+`format.md` is the one likely to stay genuinely useful, since the pack format is a contract with external authors and ETL rather than something app code fully expresses.
+
 ### When to add or split
 
 A concept earns its own file when someone would want to **read it without its parent**. If it can't be understood alone, splitting it made things worse — now the reader loads two files instead of one.
@@ -52,25 +66,67 @@ Roots are just concepts too. A UI surface sitting next to a data structure is fi
 
 Open questions live **at the level they apply to**. A question about a technical detail goes in the leaf that it blocks, so whoever implements that leaf sees it. A question about system architecture lives high in the tree. Any folder may have an `open-questions.md`; none are required. When a question resolves, it becomes rationale in the same file.
 
+## Review status
+
+Most of these specs were drafted by an agent and **have not been reviewed by a human**. That matters: an unreviewed spec is a plausible-sounding account of a decision that may never have been made. Do not treat it as settled just because it is written down and sounds confident.
+
+Every unreviewed file or section carries a blockquote marker — the literal word `UNREVIEWED` in square brackets and bold, followed by an em dash and one line on what specifically needs a human's eyes:
+
+```
+> **[UN­REVIEWED]** — the retroactivity argument is stated far more forcefully
+> here than in the source. Confirm it's a rule and not a preference.
+```
+
+(The example above contains an invisible soft hyphen so this file doesn't match its own grep. Real markers are one unbroken word.)
+
+Say what is actually suspect. "Needs review" tells a reader nothing they didn't know from the marker's presence; naming the claim you're least sure of tells them where to look and lets them review a file in a minute instead of an hour.
+
+**A whole file:** the marker goes directly under the title, and everything below it is suspect.
+
+**A single section:** the marker goes under that heading, and the rest of the file is vouched for. Review is a property of *claims*, not of files — a spec can be mostly verified with one uncertain corner, and marking the whole file would waste a re-read of the good parts.
+
+**Empty stubs carry no marker.** They make no claims, so there is nothing to review. A stub that starts asserting things needs one.
+
+Find everything awaiting review with:
+
+```
+grep -rn "\[UNREVIEWED\]" specs/
+```
+
+That grep is the interface. Ask an agent to run it and walk the results with you.
+
+### Reviewing and un-reviewing
+
+**To mark something reviewed, delete its marker.** Nothing replaces it — an absent marker means a human has read the claim and vouches for it. Absence is the signal, which keeps reviewed files clean and puts the visual weight on what still needs attention.
+
+**When you substantively edit a reviewed spec, add the marker back and say so in your response.** Substantively means the claim changed, not the wording. A typo fix or a link repair does not un-review a spec; a new rationale, a reversed decision, or a rewritten section does. If you are unsure, mark it — a false alarm costs a glance, a missed one silently launders an agent's guess into an approved decision.
+
 ### Keeping this index honest
 
-When you add, split, or promote a spec out of stub status, update the table below. An out-of-date index is the one failure that breaks the whole system — it is how a reader decides what *not* to read.
+When you add, split, or promote a spec, update the table below.
+
+**The index is a summary, not the source of truth.** Each file's own marker is authoritative for its status; this table mirrors it so a reader can triage before spending a hop. Expect the mirror to lag occasionally — when the table and a file disagree, the file is right. Fix the table when you notice.
 
 ## Index
 
-**Stubs are marked.** A stub has no content worth loading — don't open it. It marks a concept we know is coming and where it will go.
+`stub` means no content worth loading — don't open it; it marks a concept we know is coming and where it will go. `unreviewed` means drafted but not yet vouched for by a human — read it, but verify before relying on it.
 
-| Concept | | What's in it |
+| Concept | Status | What's in it |
 |---|---|---|
-| [knowledge-graph/](knowledge-graph/) | | The uniform fact model: entities, relation types, statements, reification, rank. Why everything quizzable is one shape. |
-| [packs/](packs/) | | Extensibility and distribution. Why the engine knows structure and packs know semantics. |
-| [questions/](questions/) | | Turning facts into questions: templates, directions, distractors, numeric and temporal handling. |
-| [learning/](learning/) | | What the user knows and what to ask next: the answer log, scheduling, insight and gap analysis. |
-| [storage/](storage/) | | Persistence choices: why this database, what we liked, what would make us move. |
-| [product/](product/) | _stub_ | Product and UX concepts: what the experience should feel like and why. |
-| [deployment/](deployment/) | _stub_ | How this ships and runs. |
-| [tooling/](tooling/) | _stub_ | Pack authoring and the Wikidata import pipeline. Constrains the pack format today; built post-MVP. |
+| [knowledge-graph/](knowledge-graph/) | unreviewed | The uniform fact model: entities, relation types, statements, reification, rank. Why everything quizzable is one shape. |
+| [packs/](packs/) | unreviewed | Extensibility and distribution. Why the engine knows structure and packs know semantics. Includes the pack file format. |
+| [questions/](questions/) | unreviewed | Turning facts into questions: templates, directions, distractors, numeric and temporal handling. |
+| [learning/](learning/) | unreviewed | What the user knows and what to ask next: the answer log, scheduling, insight and gap analysis. |
+| [storage/](storage/) | unreviewed | Persistence choices: why this database, what we liked, what would make us move. Includes the reference SQL schema. |
+| [product/](product/) | stub | Product and UX concepts: what the experience should feel like and why. |
+| [deployment/](deployment/) | stub | How this ships and runs. |
+| [tooling/](tooling/) | stub | Pack authoring and the Wikidata import pipeline. Constrains the pack format today; built post-MVP. |
+| [open-questions.md](open-questions.md) | unreviewed | Undecided questions at the architecture level, spanning more than one concept. |
 
-## Status
+Reference appendices sit beside their concept README: [knowledge-graph/shapes.md](knowledge-graph/shapes.md), [packs/format.md](packs/format.md), [questions/template-shape.md](questions/template-shape.md), [learning/interfaces.md](learning/interfaces.md), [storage/sql-examples.md](storage/sql-examples.md). All unreviewed, all superseded by code once it exists.
 
-The engine specs (`knowledge-graph`, `packs`, `questions`, `learning`, `storage`) are drafted from the original data-architecture design and describe an unbuilt system — they are intent, not description. Nothing here has been validated against a running implementation yet.
+## Provenance
+
+These specs were decomposed by an agent from a single hand-written design document (`geo-quiz-spec.md`, now removed — see git history). The **decisions** in that document are the author's; the **prose explaining them** is largely the agent's reconstruction, which is why nothing here is reviewed yet. Some rationale is inferred rather than recorded, and inferred rationale is exactly the kind of thing that sounds right and isn't.
+
+Everything describes an **unbuilt system**. These are intent, not description — nothing here has been validated against a running implementation.

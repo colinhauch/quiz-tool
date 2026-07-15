@@ -1,5 +1,7 @@
 # Open Questions — System
 
+> **[UNREVIEWED]** — The questions are the author's. The analysis is the agent's and is where it went furthest beyond the source: the livelock argument against crediting the answered card, and the "is 'everything is a statement' holding?" question, which the author never asked. Both are worth checking rather than accepting.
+
 Questions at the architecture level. Questions about a specific concept live with that concept — see the folder they belong to.
 
 ## Reverse `many` questions: who gets the credit?

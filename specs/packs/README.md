@@ -1,5 +1,7 @@
 # Data Packs
 
+> **[UNREVIEWED]** — The design is the author's. The agent's additions needing confirmation: that domain mistakes become data errors rather than compile errors (a stated cost the source never named), and the rule that a defensive check in the engine means the check belongs in the validator instead.
+
 How content gets into the app, and the concept that makes "generic engine" mean something.
 
 ## The engine knows structure, packs know semantics
@@ -43,3 +45,7 @@ The whole update story rests on statement IDs being stable across rebuilds, whic
 Packs may bundle assets; the engine treats them opaquely. Templates **declare the capabilities they need** — an image-based template requires the subject to have an image — and packs lacking those capabilities simply never trigger those templates.
 
 This is the general answer to "what if most packs don't have pictures," and it generalizes past images to any future asset kind: capability matching, never special-casing. A template that needs something a pack doesn't have is not an error; it is just not eligible.
+
+## Deeper
+
+- [format.md](format.md) — *reference.* The manifest, file layout, validation checklist, and lifecycle mechanics. More durable than most reference material here, because the format is a contract with external pack authors and ETL rather than something app code will fully express.

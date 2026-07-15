@@ -1,5 +1,7 @@
 # Learning
 
+> **[UNREVIEWED]** — The retroactivity argument for never storing derived judgments is stated much more forcefully here than in the source ("never trade this away without a specific measured reason"). The agent believes it; the author should confirm it's a rule and not just a preference.
+
 What the user knows, what to ask next, and where the gaps are. This is the half of the app that isn't geography.
 
 ## The log is immutable and append-only
@@ -39,3 +41,7 @@ Region rollup works by walking `located_in` edges transitively up to a continent
 Every user-side row carries a `user_id`, and the MVP hardcodes one local user.
 
 This is the cheapest hedge in the system: a column now, versus a migration across the log and the card table later. Adding accounts becomes auth plus a users table plus sync — the data model does not change. Deferring the column costs a migration of exactly the tables you least want to migrate, because they are the ones holding irreplaceable user history.
+
+## Deeper
+
+- [interfaces.md](interfaces.md) — *reference.* The proposed answer-event and card shapes, the `Scheduler` interface, and the insight queries.

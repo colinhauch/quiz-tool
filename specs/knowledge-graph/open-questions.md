@@ -1,5 +1,7 @@
 # Open Questions — Knowledge Graph
 
+> **[UNREVIEWED]** — The question and the deterministic-hash candidate are the author's. The "Unresolved" analysis — that a hash makes any data correction orphan history, and the two escape routes — is the agent's and may be missing a simpler answer.
+
 ## Statement ID stability across pack rebuilds
 
 **The problem.** Answer events reference statement IDs. If ETL re-runs a pack and emits new IDs for the same facts, every user's history for that pack is orphaned — silently. Nothing errors; the learning record just detaches.

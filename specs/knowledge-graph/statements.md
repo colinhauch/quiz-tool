@@ -1,5 +1,7 @@
 # Statements
 
+> **[UNREVIEWED]** — Two claims here are the agent's own inference and were not in the source document: that adding a third arm to the object union should be treated as a redesign, and that per-statement provenance exists primarily to make pack update/uninstall tractable. Both are load-bearing if true.
+
 The atomic unit of knowledge. Every quizzable fact is one, and every answer ever logged references one by ID.
 
 ## The object slot is a closed union
