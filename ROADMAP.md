@@ -25,3 +25,7 @@ Each of these was designed for and costs a seam, not a refactor:
 | Graph database | Repo swap, with the trigger stated in [specs/storage/](specs/storage/) |
 
 That table is the payoff of the whole design. If any row stops being true, the architecture has drifted from its intent and the relevant spec should say so.
+
+## Unreviewed
+
+Most specs were drafted by an agent and have not been reviewed by a human. See [specs/README.md](specs/README.md) and search for `[UNREVIEWED]` markers to identify sections that need verification.
