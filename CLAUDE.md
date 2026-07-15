@@ -1,3 +1,8 @@
+# Important Instructions
+
+- **Be extremely brief.** You may sacrifice grammar for the sake of concision.
+- **When a decision gets made or something is learned that changes future work, record it.** See the "Updating the specs" section for details.
+
 # Geography Learning Engine
 
 A quiz app that teaches world geography from a knowledge graph, tracks every answer, and surfaces knowledge gaps. TypeScript. Pre-implementation — the design exists, the code does not.
@@ -32,7 +37,7 @@ Reviewing marks it done by **deleting the marker**. When you substantively edit 
 
 ## Updating the specs
 
-**When a decision gets made or something is learned that changes future work, record it.** Read [specs/README.md](specs/README.md) first — it has the rules for where things go and when a concept earns its own file — then edit the relevant leaf in place. Specs are edited, not versioned; git holds the history.
+Read [specs/README.md](specs/README.md) first — it has the rules for where things go and when a concept earns its own file — then edit the relevant leaf in place. Specs are edited, not versioned; git holds the history.
 
 The highest-value moment to write is right after a hard decision or a reversal, while the reasoning is still recoverable. Failed attempts especially: nothing else records those.
 
