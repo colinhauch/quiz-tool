@@ -1,6 +1,6 @@
 # Entity Identity
 
-> **[UNREVIEWED]** — The four benefits of Q-IDs are from the source document. The framing of the *cost* (inheriting an ID space we don't control) and the judgment that it's acceptable are the agent's, as is the aliases-vs-`aka` test at the bottom.
+> **[UNREVIEWED]** — Scoped down after the 2026-07-17 review. The naming section below is reviewed. Still unverified: the framing of the *cost* of Q-IDs (inheriting an ID space we don't control) and the judgment that it's acceptable — both the agent's, and the platform and pack-data decisions have since committed us harder to Wikidata than when it was written.
 
 ## Wikidata Q-IDs as canonical IDs
 
@@ -24,10 +24,24 @@ When two installed packs both define `Q155`, the records merge rather than colli
 
 **Statements never conflict this way,** because each statement is its own record with its own ID. Two packs asserting different capitals of Brazil produce two statements, not a conflict — and that is correct, because they might both be true at different times. Disagreement between packs is represented as data (via rank and temporal qualifiers, see [rank-and-time.md](rank-and-time.md)) rather than resolved at install time. The merge rule only has to handle display fields, which is why it can be this simple.
 
-## Display aliases vs. historical names
+## Naming: we take Wikidata's shape
 
-`aliases` on an entity are display synonyms — for text-input answer matching and search. "Tokio" is an alias of Tokyo.
+Having taken Wikidata's IDs, we take its naming shape too — `labels`, `aliases`, `descriptions`, each keyed by language. These are not three flavours of "name". They are three jobs:
 
-A historical name with dates is **not** an alias. "Constantinople" is a statement (`aka`, with `start` and `end` qualifiers), because it is a fact we want to *ask questions about*. The same distinction as everywhere in this model: if it belongs to identity and display, it is an entity field; if you could quiz it, it is a statement.
+- **`labels`** — the string to *display*. At most one per language.
+- **`aliases`** — the strings to *recall it by*, for search and (later) text-input matching. Any number per language.
+- **`descriptions`** — how to tell two entities with the same label apart. Wikidata needs these because labels are not unique; "label + description" is what makes a key.
 
-The test when you are unsure: would you ever ask a question whose answer is this string? If yes, it is a statement.
+**The MVP fills `en` only, and reads only `labels`.** Aliases and descriptions ship unread. That is a real cost — an unread field cannot rot loudly — and it is accepted for two reasons: the shape is inherited rather than invented, so it is not ours to get wrong; and entities are keyed by Q-IDs, so a later pass can re-fetch aliases and descriptions for the entities we already have without regenerating the pack. There is no one-way door here. Contrast statement `rank`, where there is.
+
+The language-keyed map is kept even with one key. A bare `name: string` would not save us the fallback policy — that has to be written the moment a second language exists either way — it would only delete the seam the policy lives in, and the retrofit cost lands in every call site that has to start threading a locale.
+
+## Historical names are both
+
+An entity's name can be *both* an alias and a statement, and this is not a contradiction.
+
+"Edo" belongs in Tokyo's `aliases` — someone typing it should find Tokyo. "Edo" is *also* a fact with a date range, and once an `aka` pack ships it is a statement too, quizzable like any other. Wikidata does exactly this: alternative names sit in the term store *and* are asserted as dated, sourced claims.
+
+The line is not "could you quiz it" — it is **dates, sources, and disputes**. A name that can be true during a period, cited, or disagreed with needs statement machinery. A name that is only the string a UI prints or a search box matches does not. One string can be on both sides of that line, in different roles.
+
+> **Open question — what belongs in `aliases`?** An earlier version of this file offered a test: *"would you ever ask a question whose answer is this string? If yes, it is a statement."* That test was an invention, and it fails against the model we are copying — it puts "Edo" out of `aliases`, where Wikidata puts it in. It is withdrawn rather than repaired: there is no crisp rule here. Wikidata's own guidance is a set of exclusions (no misspellings — fuzzy search owns those; no capitalisation variants — normalisation owns those), each justified by another layer doing the job. We have neither layer yet, so we cannot copy the exclusions honestly. **This resolves when text input and an `aka` pack arrive together** — that is the first moment aliases are read, `aka` statements exist, and the overlap between them is forced. See [TODO.md](../../TODO.md).

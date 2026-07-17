@@ -10,9 +10,9 @@ Preserved from the original design document. The *reasoning* lives in [README.md
 {
   "id": "Q1490",                      // Wikidata Q-ID convention
   "types": ["city"],                  // one or more; types are declared by packs
-  "labels":  { "en": "Tokyo", "ja": "東京" },              // BCP-47 language codes
-  "aliases": { "en": ["Tokio", "Edo"], "ja": ["江戸"] },   // display synonyms, not history
-  "descriptions": { "en": "capital and largest city of Japan" },  // disambiguation
+  "labels":  { "en": "Tokyo" },                 // BCP-47 language codes; MVP fills `en` only
+  "aliases": { "en": ["Tokio", "Edo"] },        // strings to recall it by; unread in the MVP
+  "descriptions": { "en": "capital and largest city of Japan" },  // disambiguation; unread in the MVP
   "media": [ { "kind": "image", "asset": "assets/tokyo_skyline.jpg", "caption_key": "skyline" } ],
   "pack_id": "core-cities@1.0.0",
   "source": "wikidata",
