@@ -4,7 +4,7 @@
 
 **Stub.** Built post-MVP — but it constrains the pack format today, so the constraint is recorded here.
 
-Pack authoring and the import pipeline. Packs are meant to be **built by ETL, not hand-authored**; the MVP's single hand-built pack is a bootstrap, not the model.
+Pack authoring and the import pipeline. Packs are meant to be **built by ETL, not hand-authored**; the MVP's single pack is a bootstrap, not the model. How that bootstrap actually works is decided in [mvp-bootstrap.md](mvp-bootstrap.md).
 
 ## Why this stub exists
 

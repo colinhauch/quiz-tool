@@ -109,7 +109,7 @@ When you add, split, or promote a spec, update the table below.
 
 ## Index
 
-`stub` means no content worth loading — don't open it; it marks a concept we know is coming and where it will go. `unreviewed` means drafted but not yet vouched for by a human — read it, but verify before relying on it.
+`stub` means no content worth loading — don't open it; it marks a concept we know is coming and where it will go. `unreviewed` means drafted but not yet vouched for by a human — read it, but verify before relying on it. `reviewed` means a human has vouched for the claims; rely on it. `mixed` means the folder's files differ — the entry says which is which, and each file's own marker is authoritative.
 
 | Concept | Status | What's in it |
 |---|---|---|
@@ -118,9 +118,9 @@ When you add, split, or promote a spec, update the table below.
 | [questions/](questions/) | unreviewed | Turning facts into questions: templates, directions, distractors, numeric and temporal handling. |
 | [learning/](learning/) | unreviewed | What the user knows and what to ask next: the answer log, scheduling, insight and gap analysis. |
 | [storage/](storage/) | unreviewed | Persistence choices: why this database, what we liked, what would make us move. Includes the reference SQL schema. |
-| [product/](product/) | stub | Product and UX concepts: what the experience should feel like and why. |
-| [deployment/](deployment/) | stub | How this ships and runs. |
-| [tooling/](tooling/) | stub | Pack authoring and the Wikidata import pipeline. Constrains the pack format today; built post-MVP. |
+| [product/](product/) | reviewed | Product and UX concepts. Why a sitting has no boundary, and what that buys. |
+| [deployment/](deployment/) | reviewed | How this ships and runs. Why the MVP is a local web app, and what that commits us to. |
+| [tooling/](tooling/) | mixed | Pack authoring and the Wikidata import pipeline. Constrains the pack format today; built post-MVP. [mvp-bootstrap.md](tooling/mvp-bootstrap.md) is reviewed; the README is a stub and unreviewed. |
 | [open-questions.md](open-questions.md) | unreviewed | Undecided questions at the architecture level, spanning more than one concept. |
 
 Reference appendices sit beside their concept README: [knowledge-graph/shapes.md](knowledge-graph/shapes.md), [packs/format.md](packs/format.md), [questions/template-shape.md](questions/template-shape.md), [learning/interfaces.md](learning/interfaces.md), [storage/sql-examples.md](storage/sql-examples.md). All unreviewed, all superseded by code once it exists.

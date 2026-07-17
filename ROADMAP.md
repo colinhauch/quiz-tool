@@ -4,9 +4,9 @@ Project planning, not architecture. This has a short lifespan by design — the 
 
 ## MVP
 
-**Ships:** the entity / relation-type / statement model · one hand-built `core-cities` pack (~300 cities: city→country and country→continent, English labels and aliases) · forward and reverse multiple choice · answer log, cards, and a trivial random-least-recent scheduler behind the `Scheduler` interface · the region × relation accuracy screen · SQLite behind repository interfaces · a single hardcoded local user.
+**Ships:** the entity / relation-type / statement model · one `core-cities` pack (~300 cities: city→country and country→continent, English labels and aliases), generated once by a throwaway script and committed — see [specs/tooling/mvp-bootstrap.md](specs/tooling/mvp-bootstrap.md) · forward and reverse multiple choice · answer log, cards, and a trivial random-least-recent scheduler behind the `Scheduler` interface · the region × relation accuracy screen · SQLite behind repository interfaces · a single hardcoded local user · running as a local web app: Node holds the engine and SQLite, the browser renders — see [specs/deployment/](specs/deployment/).
 
-**Non-goals:** accounts and sync · images and maps · GIS/geometry · a pack authoring UI · the Wikidata import tooling itself (the *format* must support it; building it is post-MVP).
+**Non-goals:** accounts and sync · images and maps · GIS/geometry · a pack authoring UI · the Wikidata import tooling itself (the *format* must support it; building it is post-MVP — note this rules out a maintained pipeline, not the one-off script that produces the pack above).
 
 ## Deferred, and why each is cheap later
 
