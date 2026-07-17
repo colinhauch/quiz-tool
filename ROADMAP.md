@@ -4,7 +4,7 @@ Project planning, not architecture. This has a short lifespan by design — the 
 
 ## MVP
 
-**Ships:** the entity / relation-type / statement model · one `core-cities` pack (~300 cities: city→country and country→continent, English labels and aliases), generated once by a throwaway script and committed — see [specs/tooling/mvp-bootstrap.md](specs/tooling/mvp-bootstrap.md) · forward and reverse multiple choice · answer log, cards, and a trivial random-least-recent scheduler behind the `Scheduler` interface · the region × relation accuracy screen · SQLite behind repository interfaces · a single hardcoded local user · running as a local web app: Node holds the engine and SQLite, the browser renders — see [specs/deployment/](specs/deployment/).
+**Ships:** the entity / relation-type / statement model · one `core-cities` pack (100 cities: city→country and country→continent, English only), generated once by a throwaway script and committed — see [specs/tooling/mvp-bootstrap.md](specs/tooling/mvp-bootstrap.md) · forward and reverse multiple choice · answer log, cards, and a trivial random-least-recent scheduler behind the `Scheduler` interface · the region × relation accuracy screen · SQLite behind repository interfaces · a single hardcoded local user · running as a local web app: Node holds the engine and SQLite, the browser renders — see [specs/deployment/](specs/deployment/).
 
 **Non-goals:** accounts and sync · images and maps · GIS/geometry · a pack authoring UI · the Wikidata import tooling itself (the *format* must support it; building it is post-MVP — note this rules out a maintained pipeline, not the one-off script that produces the pack above).
 
@@ -18,8 +18,8 @@ Each of these was designed for and costs a seam, not a refactor:
 | New packs (languages, currencies, borders, population, `aka`) | Data plus relation registration only — see [specs/packs/](specs/packs/) |
 | Qualifier and temporal questions | The log already references statements, so qualifiers are already quizzable |
 | Images | Template capability matching; packs without images never trigger them |
-| Text-input answers | Aliases are already stored per language |
-| Multilingual quizzing | Labels are already keyed by language |
+| Text-input answers | Aliases are stored (`en`), but they are only half of it — aliases answer "is this a name for this thing?", not "did they mean this string?". Normalisation and fuzzy matching are still to build |
+| Multilingual quizzing | Labels are keyed by language, so the seam exists — but the MVP fills `en` only, and the cost is threading a locale through every call site, not the data. See [TODO.md](TODO.md) |
 | Accounts and sync | `user_id` is already on every user-side row |
 | Import tooling | The pack format already mirrors Wikidata |
 | Graph database | Repo swap, with the trigger stated in [specs/storage/](specs/storage/) |

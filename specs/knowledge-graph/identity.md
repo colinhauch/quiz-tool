@@ -22,7 +22,13 @@ The dependency this creates: we have inherited an external ID space we do not co
 
 When two installed packs both define `Q155`, the records merge rather than collide: labels, aliases, and types union; per-field conflicts resolve in pack-installation order, later pack winning.
 
-**Statements never conflict this way,** because each statement is its own record with its own ID. Two packs asserting different capitals of Brazil produce two statements, not a conflict — and that is correct, because they might both be true at different times. Disagreement between packs is represented as data (via rank and temporal qualifiers, see [rank-and-time.md](rank-and-time.md)) rather than resolved at install time. The merge rule only has to handle display fields, which is why it can be this simple.
+**Statements never conflict this way,** because each statement is its own record with its own ID. Two packs asserting different capitals of Brazil produce two statements, not a conflict — and that is correct, because they might both be true at different times. Disagreement is **represented rather than resolved**: it stays in the data instead of being settled at install time. The merge rule only has to handle display fields, which is why it can be this simple.
+
+**What represents it is an open question, not a solved one.** An earlier version of this file said disagreement is represented "via rank and temporal qualifiers", which overstated things: the MVP has one pack and [no rank at all](statements.md), so cross-pack disagreement has never been exercised, let alone solved. Rank is a sketch of one mechanism.
+
+There is a second mechanism, and it may be the better one: **state the disagreement as facts.** Rather than ranking two capital claims, assert both, and where the disagreement is itself the interesting thing, say so directly — `s(Israel, claims, Jerusalem)` and `s(Palestine, claims, Jerusalem)`. This needs no engine support, no flag, and no editorial layer; it is the uniform fact model doing its job. See [../tooling/mvp-bootstrap.md](../tooling/mvp-bootstrap.md), where the MVP defers such entities to a later pack on exactly this basis.
+
+Which mechanism wins — rank, statements-about-disagreement, or both for different cases — is decided when a second pack exists. Until then this section describes a property we have not tested.
 
 ## Naming: we take Wikidata's shape
 

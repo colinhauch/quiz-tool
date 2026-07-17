@@ -85,7 +85,11 @@ Engine-reserved, allowed on every statement — the coordination floor from [sta
   "relation": "borders",
   "object": { "entity": "Q414" },    // Argentina
   "qualifiers": { "length_km": 1261 },
-  "rank": "normal",                  // "preferred" | "normal" | "deprecated"
+  // NO `rank` in the MVP — not on the type, not in the pack. The bootstrap filter
+  // resolves conflicts at generation time, so every statement is current by
+  // construction. See ../knowledge-graph/statements.md and ../tooling/mvp-bootstrap.md.
+  // It returns as "preferred" | "normal" | "deprecated" with a second pack, a pack
+  // update that retracts a claim, or the first temporal facts.
   "pack_id": "borders@1.0.0",
   "source": "wikidata:Q155#P47",
   "created": "2026-07-14T00:00:00Z",

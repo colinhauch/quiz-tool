@@ -32,6 +32,16 @@ Because answer events reference a statement rather than a bare triple, asking "w
 
 This is a good illustration of why the log references statements. Had it referenced subject/relation/object triples, qualifier questions would have needed a parallel logging path.
 
+## The MVP statement carries no rank
+
+`rank` is **not** on the engine's statement type, and **not** in the MVP pack file. Decided in the 2026-07-17 review.
+
+The reason is not that rank is unimportant — [rank-and-time.md](rank-and-time.md) describes real jobs it does. It is that the MVP's pack has resolved every conflict *at generation time*, by filtering to claims that are current and unambiguous and excluding entities that resist — see [../tooling/mvp-bootstrap.md](../tooling/mvp-bootstrap.md). Every statement that survives is current, unconflicted, and unretracted. A field with one legal value is not a model; it is a claim about the future that nothing tests. No consumer would filter on it, and the first pack to write `deprecated` would find that nothing respected it.
+
+Nor is it a one-way door. Statement IDs are unstable, so this deserved a hard look — but rank does not need re-extraction from Wikidata. Because filtering already guarantees every statement is current, a later pass can assign rank locally without regenerating the pack, and regeneration is the thing that would orphan answer history. **Filtering removes the need for rank rather than making it precious.**
+
+Rank arrives with the work that needs it: a second pack, a pack update that retracts a claim, or the first temporal facts.
+
 ## Identity and stability
 
 Statement IDs must be stable across pack rebuilds, because **answer events reference them and history must survive a pack update.** An ETL re-run that churns IDs orphans a user's entire learning record for that pack — this is the single most destructive failure mode in the data model, and it is silent.
