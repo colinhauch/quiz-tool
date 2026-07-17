@@ -1,7 +1,5 @@
 # Knowledge Graph
 
-> **[UNREVIEWED]** — The model itself is the author's. The stated *reasons* for it — the cost/benefit framing of uniformity, the argument for thin entities, the claim that reification makes "no schema changes" credible — are an agent's reconstruction and need a human's confirmation.
-
 The fact model everything else stands on. If you are adding a new kind of content to the app, this is the concept you need first.
 
 ## The core bet
@@ -14,7 +12,13 @@ The cost we accepted: any single fact is more awkward to read than it would be i
 
 ## Three object kinds, and why
 
-**Entities are thin identity records.** They carry identity and display (labels, aliases, descriptions, media) and nothing else. Anything you could ask a question about lives in a statement, never in an entity field. The moment a population lives on the entity, it is a fact that the scheduler cannot see and the answer log cannot reference — it is invisible to the whole learning apparatus. This rule is what keeps entities from slowly accreting into the "real" data model.
+**Entities are thin identity records.** They carry identity and display — labels, aliases, descriptions, media — and nothing else.
+
+The rule: **a fact belongs in a statement.** The moment a population lives on the entity, it is a fact the scheduler cannot see and the answer log cannot reference — invisible to the whole learning apparatus. This is what keeps entities from accreting into the "real" data model.
+
+The line is **dates, sources, and disputes**, not quizzability. A thing that can be true during a period, cited, or disagreed with is a fact, and belongs in a statement. A display string does not become a fact by being quizzable — an entity's name is both a field and (with dates) a statement, in different roles. See [identity.md](identity.md).
+
+> An earlier version of this rule read *"anything you could ask a question about lives in a statement, never in an entity field."* Too strong, and agent-written: it makes labels illegal, since a name is an answer. Corrected 2026-07-17.
 
 **Relation types are registered definitions, not strings.** A statement's relation must reference a real registered type. This registry is where qualifier vocabularies, type constraints, and question templates live, and it is the only thing keeping two independently authored packs consistent with each other. Without it, pack A writes `from` where pack B writes `since`, and no template can span both.
 

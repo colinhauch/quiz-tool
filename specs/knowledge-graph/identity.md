@@ -40,7 +40,11 @@ Having taken Wikidata's IDs, we take its naming shape too — `labels`, `aliases
 - **`aliases`** — the strings to *recall it by*, for search and (later) text-input matching. Any number per language.
 - **`descriptions`** — how to tell two entities with the same label apart. Wikidata needs these because labels are not unique; "label + description" is what makes a key.
 
-**The MVP fills `en` only, and reads only `labels`.** Aliases and descriptions ship unread. That is a real cost — an unread field cannot rot loudly — and it is accepted for two reasons: the shape is inherited rather than invented, so it is not ours to get wrong; and entities are keyed by Q-IDs, so a later pass can re-fetch aliases and descriptions for the entities we already have without regenerating the pack. There is no one-way door here. Contrast statement `rank`, where there is.
+**The MVP fills `en` only.** `labels` is read. `aliases` ships unread — it waits for text input. That is a real cost, since an unread field cannot rot loudly, and it is accepted because the shape is inherited rather than invented, and because Q-IDs let a later pass re-fetch without regenerating the pack. No one-way door. Contrast statement `rank`, where there is.
+
+`descriptions` is **ours to use, carefully**. It is good for data organisation and for dev ergonomics — a bare Q-ID is unreadable in a log or a query result. The UI may show it in some places.
+
+> **It must never be shown where it could give away an answer.** Tokyo's description is "capital and largest city of Japan", which hands over a city→country question outright. **For cities, do not display it.** The general rule — which surfaces are safe — is unresolved and belongs with question generation, not here.
 
 The language-keyed map is kept even with one key. A bare `name: string` would not save us the fallback policy — that has to be written the moment a second language exists either way — it would only delete the seam the policy lives in, and the retrofit cost lands in every call site that has to start threading a locale.
 

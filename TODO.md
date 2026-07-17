@@ -14,3 +14,7 @@ Deferred from the MVP, which fills `en` only and reads only `labels`. Entities k
 
 - [ ] **Ship `aka` as a relation** (`start` / `end` qualifiers) so historical names are quizzable — "what was Tokyo called before 1868?"
 - [ ] **Settle what belongs in `aliases` vs. an `aka` statement.** A string can legitimately be both: "Edo" is an alias (you should find Tokyo by typing it) *and* a dated fact. The open question is the overlap, not the split. It only becomes answerable when text input and an `aka` pack exist together — that is the first moment aliases are actually read. Wikidata's guidance is a set of exclusions (no misspellings, no capitalisation variants), each justified by a layer we do not have yet.
+
+## Descriptions in the UI
+
+- [ ] **Decide which surfaces may show an entity's `description`.** It leaks: Tokyo's is "capital and largest city of Japan", which gives away a city→country question. Cities: never display. The general rule belongs with question generation — see [specs/questions/](specs/questions/).

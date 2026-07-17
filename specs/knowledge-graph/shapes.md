@@ -12,7 +12,7 @@ Preserved from the original design document. The *reasoning* lives in [README.md
   "types": ["city"],                  // one or more; types are declared by packs
   "labels":  { "en": "Tokyo" },                 // BCP-47 language codes; MVP fills `en` only
   "aliases": { "en": ["Tokio", "Edo"] },        // strings to recall it by; unread in the MVP
-  "descriptions": { "en": "capital and largest city of Japan" },  // disambiguation; unread in the MVP
+  "descriptions": { "en": "capital and largest city of Japan" },  // disambiguation; usable, but never where it leaks an answer
   "media": [ { "kind": "image", "asset": "assets/tokyo_skyline.jpg", "caption_key": "skyline" } ],
   "pack_id": "core-cities@1.0.0",
   "source": "wikidata",
