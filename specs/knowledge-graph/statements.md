@@ -1,14 +1,16 @@
 # Statements
 
-> **[UNREVIEWED]** — Scoped down in the 2026-07-17 review; the provenance claim was demoted and the section rewritten. Still unverified: that adding a third arm to the object union should be treated as a **redesign** rather than an extension. That is the agent's inference, was not in the source document, and is load-bearing if true.
-
 The atomic unit of knowledge. Every quizzable fact is one, and every answer ever logged references one by ID.
 
 ## The object slot is a closed union
 
 An object is **either** a reference to another entity **or** a typed literal. Two arms, closed deliberately.
 
-The closure matters more than either arm. It is what lets every consumer — the scheduler, the answer log, the template engine, the distractor generator — exhaustively handle objects with no default case. Adding a third arm is not a feature addition; it is a change that touches every consumer, and it should be treated as a redesign rather than an extension. The pressure to add one will come from something that feels like it is "neither an entity nor a value." That thing is almost certainly a reification.
+The closure matters more than either arm. It is what lets every consumer — the scheduler, the answer log, the template engine, the distractor generator — exhaustively handle objects with no default case.
+
+**A third arm is a redesign, not an extension.** Not because of the switch statements — a compiler finds those, and that would be ordinary. Because the closed union is what *forces* reification, and reification is what makes "no schema changes ever" credible ([README.md](README.md)). The escape hatch only works while there is no other way out. A third arm means something bypassed it, and the pressure to add one — from something that feels like it is "neither an entity nor a value" — is exactly the pressure reification exists to absorb. That thing is almost certainly a reification. If it truly is not, the core bet lost, and that is worth stopping over.
+
+Reviewed 2026-07-17 against a live case: a territorial dispute feels like the archetypal third thing, and resolves to ordinary entity-valued statements — `s(Q_government_of_israel, claims, Q1218)`, `s(Q_state_of_palestine, claims, Q1218)`. Note the subjects: the claimants are *governments*, not countries. Getting that wrong is what makes a dispute look unrepresentable. Such facts are a later `disputed-land` pack; see [../tooling/mvp-bootstrap.md](../tooling/mvp-bootstrap.md).
 
 Literal datatypes (string, quantity, date, boolean) are **engine-level, not pack-level**. A pack cannot invent a datatype. This is the boundary that keeps validation and question generation writable at all — `literal_spread` distractors know what a quantity is, and could not know what an arbitrary pack-defined type is. Adding a datatype is an engine change with a version bump, and that friction is intentional.
 
