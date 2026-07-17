@@ -1,7 +1,5 @@
 # Entity Identity
 
-> **[UNREVIEWED]** — Scoped down after the 2026-07-17 review. The naming section below is reviewed. Still unverified: the framing of the *cost* of Q-IDs (inheriting an ID space we don't control) and the judgment that it's acceptable — both the agent's, and the platform and pack-data decisions have since committed us harder to Wikidata than when it was written.
-
 ## Wikidata Q-IDs as canonical IDs
 
 Entities use Wikidata Q-IDs wherever the entity exists in Wikidata — `Q155` is Brazil, `Q1490` is Tokyo. Entities with no Wikidata counterpart (app-specific reifications, mostly) get a namespaced ID like `gq:us_mx_border`.
@@ -16,7 +14,11 @@ This looks like an arbitrary convention. It is doing four jobs:
 
 **Import tooling maps 1:1.** Wikidata's model is close enough to ours that ETL is nearly mechanical: Q-IDs become entity IDs, properties become relation types, qualifiers become qualifiers. This is not a coincidence — the fact model was shaped with this correspondence in mind, because the alternative is hand-authoring hundreds of thousands of facts. See [../tooling/](../tooling/).
 
-The dependency this creates: we have inherited an external ID space we do not control. If Wikidata merges or deletes an item, our IDs are stale. This is judged acceptable — the items we care about are stable, well-curated ones, and a stale ID is a data problem, not a structural one.
+The dependency this creates: we have inherited an external ID space we do not control. If Wikidata merges or deletes an item, our IDs are stale.
+
+**Accepted, for now** (reviewed 2026-07-17). The items we care about are the stable, well-curated ones, and a stale ID is a data problem rather than a structural one. The "for now" is the honest part: the dependency has deepened since this was first written — the pack is generated from Wikidata, the naming shape is Wikidata's, and the MVP's whole claim to simple data rests on a Wikidata-side filter. We are further in than "we borrowed some IDs".
+
+What would reopen this: a merge or deletion hitting an entity a user has answer history against. That is the case where a stale ID stops being a data problem — the ID is the join key between the pack and the answer log, so a *silently wrong* Q-ID is worse than a missing one. Nothing in the MVP detects it. This is not worth solving before it happens, but it is worth recognising quickly when it does.
 
 ## Merging entities across packs
 
