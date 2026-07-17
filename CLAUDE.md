@@ -42,3 +42,17 @@ Read [specs/README.md](specs/README.md) first — it has the rules for where thi
 The highest-value moment to write is right after a hard decision or a reversal, while the reasoning is still recoverable. Failed attempts especially: nothing else records those.
 
 Keep the index in [specs/README.md](specs/README.md) current when you add a spec or promote one out of stub status.
+
+## Agent skills
+
+### Issue tracker
+
+Issues and PRDs live in GitHub Issues. Skills use the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default label vocabulary: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context layout with `CONTEXT.md` at root. See `docs/agents/domain.md`.
