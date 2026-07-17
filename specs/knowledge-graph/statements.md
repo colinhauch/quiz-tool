@@ -1,6 +1,6 @@
 # Statements
 
-> **[UNREVIEWED]** — Two claims here are the agent's own inference and were not in the source document: that adding a third arm to the object union should be treated as a redesign, and that per-statement provenance exists primarily to make pack update/uninstall tractable. Both are load-bearing if true.
+> **[UNREVIEWED]** — Scoped down in the 2026-07-17 review; the provenance claim was demoted and the section rewritten. Still unverified: that adding a third arm to the object union should be treated as a **redesign** rather than an extension. That is the agent's inference, was not in the source document, and is load-bearing if true.
 
 The atomic unit of knowledge. Every quizzable fact is one, and every answer ever logged references one by ID.
 
@@ -14,11 +14,18 @@ Literal datatypes (string, quantity, date, boolean) are **engine-level, not pack
 
 ## Why statements carry provenance
 
-Every statement records which pack introduced it and where it originally came from. Two reasons, and the second is the one that matters:
+Every statement records which pack introduced it (`pack_id`) and where that particular fact came from (`source`).
 
-Credit and licensing are the obvious one — packs carry licenses and sources deserve attribution.
+**The reason is that a pack is not homogeneous.** Origin varies *within* a pack — `core-cities` is Wikidata-derived, but any pack may mix generated facts with hand-authored ones, corrections, or a second upstream. Provenance is per-statement because the thing it records is per-statement. A pack-level field could not answer the question at all, and the question is a real one: *where did this particular entity or statement come from?*
 
-The real reason is that **a statement's origin is what makes pack update and uninstall tractable**. When a pack updates, we diff by statement ID and mark removed statements deprecated rather than deleting them; when it uninstalls, its statements deactivate. Both operations need to know which statements belong to whom. Without per-statement provenance, an uninstall would have to re-derive ownership, and answer events pointing at deleted statements would dangle. See [../packs/](../packs/).
+This is what makes hand-adding a statement cheap and honest — it goes in next to the generated ones, saying plainly that it is not one of them. That is not hypothetical: [../tooling/mvp-bootstrap.md](../tooling/mvp-bootstrap.md) *drops* cities its filter cannot state simply, and hand-authoring is the obvious way to patch a hole you dislike.
+
+**The MVP reads it.** The quiz card shows a subtle source line, so provenance is exercised from day one rather than written and trusted. It is also the right thing for a learning app to say: facts have origins, and the app should be willing to name them.
+
+Two reasons this section previously gave, and why they are not the reason:
+
+- **Licensing and attribution** are real, but they are *pack-level*. A licence belongs to a pack; it never explains a field on every row.
+- **Pack update and uninstall** are made tractable by provenance — a pack update diffs by statement ID and deprecates rather than deletes; an uninstall deactivates a pack's statements; neither can dangle an answer event. This is a genuine benefit and worth keeping. But it needs only `pack_id`, and it explains nothing about `source`. An earlier version of this file called it "the real reason", displacing the author's; it was an agent's inference, and the MVP has neither update nor uninstall to exercise it. See [../packs/](../packs/).
 
 ## Qualifiers, and the shared vocabulary problem
 
