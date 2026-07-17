@@ -7,7 +7,7 @@
 Deferred from the MVP, which fills `en` only and reads only `labels`. Entities keep Wikidata's language-keyed shape (`labels` / `aliases` / `descriptions`), so the seam exists — see [specs/knowledge-graph/identity.md](specs/knowledge-graph/identity.md).
 
 - [ ] **Thread a locale through name resolution.** Resolution is a function `(entity, locale) → string`. The MVP hardcodes `en`; the retrofit cost is every call site, not the data. Cheap to add languages, expensive to add the argument.
-- [ ] **Decide the fallback policy, explicitly.** RFC 4647 Lookup truncates from the end and *requires you* to define the default — an `en` backstop is our policy, not the spec's. CLDR parent locales are where truncation is wrong (`zh_Hant` → `root`, not `zh`; `en_AU` → `en_001`). See [docs/research/](docs/research/) on the `research/multilingual-names` branch.
+- [ ] **Decide the fallback policy, explicitly.** RFC 4647 Lookup truncates from the end and *requires you* to define the default — an `en` backstop is our policy, not the spec's. CLDR parent locales are where truncation is wrong (`zh_Hant` → `root`, not `zh`; `en_AU` → `en_001`). See [docs/research/multilingual-names.md](docs/research/multilingual-names.md).
 - [ ] **Backfill labels/aliases for existing entities.** Safe: entities are keyed by Q-IDs, so a fresh query joins on the pack we already shipped. Bounded re-extraction, *not* a pack regeneration — regenerating the pack churns statement IDs and orphans answer history. See [specs/tooling/mvp-bootstrap.md](specs/tooling/mvp-bootstrap.md).
 
 ## An `aka` statement relation
