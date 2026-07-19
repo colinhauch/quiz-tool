@@ -1,7 +1,5 @@
 # Pack Format
 
-> **[UNREVIEWED]** — Proposed, never built. No pack has been authored against this format and no installer has read it.
-
 The concrete file layout, preserved from the original design. The reasoning behind it is in [README.md](README.md).
 
 This one has more durable value than most reference material here, because **the pack format is a contract with things outside the app** — external pack authors and the ETL pipeline. App code won't fully express it the way it expresses an internal type, so a written format is likely to stay useful even after implementation.
@@ -44,6 +42,7 @@ Run when a pack is built and again on install. The runtime never re-checks — s
 5. All entity references resolve (within the pack or its dependencies).
 6. No relation-type ID collisions with installed packs.
 7. Asset references resolve to bundled files.
+8. Statement IDs unique within the pack, and no collision with a statement ID already installed — statements never merge across packs, so a clash is always an error. See [../knowledge-graph/open-questions.md](../knowledge-graph/open-questions.md).
 
 ## Lifecycle
 
@@ -53,4 +52,4 @@ Run when a pack is built and again on install. The runtime never re-checks — s
 
 **Uninstall:** deactivate the pack's statements. The original design floated keeping a `statements_archive` so answer events pointing at removed statements still resolve — that is an unresolved detail, and it is the same log-integrity concern that drives `deprecated`.
 
-All three depend on statement IDs being stable across rebuilds, which is unresolved — see [../knowledge-graph/open-questions.md](../knowledge-graph/open-questions.md).
+All three depend on statement IDs being stable across rebuilds. They are: IDs are authored pack data, frozen at authoring time, so a rebuild re-emits them unchanged — see [../knowledge-graph/open-questions.md](../knowledge-graph/open-questions.md).

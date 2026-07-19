@@ -1,7 +1,5 @@
 # Record Shapes (Reference)
 
-> **[UNREVIEWED]** — Proposed shapes, never implemented. **The most drift-prone file in the tree:** the moment TypeScript types exist, they are the source of truth and this becomes a historical sketch. Kept so that if the real types diverge, the divergence is visible and informative.
-
 Preserved from the original design document. The *reasoning* lives in [README.md](README.md), [statements.md](statements.md), [identity.md](identity.md), and [rank-and-time.md](rank-and-time.md) — read those first; this is here so the first attempt isn't lost.
 
 ## Entity

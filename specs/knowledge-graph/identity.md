@@ -1,7 +1,5 @@
 # Entity Identity
 
-> **[UNREVIEWED]** — The four benefits of Q-IDs are from the source document. The framing of the *cost* (inheriting an ID space we don't control) and the judgment that it's acceptable are the agent's, as is the aliases-vs-`aka` test at the bottom.
-
 ## Wikidata Q-IDs as canonical IDs
 
 Entities use Wikidata Q-IDs wherever the entity exists in Wikidata — `Q155` is Brazil, `Q1490` is Tokyo. Entities with no Wikidata counterpart get a namespaced ID like `gq:some_entity`.
