@@ -28,7 +28,7 @@ The engine may still *reserve* a few names by convention (`start`, `end`, `as_of
 
 > Post-MVP: we don't quiz qualifiers yet. This section is here for the structural point it makes about the log, which *is* an MVP decision.
 
-Because answer events reference a statement rather than a bare triple, asking "when did Constantinople become Istanbul?" would be just quizzing a qualifier of an existing statement. No new fact kind, no new log shape — the answer event records a direction of `qualifier:end` and everything else works unchanged.
+Because answer events reference a statement rather than a bare triple, asking "when did Constantinople become Istanbul?" would be just quizzing a qualifier of an existing statement. No new fact kind, no new log shape — the answer event hides the `end` qualifier of that statement and everything else works unchanged.
 
 This is a good illustration of why the log references statements. Had it referenced subject/relation/object triples, qualifier questions would have needed a parallel logging path.
 

@@ -4,9 +4,9 @@
 
 Questions at the architecture level. Questions about a specific concept live with that concept — see the folder they belong to.
 
-## Reverse `many` questions: who gets the credit?
+## Subject-hidden `many` questions: who gets the credit?
 
-"Name a city in Brazil" accepts any valid answer. But a card is keyed to `(statement, direction)`, and the question was generated from *one* statement while a dozen would satisfy it.
+"Name a city in Brazil" accepts any valid answer. But a card is keyed to `(statement, hidden_slot)`, and the question was generated from *one* statement while a dozen would satisfy it.
 
 Proposal: credit the statement matching whatever the user actually said. Answer "São Paulo," credit the São Paulo card.
 
@@ -22,6 +22,6 @@ Two places currently push against the uniform model, and it is worth watching wh
 
 **Comparison questions** need a card keyed to a *pair* of statements — see [questions/open-questions.md](questions/open-questions.md).
 
-**Reverse `many` questions** need a card that isn't keyed to one statement either (above).
+**Subject-hidden `many` questions** need a card that isn't keyed to one statement either (above).
 
 Both strain the same joint: the assumption that a unit of knowledge maps to a single fact. If a third case appears, that assumption is probably wrong and the card key — not the statement model — is what needs to change.

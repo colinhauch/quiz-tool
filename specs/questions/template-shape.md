@@ -6,14 +6,14 @@ Preserved from the original design, then reframed: question generation is **pack
 
 ## The generator interface
 
-A pack registers, per relation and direction, a generator the engine can invoke. Sketch:
+A pack registers, per relation, a generator the engine can invoke. Sketch:
 
 ```ts
-// The engine hands the generator a due statement, a direction, and the
-// learner's current level; it gets back a fully-assembled question.
+// The engine hands the generator a due card — the statement(s) and which
+// slot to hide — plus the learner's level; it gets back an assembled question.
 type Generator = (input: {
-  statement: Statement;
-  direction: "forward" | "reverse" | `qualifier:${string}`;
+  statements: Statement[];       // one for recall, two for a comparison
+  hiddenSlot: "subject" | "object" | `qualifier:${string}`;  // what to conceal
   level: number;                 // learner's current stability, so the generator can pitch difficulty
   graph: GraphQuery;             // to pull distractors from the same graph
 }) => Question;
@@ -30,13 +30,13 @@ The old declarative fields (prompt string, option count, distractor strategy, di
 
 ## Generation path
 
-Scheduler picks a due card → the card names a statement and a direction → the engine invokes the pack's generator for that relation → the generator assembles the prompt and options (distractors from the graph) → the engine displays it and logs the result.
+Scheduler picks a due card → the card names a statement and which slot to hide → the engine invokes the pack's generator for that relation → the generator assembles the prompt and options (distractors from the graph) → the engine displays it and logs the result.
 
-## Directions
+## Hidden slots
 
-- **forward** — hide the object: "What country is Tokyo in?"
-- **reverse** — hide the subject, phrased via `inverse_of` or symmetric normalization: "Name a city in India." For `cardinality: many`, *any* valid subject is correct — which is the unresolved crediting problem in [../open-questions.md](../open-questions.md).
-- **qualifier:&lt;name&gt;** — hide a qualifier: "When did Constantinople become Istanbul?"
+- **object** — hide the object: "What country is Tokyo in?"
+- **subject** — hide the subject, phrased via `inverse_of` or symmetric normalization: "Name a city in India." For `cardinality: many`, *any* valid subject is correct — which is the unresolved crediting problem in [../open-questions.md](../open-questions.md).
+- **qualifier:&lt;name&gt;** — hide a qualifier (post-MVP): "When did Constantinople become Istanbul?"
 
 ## Distractor strategies
 

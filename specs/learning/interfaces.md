@@ -12,27 +12,40 @@ Immutable, append-only.
 {
   "id": "a_7c21",
   "user_id": "local",
-  "statement_id": "s_9f3a",         // the fact tested
-  "direction": "forward",           // "forward" | "reverse" | "qualifier:<name>"
-  "template_id": "mc_object",
+  "statement_ids": ["s_9f3a"],      // the statement(s) the question was built from; 2+ for comparison
+  "hidden": [{ "slot": "object", "statement_id": "s_9f3a" }],
+                                    // what was concealed: an entity/literal the user had to produce.
+                                    // recall hides one slot; a comparison hides both populations.
+  "presented": "Which country borders Brazil?",  // the string shown, for display
   "input_mode": "multiple_choice",  // "multiple_choice" | "text" | "select_all" | …
   "correct": true,
   "answer_given": "Q414",           // entity ID, literal, or raw text
-  "distractors": ["Q717", "Q736", "Q750"],  // optional: what the wrong options were
   "latency_ms": 3400,               // optional
   "asked_at": "2026-07-14T14:02:11Z",
   "session_id": "sess_04"
 }
 ```
 
-`distractors` is logged because a correct answer against far distractors and one against siblings are different evidence — see [../questions/distractors.md](../questions/distractors.md). Worth noting nothing currently *consumes* this field.
+The row carries no `template_id`/`generator_id` and no `direction`. The **`hidden`** array is what replaces direction: it names the entity-IDs and/or literals the question concealed, and its shape is what distinguishes challenges — one hidden slot for recall, two hidden literals for a comparison. The correct answer is not stored; it is re-derivable from `statement_ids` + `hidden` (for recall the hidden slot *is* the answer; for comparison it is computed from the two hidden literals), and statements survive deprecation so that derivation stays valid. What kind of question a row was is likewise derived, never tagged.
+
+A comparison row, for contrast:
+
+```jsonc
+{
+  "statement_ids": ["s_tok_pop", "s_del_pop"],
+  "hidden": [{ "slot": "object", "statement_id": "s_tok_pop" },
+             { "slot": "object", "statement_id": "s_del_pop" }],
+  "presented": "Which has the larger population: Tokyo or Delhi?",
+  "answer_given": "Q1490", "correct": true
+}
+```
 
 ## Card (scheduler state)
 
-Mutable, one row per `(user_id, statement_id, direction)`.
+Mutable, one row per `(user_id, statement_id, hidden_slot)` — which slot of the statement the learner had to produce (`subject` | `object` | `qualifier:<name>`). Comparison questions have no single-statement coordinate and use a virtual card — see [README.md](README.md).
 
 ```jsonc
-{ "user_id": "local", "statement_id": "s_9f3a", "direction": "forward",
+{ "user_id": "local", "statement_id": "s_9f3a", "hidden_slot": "object",
   "due": "2026-07-19T00:00:00Z", "stability": 4.2, "difficulty": 6.1,
   "reps": 3, "lapses": 0, "last_review": "2026-07-14T14:02:11Z",
   "state": "review",                 // "new" | "learning" | "review" | "relearning"
