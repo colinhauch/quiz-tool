@@ -33,6 +33,8 @@ pids/
 *.pid
 *.seed
 *.pid.lock
+*.sqlite
+*.sqlite-journal
 
 # Coverage
 coverage/

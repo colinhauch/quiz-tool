@@ -1,38 +1,82 @@
-import type { QuestionResponse } from "@geo/contract";
-import { useEffect, useState } from "react";
+import type { AnswerResponse, QuestionResponse } from "@geo/contract";
+import { type FormEvent, useCallback, useEffect, useState } from "react";
 
 /** Where the browser reaches the Node server; `/api` is proxied in dev (see vite.config.ts). */
 const QUESTION_URL = "/api/question";
+const ANSWER_URL = "/api/answer";
 
-type Status =
+type View =
   | { state: "loading" }
-  | { state: "ready"; question: QuestionResponse }
-  | { state: "error" };
+  | { state: "error" }
+  | { state: "asking"; question: QuestionResponse }
+  | { state: "answered"; question: QuestionResponse; result: AnswerResponse };
 
 export function App() {
-  const [status, setStatus] = useState<Status>({ state: "loading" });
+  const [view, setView] = useState<View>({ state: "loading" });
+  const [input, setInput] = useState("");
+
+  const loadQuestion = useCallback(async () => {
+    setView({ state: "loading" });
+    setInput("");
+    try {
+      const question = (await (await fetch(QUESTION_URL)).json()) as QuestionResponse;
+      setView({ state: "asking", question });
+    } catch {
+      setView({ state: "error" });
+    }
+  }, []);
 
   useEffect(() => {
-    let active = true;
-    fetch(QUESTION_URL)
-      .then((res) => res.json() as Promise<QuestionResponse>)
-      .then((question) => {
-        if (active) setStatus({ state: "ready", question });
-      })
-      .catch(() => {
-        if (active) setStatus({ state: "error" });
+    void loadQuestion();
+  }, [loadQuestion]);
+
+  async function submitAnswer(event: FormEvent, question: QuestionResponse) {
+    event.preventDefault();
+    try {
+      const res = await fetch(ANSWER_URL, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ cardId: question.cardId, input }),
       });
-    return () => {
-      active = false;
-    };
-  }, []);
+      const result = (await res.json()) as AnswerResponse;
+      setView({ state: "answered", question, result });
+    } catch {
+      setView({ state: "error" });
+    }
+  }
 
   return (
     <main>
       <h1>Geography Quiz</h1>
-      {status.state === "ready" && <p>{status.question.prompt}</p>}
-      {status.state === "loading" && <p>Loading a question…</p>}
-      {status.state === "error" && <p>Couldn’t load a question. Try again.</p>}
+
+      {view.state === "loading" && <p>Loading a question…</p>}
+      {view.state === "error" && <p>Couldn’t reach the quiz. Try again.</p>}
+
+      {view.state === "asking" && (
+        <form onSubmit={(e) => submitAnswer(e, view.question)}>
+          <p>{view.question.prompt}</p>
+          <input
+            aria-label="Your answer"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            autoFocus
+          />
+          <button type="submit">Submit</button>
+        </form>
+      )}
+
+      {view.state === "answered" && (
+        <div>
+          <p>{view.question.prompt}</p>
+          <p role="status">
+            {view.result.correct ? "Correct!" : "Incorrect."} The answer is{" "}
+            {view.result.acceptedAnswer}.
+          </p>
+          <button type="button" onClick={() => void loadQuestion()}>
+            Next question
+          </button>
+        </div>
+      )}
     </main>
   );
 }

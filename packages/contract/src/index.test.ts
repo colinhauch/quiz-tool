@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { healthSchema, questionResponseSchema } from "./index.js";
+import {
+  answerRequestSchema,
+  answerResponseSchema,
+  healthSchema,
+  questionResponseSchema,
+} from "./index.js";
 
 describe("contract", () => {
   it("validates a well-formed health payload", () => {
@@ -30,5 +35,39 @@ describe("questionResponseSchema", () => {
 
   it("rejects a leaked answer field", () => {
     expect(questionResponseSchema.safeParse({ ...question, answer: "Japan" }).success).toBe(false);
+  });
+});
+
+describe("answerRequestSchema", () => {
+  it("validates a well-formed request", () => {
+    const req = { cardId: "cc:tokyo-japan:object", input: "Japan" };
+    expect(answerRequestSchema.parse(req)).toEqual(req);
+  });
+
+  it("accepts empty input (a blank submission is still an answer)", () => {
+    expect(answerRequestSchema.safeParse({ cardId: "c", input: "" }).success).toBe(true);
+  });
+
+  it("rejects a missing cardId", () => {
+    expect(answerRequestSchema.safeParse({ input: "Japan" }).success).toBe(false);
+  });
+});
+
+describe("answerResponseSchema", () => {
+  it("validates a well-formed response", () => {
+    const res = { correct: true, acceptedAnswer: "Japan" };
+    expect(answerResponseSchema.parse(res)).toEqual(res);
+  });
+
+  it("rejects a non-boolean correct", () => {
+    expect(answerResponseSchema.safeParse({ correct: "yes", acceptedAnswer: "Japan" }).success).toBe(
+      false,
+    );
+  });
+
+  it("rejects extra fields", () => {
+    expect(
+      answerResponseSchema.safeParse({ correct: true, acceptedAnswer: "Japan", debug: 1 }).success,
+    ).toBe(false);
   });
 });

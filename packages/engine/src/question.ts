@@ -1,3 +1,4 @@
+import { makeCardId } from "./card.js";
 import { createGraph } from "./graph.js";
 import type { HiddenSlot, Pack, RenderedQuestion, Statement } from "./types.js";
 
@@ -20,7 +21,7 @@ export function generateQuestion(
   if (!generator) throw new Error(`no generator for relation: ${statement.relation}`);
 
   const content = generator({ statement, hiddenSlot, graph: createGraph(pack.entities) });
-  return { cardId: `${statement.id}:${hiddenSlot}`, prompt: content.prompt, input: content.input };
+  return { cardId: makeCardId(statement.id, hiddenSlot), prompt: content.prompt, input: content.input };
 }
 
 /**

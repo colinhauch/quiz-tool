@@ -8,4 +8,12 @@
 
 export * from "./types.js";
 export { createGraph } from "./graph.js";
+export { makeCardId, findCard } from "./card.js";
 export { generateQuestion, selectQuestion } from "./question.js";
+export {
+  normalizeAnswer,
+  acceptedAnswers,
+  matchesEntity,
+  checkAnswer,
+  type AnswerResult,
+} from "./answer.js";

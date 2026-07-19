@@ -30,3 +30,29 @@ export const questionResponseSchema = z
   .strict();
 
 export type QuestionResponse = z.infer<typeof questionResponseSchema>;
+
+/**
+ * `POST /answer` request — the card being answered and the learner's raw typed
+ * input. The server normalizes and judges; the client sends text verbatim.
+ */
+export const answerRequestSchema = z
+  .object({
+    cardId: z.string().min(1),
+    input: z.string(),
+  })
+  .strict();
+
+export type AnswerRequest = z.infer<typeof answerRequestSchema>;
+
+/**
+ * `POST /answer` response — whether the input was correct, and the canonical
+ * label of the correct answer so the UI can show it either way.
+ */
+export const answerResponseSchema = z
+  .object({
+    correct: z.boolean(),
+    acceptedAnswer: z.string().min(1),
+  })
+  .strict();
+
+export type AnswerResponse = z.infer<typeof answerResponseSchema>;
