@@ -1,28 +1,42 @@
 # Data Packs
 
-> **[UNREVIEWED]** — The design is the author's. The agent's additions needing confirmation: that domain mistakes become data errors rather than compile errors (a stated cost the source never named), and the rule that a defensive check in the engine means the check belongs in the validator instead.
-
 How content gets into the app, and the concept that makes "generic engine" mean something.
 
-## The engine knows structure, packs know semantics
+## The engine runs the learning loop; packs supply the domain
 
-The engine understands entities, relation types, statements, qualifiers, and templates. **It has no idea what a "city" is.** It cannot, and this is enforced by construction rather than convention: entity types, relation types, and statements all arrive from packs, so there is nowhere for the engine to hard-code a domain concept even if someone wanted to.
+The split is by *responsibility*, not by data-vs-nothing. The **engine** owns everything about *learning* and knows nothing about geography: it schedules what to ask next, invokes a pack to produce a question, displays it, scores and logs the answer, and tracks what the user knows. The **pack** owns everything about a *domain*: not just the data, but the code to make sense of it.
 
-The payoff is the project's central claim. Adding languages, currencies, borders, rivers, or religions later means shipping a pack — not changing a schema, not breaking historical answer logs, not rearchitecting. The MVP ships one pack of world cities; everything after is content.
+Concretely, a pack ships:
 
-The cost is that domain knowledge is data, so domain mistakes are data errors rather than compile errors. Validation at pack build/install time is the compensating control.
+- **Type definitions and handler code** for its entity types, relation types, and qualifiers — the engine doesn't hard-code how `borders` behaves; the pack does.
+- **The data itself** — the entity and statement rows.
+- **Question generators** — functions that turn this pack's statements into questions. See [../questions/](../questions/); this is the big move away from an engine-owned template registry.
 
-## A pack is any subset
+The only domain vocabulary the engine fixes is **literals** — the datatypes (`string`, `quantity`, `date`, `dateRange`, `boolean`) that its own generic machinery has to reason about (comparison logic, numeric distractors). Everything else about a domain lives in the pack. See [../knowledge-graph/statements.md](../knowledge-graph/statements.md) for why that line falls exactly there.
 
-Manifest, plus any combination of entity types, relation types, entities, statements, and assets. All optional.
+The payoff is the project's central claim. Adding languages, currencies, borders, rivers, or religions later means writing a pack — not changing the engine, not breaking historical answer logs, not rearchitecting. The MVP ships one pack of world cities; everything after is content-plus-code, packaged together.
 
-This matters more than it sounds. A `borders` pack that adds only statements over countries that a `core-countries` pack already defined ships **no entity file at all** — it depends on the other pack and asserts new facts about its entities. That composability is what makes packs feel like a graph extension rather than a bundle: content layers over shared identity instead of duplicating it. Wikidata Q-IDs are what make it possible — see [../knowledge-graph/identity.md](../knowledge-graph/identity.md).
+**Why this reversed an earlier design.** An earlier draft made the engine own structure (entities, relations, qualifiers, *templates*) and packs own only semantics and data — templates were declarative data, question generation lived in the engine. That breaks the moment a relation needs question logic the engine can't express generically, and it forces a fixed qualifier vocabulary the engine has to anticipate. Since we own all packs anyway (below), there's no reason to keep domain logic out of them. Pushing handlers and generators into the pack means the engine never has to predict what a future domain needs — the pack brings its own understanding.
+
+## Packs are first-party, and topic-scoped
+
+**We author and own every pack; they live in this repo.** A pack is not a third-party plugin — it is a way of chunking an effectively infinite graph of entities and relationships into something manageable, organized by topic. "The 100 most populated cities, their countries, and their populations" is a pack. It is small, simple data plus the modest code to quiz it.
+
+This changes the trust story completely. Because pack code is *our* code, shipping executable handlers and generators in a pack is not a security boundary to defend — it is just code organization. Validation still earns its keep (below), but as a correctness aid, not a sandbox.
+
+The MVP pack is deliberately simple data; the *capability* for richer per-pack handling exists for topics that need it later, but nothing about MVP requires it.
+
+## A pack is any subset of content, plus its code
+
+Manifest, plus any combination of entity types, relation types, entities, statements, assets — and the handler/generator code for whatever domain concepts it introduces. The content pieces are all optional.
+
+This composability matters more than it sounds. A `borders` pack that adds only statements over countries a `core-countries` pack already defined ships **no entity file at all** — it depends on the other pack and asserts new facts about its entities. Content layers over shared identity instead of duplicating it, which is what makes packs feel like a graph extension rather than a bundle. Wikidata Q-IDs are what make it possible — see [../knowledge-graph/identity.md](../knowledge-graph/identity.md).
 
 ## Validate at build time, trust at runtime
 
-Packs are validated when built and again when installed. **The runtime engine never defensively parses.** No optional chaining through pack data, no "what if the relation isn't registered" branches in the question generator.
+Packs are validated when built and again when installed, and **the runtime engine never defensively parses** — no optional chaining through pack data, no "what if the relation isn't registered" branches downstream.
 
-This is a deliberate trade: all the paranoia is concentrated at one boundary so the entire runtime downstream can be written as if the data is correct. The rule to preserve is that runtime code assumes valid data; if you find yourself adding a defensive check in the engine, the check belongs in the validator instead.
+This is a deliberate trade: the paranoia is concentrated at one boundary so the runtime can be written as if the data is correct. It's a correctness discipline, not a security perimeter — packs are first-party, so validation is there to catch our own mistakes early, where they're cheap, rather than deep in a quiz session. If you find yourself adding a defensive check in the engine, the check usually belongs in the validator instead.
 
 Validation covers the things that would otherwise fail deep in the runtime: relations are registered, subject and object types satisfy the relation's domain and range, literals match the declared datatype, qualifiers validate against the relation's schema, entity references resolve, assets exist, and relation-type IDs don't collide with installed packs.
 
@@ -30,7 +44,7 @@ Validation covers the things that would otherwise fail deep in the runtime: rela
 
 A pack may define new relation types or reference ones from packs it depends on. What it may not do is redefine an existing ID.
 
-If two packs could each define `borders` with different qualifier schemas, then a statement's meaning would depend on which pack you asked — and the registry's entire purpose is that a relation means one thing everywhere. Extension happens by adding templates, which are additive and safe.
+If two packs could each define `borders` with different qualifier schemas, then a statement's meaning would depend on which pack you asked — and the registry's entire purpose is that a relation means one thing everywhere. A pack extends the graph by defining *new* relations (with their own generators), never by redefining someone else's.
 
 ## Updates preserve history
 
@@ -42,9 +56,9 @@ The whole update story rests on statement IDs being stable across rebuilds, whic
 
 ## Assets and capability matching
 
-Packs may bundle assets; the engine treats them opaquely. Templates **declare the capabilities they need** — an image-based template requires the subject to have an image — and packs lacking those capabilities simply never trigger those templates.
+Packs may bundle assets; the engine treats them opaquely. A generator that needs an asset — an image-based question requiring the subject to have an image — simply produces nothing when the statement lacks it, so a pack without pictures never yields image questions.
 
-This is the general answer to "what if most packs don't have pictures," and it generalizes past images to any future asset kind: capability matching, never special-casing. A template that needs something a pack doesn't have is not an error; it is just not eligible.
+This is the general answer to "what if most packs don't have pictures," and it generalizes past images to any future asset kind: the generator checks for what it needs and declines gracefully, never special-casing. A missing capability is not an error; that question just isn't generated.
 
 ## Deeper
 

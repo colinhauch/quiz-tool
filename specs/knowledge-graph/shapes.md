@@ -36,13 +36,13 @@ Entity-valued:
   "inverse_of": null,                // for asymmetric pairs: located_in ⇄ contains
   "domain": ["country"],             // allowed subject types
   "range":  ["country"],             // allowed object types
-  "cardinality": "many",             // "one" | "many" — informs templates
-  "qualifier_schema": {              // JSON Schema fragment for this relation
+  "cardinality": "many",             // "one" | "many" — informs question generation
+  "qualifier_schema": {              // JSON Schema fragment; qualifiers are pack-defined
     "type": "object",
     "properties": { "length_km": { "type": "number" } },
-    "additionalProperties": false    // core qualifiers implicitly allowed
+    "additionalProperties": false
   },
-  "templates": ["mc_object", "mc_subject", "select_all_objects", "qualifier_quantity"],
+  // question generators for this relation live in the pack's code, not here
   "pack_id": "borders@1.0.0"
 }
 ```
@@ -58,16 +58,16 @@ Literal-valued differs only in `arity` and `range`:
   "symmetric": false,
   "cardinality": "one",              // one *current* value; history via rank + time
   "qualifier_schema": { "type": "object", "properties": { "as_of": { "type": "string", "format": "date" } } },
-  "templates": ["compare_two", "order_of_magnitude_mc", "range_bucket_mc"],
+  // numeric question generators (compare, order-of-magnitude, range-bucket) ship in the pack's code
   "pack_id": "core-cities@1.0.0"
 }
 ```
 
 A relation declares **at most one** of `symmetric` / `inverse_of`.
 
-## Core qualifiers
+## Common qualifiers
 
-Engine-reserved, allowed on every statement — the coordination floor from [statements.md](statements.md):
+Qualifiers are pack-defined (see [statements.md](statements.md)). These names recur across packs by convention, and a pack that wants temporal semantics is encouraged to spell them this way — but the engine implements nothing special for them in MVP:
 
 | Qualifier | Type | Meaning |
 |---|---|---|
@@ -133,14 +133,6 @@ Datatypes (MVP set): `string` (optionally language-tagged), `quantity` (value + 
 // Q: "When did Constantinople become Istanbul?"          → `end` qualifier of s_ist
 ```
 
-**Direction as an edge property** — geometry resolved at import time:
-
-```jsonc
-{ "subject": "gq:santa_catalinas", "relation": "overlooks", "object": { "entity": "Q18575" },  // Tucson
-  "qualifiers": { "direction": "NE" } }
-// Q: "Which mountain range lies northeast of Tucson?"
-```
-
 **Numeric snapshot:**
 
 ```jsonc
@@ -148,20 +140,3 @@ Datatypes (MVP set): `string` (optionally language-tagged), `quantity` (value + 
   "object": { "literal": { "datatype": "quantity", "value": 37400000, "unit": "people" } },
   "qualifiers": { "as_of": "2025-01-01" }, "source": "wikidata:Q1490#P1082" }
 ```
-
-## Reification
-
-"The Rio Grande forms part of the border between the US and Mexico" — four participants, so the relationship becomes an entity:
-
-```jsonc
-{ "id": "gq:us_mx_border", "types": ["border"], "labels": { "en": "United States–Mexico border" } }
-
-{ "subject": "gq:us_mx_border", "relation": "border_party",  "object": { "entity": "Q30" } }    // USA
-{ "subject": "gq:us_mx_border", "relation": "border_party",  "object": { "entity": "Q96" } }    // Mexico
-{ "subject": "gq:us_mx_border", "relation": "formed_by",     "object": { "entity": "Q41000" },  // Rio Grande
-  "qualifiers": { "extent": "partial" } }
-{ "subject": "gq:us_mx_border", "relation": "length",
-  "object": { "literal": { "datatype": "quantity", "value": 3145, "unit": "km" } } }
-```
-
-Note that nothing here is a new *kind* of thing — it is entities and statements, which is the point.

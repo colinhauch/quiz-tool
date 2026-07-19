@@ -23,12 +23,13 @@ This one has more durable value than most reference material here, because **the
     "relation_types": "relation_types.json", // optional
     "entities":       "entities.jsonl",      // optional
     "statements":     "statements.jsonl",    // optional
-    "assets":         "assets/"              // optional
+    "assets":         "assets/",             // optional
+    "code":           "index.ts"             // optional — handlers + question generators
   }
 }
 ```
 
-Every entry in `contents` is optional — that is the composability point from [README.md](README.md). The `borders` pack ships no entity file at all.
+Every entry in `contents` is optional — that is the composability point from [README.md](README.md). The `borders` pack ships no entity file at all. A pack that introduces new relations also ships **code** (`index.ts` or similar): the handler and question-generator functions for those relations, per [README.md](README.md) and [../questions/template-shape.md](../questions/template-shape.md). A pack that only asserts statements over relations another pack already defined needs no code of its own.
 
 **`.jsonl` for the large files** (one JSON object per line) so they stay streamable and diff-friendly. A 300-city pack is a big JSON array or a pleasant line-oriented file; the latter reviews in git.
 
@@ -39,7 +40,7 @@ Run when a pack is built and again on install. The runtime never re-checks — s
 1. Manifest well-formed; dependencies resolvable at compatible versions.
 2. Every statement's `relation` is registered (locally or via a dependency).
 3. Subject/object types satisfy the relation's `domain`/`range`; literal objects match `arity` and datatype.
-4. Qualifier bags validate against `qualifier_schema` plus the core qualifiers.
+4. Qualifier bags validate against the relation type's `qualifier_schema` (qualifiers are pack-defined — see [../knowledge-graph/statements.md](../knowledge-graph/statements.md)).
 5. All entity references resolve (within the pack or its dependencies).
 6. No relation-type ID collisions with installed packs.
 7. Asset references resolve to bundled files.

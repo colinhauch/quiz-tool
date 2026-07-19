@@ -113,9 +113,9 @@ When you add, split, or promote a spec, update the table below.
 
 | Concept | Status | What's in it |
 |---|---|---|
-| [knowledge-graph/](knowledge-graph/) | unreviewed | The uniform fact model: entities, relation types, statements, reification, rank. Why everything quizzable is one shape. |
-| [packs/](packs/) | unreviewed | Extensibility and distribution. Why the engine knows structure and packs know semantics. Includes the pack file format. |
-| [questions/](questions/) | unreviewed | Turning facts into questions: templates, directions, distractors, numeric and temporal handling. |
+| [knowledge-graph/](knowledge-graph/) | mixed | The uniform fact model: entities, relation types, statements, rank. Why everything quizzable is one shape. README reviewed; child files unreviewed. |
+| [packs/](packs/) | mixed | First-party, topic-scoped modules that ship data *and* the code to handle it. Why the engine runs the learning loop and packs supply the domain. README reviewed; format.md unreviewed. |
+| [questions/](questions/) | unreviewed | Turning facts into questions via pack-provided generator code: directions, distractors, numeric and temporal handling. |
 | [learning/](learning/) | unreviewed | What the user knows and what to ask next: the answer log, scheduling, insight and gap analysis. |
 | [storage/](storage/) | unreviewed | Persistence choices: why this database, what we liked, what would make us move. Includes the reference SQL schema. |
 | [product/](product/) | reviewed | Product and UX concepts. Why a sitting has no boundary, and what that buys. |
