@@ -15,3 +15,18 @@ export const healthSchema = z.object({
 });
 
 export type Health = z.infer<typeof healthSchema>;
+
+/**
+ * `GET /question` — a rendered question ready to display. It carries a stable
+ * `cardId` for the card being asked, the prompt, and the input mode. It
+ * deliberately does NOT carry the answer: the seam must never reveal it.
+ */
+export const questionResponseSchema = z
+  .object({
+    cardId: z.string().min(1),
+    prompt: z.string().min(1),
+    input: z.literal("text"),
+  })
+  .strict();
+
+export type QuestionResponse = z.infer<typeof questionResponseSchema>;
