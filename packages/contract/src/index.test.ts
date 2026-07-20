@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  answerLogSchema,
   answerRequestSchema,
   answerResponseSchema,
   healthSchema,
@@ -69,5 +70,36 @@ describe("answerResponseSchema", () => {
     expect(
       answerResponseSchema.safeParse({ correct: true, acceptedAnswer: "Japan", debug: 1 }).success,
     ).toBe(false);
+  });
+});
+
+describe("answerLogSchema", () => {
+  const entry = {
+    cardId: "cc:tokyo-japan:object",
+    question: "What country is Tokyo in?",
+    input: "Japan",
+    correct: true,
+    askedAt: "2026-07-19T12:00:00.000Z",
+  };
+
+  it("validates a log of recorded answers", () => {
+    expect(answerLogSchema.parse([entry])).toEqual([entry]);
+  });
+
+  it("accepts an empty log", () => {
+    expect(answerLogSchema.parse([])).toEqual([]);
+  });
+
+  it("accepts an empty input (a blank submission is still an answer)", () => {
+    expect(answerLogSchema.safeParse([{ ...entry, input: "" }]).success).toBe(true);
+  });
+
+  it("rejects an entry with a missing timestamp", () => {
+    const { askedAt: _askedAt, ...rest } = entry;
+    expect(answerLogSchema.safeParse([rest]).success).toBe(false);
+  });
+
+  it("rejects an entry with extra fields", () => {
+    expect(answerLogSchema.safeParse([{ ...entry, debug: 1 }]).success).toBe(false);
   });
 });
