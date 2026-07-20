@@ -1,7 +1,7 @@
 import type { AnswerResponse, QuestionResponse } from "@geo/contract";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { App } from "./App.js";
+import { Quiz } from "./Quiz.js";
 
 const tokyo: QuestionResponse = {
   cardId: "cc:tokyo-japan:object",
@@ -36,23 +36,22 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe("App", () => {
-  it("renders the app shell and the fetched prompt", async () => {
+describe("Quiz", () => {
+  it("renders the fetched prompt", async () => {
     stubFetch([tokyo], { correct: true, acceptedAnswer: "Japan" });
-    render(<App />);
-    expect(screen.getByRole("heading", { name: /geography quiz/i })).toBeInTheDocument();
+    render(<Quiz />);
     expect(await screen.findByText("What country is Tokyo in?")).toBeInTheDocument();
   });
 
   it("shows an error message when the question fetch fails", async () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("network down")));
-    render(<App />);
+    render(<Quiz />);
     expect(await screen.findByText(/couldn’t reach the quiz/i)).toBeInTheDocument();
   });
 
   it("submits a typed answer and shows correct feedback", async () => {
     const fetchMock = stubFetch([tokyo], { correct: true, acceptedAnswer: "Japan" });
-    render(<App />);
+    render(<Quiz />);
 
     fireEvent.change(await screen.findByLabelText(/your answer/i), { target: { value: "Japan" } });
     fireEvent.click(screen.getByRole("button", { name: /submit/i }));
@@ -69,7 +68,7 @@ describe("App", () => {
 
   it("shows incorrect feedback with the accepted answer", async () => {
     stubFetch([tokyo], { correct: false, acceptedAnswer: "Japan" });
-    render(<App />);
+    render(<Quiz />);
 
     fireEvent.change(await screen.findByLabelText(/your answer/i), { target: { value: "China" } });
     fireEvent.click(screen.getByRole("button", { name: /submit/i }));
@@ -79,7 +78,7 @@ describe("App", () => {
 
   it("fetches a fresh question after answering", async () => {
     stubFetch([tokyo, paris], { correct: true, acceptedAnswer: "Japan" });
-    render(<App />);
+    render(<Quiz />);
 
     fireEvent.change(await screen.findByLabelText(/your answer/i), { target: { value: "Japan" } });
     fireEvent.click(screen.getByRole("button", { name: /submit/i }));
