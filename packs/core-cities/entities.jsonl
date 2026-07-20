@@ -1,0 +1,11 @@
+{"id":"Q1490","labels":{"en":"Tokyo"},"aliases":{"en":["Tokio"]},"types":["city"]}
+{"id":"Q90","labels":{"en":"Paris"},"types":["city"]}
+{"id":"Q84","labels":{"en":"London"},"types":["city"]}
+{"id":"Q60","labels":{"en":"New York City"},"aliases":{"en":["New York","NYC"]},"types":["city"]}
+{"id":"Q1297","labels":{"en":"Chicago"},"types":["city"]}
+{"id":"Q1963","labels":{"en":"São Paulo"},"aliases":{"en":["Sao Paulo"]},"types":["city"]}
+{"id":"Q17","labels":{"en":"Japan"},"types":["country"]}
+{"id":"Q142","labels":{"en":"France"},"types":["country"]}
+{"id":"Q145","labels":{"en":"United Kingdom"},"aliases":{"en":["UK","Britain","Great Britain"]},"types":["country"]}
+{"id":"Q30","labels":{"en":"United States"},"aliases":{"en":["USA","US","United States of America"]},"types":["country"]}
+{"id":"Q155","labels":{"en":"Brazil"},"types":["country"]}

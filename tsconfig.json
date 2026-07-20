@@ -1,0 +1,10 @@
+{
+  "files": [],
+  "references": [
+    { "path": "./packages/contract" },
+    { "path": "./packages/engine" },
+    { "path": "./packages/server" },
+    { "path": "./packages/web" },
+    { "path": "./packs/core-cities" }
+  ]
+}
