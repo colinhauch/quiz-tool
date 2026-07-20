@@ -60,6 +60,16 @@ Packs may bundle assets; the engine treats them opaquely. A generator that needs
 
 This is the general answer to "what if most packs don't have pictures," and it generalizes past images to any future asset kind: the generator checks for what it needs and declines gracefully, never special-casing. A missing capability is not an error; that question just isn't generated.
 
+## Which pack a question came from isn't in the contract yet
+
+> **[UNREVIEWED]** — captured from a UI need, not yet designed. Check whether pack provenance belongs on `QuestionResponse`, the answer-log entry, or both, and how it relates to per-statement provenance.
+
+Once packs interweave (the whole point — "lots of packs with their questions interwoven"), a user looking at a question should be able to tell **which pack it came from**. The UI wants a human label for this (shown as the quiz card's eyebrow).
+
+Today `QuestionResponse` is `{ cardId, prompt, input }` — no pack identity. The `cardId` prefix (`cc:tokyo-japan:object`) *does* encode the pack code, so the web UI currently parses that prefix to a display name as a **stopgap** (`packLabel` in `packages/web/src/Quiz.tsx`). That's fragile: it couples the UI to the cardId format and hard-codes the code→name mapping in the frontend.
+
+The proper fix is for a question to carry its **pack id + human label** (and likely pack **version**) from the pack manifest, so the engine — not the UI — resolves provenance. Open: whether the answer-log entry should also record the pack (it already keeps per-statement provenance; the pack label may be derivable rather than stored, mirroring how `question` is derived from `cardId` at read time — see [../storage/](../storage/)).
+
 ## Deeper
 
 - [format.md](format.md) — *reference.* The manifest, file layout, validation checklist, and lifecycle mechanics. More durable than most reference material here, because the format is a contract with external pack authors and ETL rather than something app code will fully express.
