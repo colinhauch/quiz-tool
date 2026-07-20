@@ -26,14 +26,16 @@ export function AnswerLog() {
     void load();
   }, [load]);
 
-  if (view.state === "loading") return <p>Loading your answers…</p>;
-  if (view.state === "error") return <p>Couldn’t load your answers. Try again.</p>;
+  if (view.state === "loading") return <p className="quiz-message">Loading your answers…</p>;
+  if (view.state === "error") {
+    return <p className="quiz-message">Couldn’t load your answers. Try again.</p>;
+  }
   if (view.answers.length === 0) {
-    return <p>No answers yet. Answer a question to start your log.</p>;
+    return <p className="quiz-message">No answers yet. Answer a question to start your log.</p>;
   }
 
   return (
-    <table>
+    <table className="answer-log">
       <caption>Your answers, most recent first</caption>
       <thead>
         <tr>
@@ -49,7 +51,11 @@ export function AnswerLog() {
           <tr key={`${a.cardId}@${a.askedAt}#${i}`}>
             <td>{a.question}</td>
             <td>{a.input || "—"}</td>
-            <td>{a.correct ? "Correct" : "Incorrect"}</td>
+            <td>
+              <span className={`result-pill ${a.correct ? "result-pill--correct" : "result-pill--incorrect"}`}>
+                {a.correct ? "Correct" : "Incorrect"}
+              </span>
+            </td>
           </tr>
         ))}
       </tbody>

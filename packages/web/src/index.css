@@ -1,0 +1,334 @@
+/*
+ * Geography Quiz — visual design system (variant "B").
+ * Light theme: Platinum surface, Indigo Ink chrome, blues for structure,
+ * Princeton Orange reserved for the primary button. Garamond for display type.
+ *
+ * Topographic texture: pre-tinted copies of one contour SVG, placed as
+ * `background-image` on a colored surface. Different crops (background-size /
+ * background-position) make each placement look distinct from the same source.
+ * (Pre-tinted rather than CSS-masked because mask rendering proved unreliable.)
+ */
+
+:root {
+  --indigo: #27187e;
+  --cornflower: #758bfd;
+  --periwinkle: #aeb8fe;
+  --platinum: #f1f2f6;
+  --orange: #ff8600;
+  --orange-hover: #e67600;
+
+  /* Feedback, tuned to sit with the palette (not traffic-light). */
+  --green: #4a8f6f;
+  --green-bg: #e8f5f0;
+  --green-text: #2a5a50;
+  --red: #9c5555;
+  --red-bg: #faf3f3;
+  --red-text: #6a3a3a;
+
+  --serif: "EB Garamond", Garamond, "Times New Roman", serif;
+  --sans: Inter, system-ui, -apple-system, sans-serif;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--sans);
+  background: var(--platinum);
+  color: var(--indigo);
+  line-height: 1.6;
+}
+
+/* ── App shell ───────────────────────────────────────────── */
+.app-header {
+  position: relative;
+  overflow: hidden;
+  background: var(--indigo);
+  color: var(--platinum);
+}
+
+/* Hero topo: Periwinkle contours over the Indigo band. */
+.app-header__topo {
+  position: absolute;
+  inset: 0;
+  background-image: url(/contour-periwinkle.svg);
+  background-repeat: no-repeat;
+  background-size: 150% auto;
+  background-position: 18% 34%;
+  opacity: 0.2;
+  pointer-events: none;
+}
+
+.app-header__inner {
+  position: relative;
+  z-index: 1;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+.app-title {
+  font-family: var(--serif);
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  margin-bottom: 1.5rem;
+}
+
+.app-nav {
+  display: flex;
+  gap: 2rem;
+}
+
+.app-nav button {
+  background: none;
+  border: none;
+  color: var(--platinum);
+  font: inherit;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  padding: 0 0 0.5rem;
+  border-bottom: 2px solid transparent;
+  transition: border-color 0.2s, opacity 0.2s;
+}
+
+.app-nav button:hover {
+  opacity: 0.8;
+}
+
+.app-nav button[aria-current="true"] {
+  border-bottom-color: var(--orange);
+}
+
+.app-main {
+  max-width: 680px;
+  margin: 2.5rem auto;
+  padding: 0 1.5rem;
+}
+
+/* ── Quiz card ───────────────────────────────────────────── */
+.quiz-card {
+  background: #fff;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(39, 24, 126, 0.08);
+  border-left: 4px solid var(--cornflower);
+}
+
+/* Colored banner carrying a DIFFERENT crop of the same contour file, plus the
+   pack label. Min-height (not fixed) so the label always fits. */
+.quiz-card__strip {
+  position: relative;
+  overflow: hidden;
+  min-height: 2.75rem;
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 1.5rem;
+  background: linear-gradient(to right, var(--periwinkle), var(--cornflower));
+}
+
+.quiz-card__strip::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url(/contour-indigo.svg);
+  background-repeat: no-repeat;
+  background-size: 220% auto;
+  background-position: 72% 60%;
+  opacity: 0.2;
+  pointer-events: none;
+}
+
+/* Pack / category eyebrow, sits above the topo crop. */
+.quiz-card__eyebrow {
+  position: relative;
+  z-index: 1;
+  font-family: var(--sans);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--indigo);
+}
+
+.quiz-card__body {
+  padding: 2rem 1.5rem;
+}
+
+.quiz-prompt {
+  font-family: var(--serif);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--indigo);
+  line-height: 1.4;
+  margin-bottom: 2rem;
+}
+
+.quiz-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.quiz-input {
+  padding: 0.875rem 1rem;
+  border: 1px solid var(--periwinkle);
+  border-radius: 0.375rem;
+  font-size: 1rem;
+  font-family: var(--sans);
+  color: var(--indigo);
+  background: var(--platinum);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.quiz-input:focus {
+  outline: none;
+  border-color: var(--cornflower);
+  box-shadow: 0 0 0 3px rgba(117, 139, 253, 0.15);
+}
+
+.quiz-input::placeholder {
+  color: var(--indigo);
+  opacity: 0.4;
+}
+
+/* ── Primary button (the one orange thing) ───────────────── */
+.btn-primary {
+  padding: 1rem 1.5rem;
+  border: none;
+  border-radius: 0.375rem;
+  font-size: 1rem;
+  font-weight: 600;
+  font-family: var(--sans);
+  cursor: pointer;
+  background: var(--orange);
+  color: #fff;
+  width: 100%;
+  transition: background-color 0.2s, transform 0.05s;
+}
+
+.btn-primary:hover {
+  background: var(--orange-hover);
+}
+
+.btn-primary:active {
+  transform: scale(0.99);
+}
+
+/* ── Result feedback ─────────────────────────────────────── */
+.quiz-result {
+  margin-bottom: 2rem;
+  padding: 1.25rem 1.5rem;
+  border-radius: 0.375rem;
+  font-size: 0.95rem;
+}
+
+.quiz-result__verdict {
+  font-family: var(--serif);
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.quiz-result--correct {
+  background: var(--green-bg);
+  border-left: 4px solid var(--green);
+  color: var(--green-text);
+}
+
+.quiz-result--correct .quiz-result__verdict {
+  color: var(--green);
+}
+
+.quiz-result--incorrect {
+  background: var(--red-bg);
+  border-left: 4px solid var(--red);
+  color: var(--red-text);
+}
+
+.quiz-result--incorrect .quiz-result__verdict {
+  color: var(--red);
+}
+
+/* ── Status / transient messages ─────────────────────────── */
+.quiz-message {
+  padding: 2rem 0;
+  color: var(--indigo);
+  opacity: 0.7;
+}
+
+/* ── Answer log (kept basic for now) ─────────────────────── */
+.answer-log {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(39, 24, 126, 0.08);
+}
+
+.answer-log caption {
+  font-family: var(--serif);
+  font-size: 1.25rem;
+  font-weight: 700;
+  text-align: left;
+  margin-bottom: 1rem;
+  color: var(--indigo);
+}
+
+.answer-log th,
+.answer-log td {
+  text-align: left;
+  padding: 0.875rem 1rem;
+  border-bottom: 1px solid var(--platinum);
+}
+
+.answer-log thead th {
+  background: var(--platinum);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--indigo);
+  opacity: 0.7;
+}
+
+.answer-log tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.result-pill {
+  display: inline-block;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.result-pill--correct {
+  background: var(--green-bg);
+  color: var(--green);
+}
+
+.result-pill--incorrect {
+  background: var(--red-bg);
+  color: var(--red);
+}
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .app-title {
+    font-size: 1.5rem;
+  }
+  .app-nav {
+    gap: 1.5rem;
+  }
+  .app-nav button {
+    font-size: 0.85rem;
+  }
+  .quiz-prompt {
+    font-size: 1.25rem;
+  }
+}
