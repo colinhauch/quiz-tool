@@ -10,6 +10,16 @@ The closure matters more than either arm. It is what lets every consumer — the
 
 Literal datatypes (string, quantity, date, dateRange, boolean) are **engine-level, not pack-level**. This is the load-bearing split in the whole model: **the engine defines the literals — the kinds of data — and packs define the qualifiers that couch that data.** Literals have to be engine-level because validation and question generation reason about them directly: `literal_spread` distractors know what a quantity is, and couldn't know what an arbitrary pack-defined type is. Qualifiers, by contrast, aren't predictable enough to plan the engine around, so packs own them (see below). Adding a datatype is therefore an engine change with a version bump — a real cost, and the reason the literal set stays small and general enough to hold any *kind* of data.
 
+## Orient asymmetric relations in their functional direction
+
+When a relation is functional one way — each subject has at most one object (`cardinality: "one"`) — store it that way: the **many** side is the subject, the single determined value is the object. `located_in` is written city→country, never country→city, because a city sits in one country (functional) while a country holds many (not). This is already why the model stores `located_in` and *generates* `contains` rather than storing both — see `inverse_of` in [shapes.md](shapes.md) and "the inverse edge is never stored" in [../questions/](../questions/). The convention just names the principle behind that choice, so packs orient new relations the same way instead of flip-flopping.
+
+The payoff is that a statement's orientation is predictable, which is what lets **the slot a question hides carry meaning**. Hiding the object asks for the one determined value — "what country is Tokyo in?", exactly one answer, the MVP case. Hiding the subject asks to enumerate the many — "name a city in Japan", an open set that [falls out of a query](README.md#sets-fall-out-of-queries). Without the convention, "hide the object" would mean single-answer in one pack and enumerate-many in another, and the hidden slot would tell a generator nothing.
+
+This does not remove the need for a *card* (`statement` + hidden slot): recall and enumeration over the same fact stay different skills, tracked separately (see [../questions/](../questions/) and [../learning/](../learning/)). It makes the card's hidden slot well-defined rather than redundant — the convention is the precondition that gives the slot its single-answer-vs-enumerate meaning.
+
+The rule applies only where a functional direction exists. **Symmetric relations have none** — `borders` is many-to-many both ways — so they store one edge (`symmetric: true`) and are enumerate-many in either direction. Orientation is a property of the relation type, decided once when the relation is defined, not per statement.
+
 ## Why statements carry provenance
 
 Every statement records which pack introduced it and where it originally came from. Two reasons:
