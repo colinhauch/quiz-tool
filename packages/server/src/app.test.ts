@@ -1,7 +1,7 @@
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { answerResponseSchema, questionResponseSchema } from "@geo/contract";
+import { answerLogSchema, answerResponseSchema, questionResponseSchema } from "@geo/contract";
 import type { Entity, Generator, Pack, Statement } from "@geo/engine";
 import { afterEach, describe, expect, it } from "vitest";
 import { createApp } from "./app.js";
@@ -124,6 +124,67 @@ describe("POST /answer", () => {
   });
 });
 
+describe("GET /answers", () => {
+  async function answer(store: AnswerStore, input: string, at: string) {
+    return createApp({ pack: fixturePack(), store, now: () => new Date(at) }).request("/answer", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ cardId: "S1:object", input }),
+    });
+  }
+
+  it("returns an empty log before anything is answered, typed via the contract", async () => {
+    const res = await createApp({ pack: fixturePack(), store: memoryStore() }).request("/answers");
+    expect(res.status).toBe(200);
+    expect(answerLogSchema.parse(await res.json())).toEqual([]);
+  });
+
+  it("returns recorded answers most recent first", async () => {
+    const store = memoryStore();
+    await answer(store, "japan", "2026-07-19T12:00:00.000Z");
+    await answer(store, "china", "2026-07-19T12:05:00.000Z");
+
+    const res = await createApp({ pack: fixturePack(), store }).request("/answers");
+    expect(answerLogSchema.parse(await res.json())).toEqual([
+      {
+        cardId: "S1:object",
+        question: "What country is Tokyo in?",
+        input: "china",
+        correct: false,
+        askedAt: "2026-07-19T12:05:00.000Z",
+      },
+      {
+        cardId: "S1:object",
+        question: "What country is Tokyo in?",
+        input: "japan",
+        correct: true,
+        askedAt: "2026-07-19T12:00:00.000Z",
+      },
+    ]);
+  });
+
+  it("re-derives each answer's question text from its card", async () => {
+    const store = memoryStore();
+    await answer(store, "japan", "2026-07-19T12:00:00.000Z");
+    const res = await createApp({ pack: fixturePack(), store }).request("/answers");
+    const [entry] = answerLogSchema.parse(await res.json());
+    expect(entry?.question).toBe("What country is Tokyo in?");
+  });
+
+  it("falls back to the raw cardId when the card no longer resolves", async () => {
+    const store = memoryStore();
+    store.record({
+      cardId: "S9:object",
+      input: "x",
+      correct: false,
+      askedAt: "2026-07-19T12:00:00.000Z",
+    });
+    const res = await createApp({ pack: fixturePack(), store }).request("/answers");
+    const [entry] = answerLogSchema.parse(await res.json());
+    expect(entry?.question).toBe("S9:object");
+  });
+});
+
 describe("full loop over the real fixture pack and a temp-file database", () => {
   let dir: string;
 
@@ -152,6 +213,17 @@ describe("full loop over the real fixture pack and a temp-file database", () => 
     expect(recorded).toHaveLength(1);
     expect(recorded[0]?.cardId).toBe(question.cardId);
     expect(recorded[0]?.correct).toBe(true);
+
+    const log = answerLogSchema.parse(await (await app.request("/answers")).json());
+    expect(log).toEqual([
+      {
+        cardId: question.cardId,
+        question: question.prompt,
+        input: "Japan",
+        correct: true,
+        askedAt: recorded[0]?.askedAt,
+      },
+    ]);
     db.close();
   });
 });

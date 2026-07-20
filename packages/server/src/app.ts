@@ -1,10 +1,11 @@
 import {
+  answerLogSchema,
   answerRequestSchema,
   answerResponseSchema,
   healthSchema,
   questionResponseSchema,
 } from "@geo/contract";
-import { checkAnswer, type Pack, selectQuestion } from "@geo/engine";
+import { checkAnswer, findCard, generateQuestion, type Pack, selectQuestion } from "@geo/engine";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { AnswerStore } from "./storage.js";
@@ -62,5 +63,36 @@ export function createApp({ pack, store, rng, now = () => new Date() }: AppOptio
     return c.json(answerResponseSchema.parse(result));
   });
 
+  // The raw answer log for review, most recent first. The store keeps the log
+  // in insertion order (it is an append log); reversing here is the view's
+  // choice, not the store's. Each record's question text is re-derived from its
+  // cardId — the prompt is a deterministic function of the card, so it isn't
+  // stored — and falls back to the raw cardId if the card no longer resolves
+  // (e.g. the pack changed). Parsed through the schema so the seam stays honest.
+  app.get("/answers", (c) =>
+    c.json(
+      answerLogSchema.parse(
+        [...store.all()]
+          .reverse()
+          .map((record) => ({ ...record, question: questionText(pack, record.cardId) })),
+      ),
+    ),
+  );
+
   return app;
+}
+
+/**
+ * The rendered prompt for a recorded card, re-derived from its id. Generation
+ * is deterministic, so a stored answer can be shown its original question
+ * without persisting the text. A stale id (its card gone from the pack) falls
+ * back to the id itself rather than failing the whole log.
+ */
+function questionText(pack: Pack, cardId: string): string {
+  try {
+    const { statement, hiddenSlot } = findCard(pack, cardId);
+    return generateQuestion(pack, statement, hiddenSlot).prompt;
+  } catch {
+    return cardId;
+  }
 }
