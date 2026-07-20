@@ -1,0 +1,58 @@
+import type { AnswerLog as AnswerLogData } from "@geo/contract";
+import { useCallback, useEffect, useState } from "react";
+
+/** The raw answer log, served most-recent-first; `/api` is proxied in dev. */
+const ANSWERS_URL = "/api/answers";
+
+type View =
+  | { state: "loading" }
+  | { state: "error" }
+  | { state: "loaded"; answers: AnswerLogData };
+
+export function AnswerLog() {
+  const [view, setView] = useState<View>({ state: "loading" });
+
+  const load = useCallback(async () => {
+    setView({ state: "loading" });
+    try {
+      const answers = (await (await fetch(ANSWERS_URL)).json()) as AnswerLogData;
+      setView({ state: "loaded", answers });
+    } catch {
+      setView({ state: "error" });
+    }
+  }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  if (view.state === "loading") return <p>Loading your answers…</p>;
+  if (view.state === "error") return <p>Couldn’t load your answers. Try again.</p>;
+  if (view.answers.length === 0) {
+    return <p>No answers yet. Answer a question to start your log.</p>;
+  }
+
+  return (
+    <table>
+      <caption>Your answers, most recent first</caption>
+      <thead>
+        <tr>
+          <th scope="col">Question</th>
+          <th scope="col">Your answer</th>
+          <th scope="col">Result</th>
+        </tr>
+      </thead>
+      <tbody>
+        {view.answers.map((a, i) => (
+          // The log has no stable per-row id in the contract; the card + timestamp
+          // pair is effectively unique, and the index disambiguates any collision.
+          <tr key={`${a.cardId}@${a.askedAt}#${i}`}>
+            <td>{a.question}</td>
+            <td>{a.input || "—"}</td>
+            <td>{a.correct ? "Correct" : "Incorrect"}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}

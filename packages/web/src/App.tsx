@@ -1,82 +1,31 @@
-import type { AnswerResponse, QuestionResponse } from "@geo/contract";
-import { type FormEvent, useCallback, useEffect, useState } from "react";
+import { useState } from "react";
+import { AnswerLog } from "./AnswerLog.js";
+import { Quiz } from "./Quiz.js";
 
-/** Where the browser reaches the Node server; `/api` is proxied in dev (see vite.config.ts). */
-const QUESTION_URL = "/api/question";
-const ANSWER_URL = "/api/answer";
+type Tab = "quiz" | "answers";
 
-type View =
-  | { state: "loading" }
-  | { state: "error" }
-  | { state: "asking"; question: QuestionResponse }
-  | { state: "answered"; question: QuestionResponse; result: AnswerResponse };
-
+/**
+ * The app shell: a title, a two-item nav, and the active view. Each tab mounts
+ * a fresh component, so switching to "My answers" refetches the log and picks
+ * up anything just answered — enough navigation for the walking skeleton.
+ */
 export function App() {
-  const [view, setView] = useState<View>({ state: "loading" });
-  const [input, setInput] = useState("");
-
-  const loadQuestion = useCallback(async () => {
-    setView({ state: "loading" });
-    setInput("");
-    try {
-      const question = (await (await fetch(QUESTION_URL)).json()) as QuestionResponse;
-      setView({ state: "asking", question });
-    } catch {
-      setView({ state: "error" });
-    }
-  }, []);
-
-  useEffect(() => {
-    void loadQuestion();
-  }, [loadQuestion]);
-
-  async function submitAnswer(event: FormEvent, question: QuestionResponse) {
-    event.preventDefault();
-    try {
-      const res = await fetch(ANSWER_URL, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ cardId: question.cardId, input }),
-      });
-      const result = (await res.json()) as AnswerResponse;
-      setView({ state: "answered", question, result });
-    } catch {
-      setView({ state: "error" });
-    }
-  }
+  const [tab, setTab] = useState<Tab>("quiz");
 
   return (
     <main>
       <h1>Geography Quiz</h1>
 
-      {view.state === "loading" && <p>Loading a question…</p>}
-      {view.state === "error" && <p>Couldn’t reach the quiz. Try again.</p>}
+      <nav aria-label="Views">
+        <button type="button" aria-current={tab === "quiz"} onClick={() => setTab("quiz")}>
+          Quiz
+        </button>
+        <button type="button" aria-current={tab === "answers"} onClick={() => setTab("answers")}>
+          My answers
+        </button>
+      </nav>
 
-      {view.state === "asking" && (
-        <form onSubmit={(e) => submitAnswer(e, view.question)}>
-          <p>{view.question.prompt}</p>
-          <input
-            aria-label="Your answer"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            autoFocus
-          />
-          <button type="submit">Submit</button>
-        </form>
-      )}
-
-      {view.state === "answered" && (
-        <div>
-          <p>{view.question.prompt}</p>
-          <p role="status">
-            {view.result.correct ? "Correct!" : "Incorrect."} The answer is{" "}
-            {view.result.acceptedAnswer}.
-          </p>
-          <button type="button" onClick={() => void loadQuestion()}>
-            Next question
-          </button>
-        </div>
-      )}
+      {tab === "quiz" ? <Quiz /> : <AnswerLog />}
     </main>
   );
 }
