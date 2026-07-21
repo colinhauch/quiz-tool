@@ -11,3 +11,7 @@
 - **Across packs**, an import halts if it introduces a statement ID that already exists in the system. Unlike entities, which *merge* when two packs define `Q155` (see [identity.md](identity.md)), statements never merge — each is its own record — so a cross-pack ID clash is always an error, never a merge.
 
 While packs are hand-built, enforcing these by hand is fine — but they are *validation rules the importer owns*, and the manual check is just their MVP implementation. Namespacing IDs by pack (e.g. `borders@1.0.0:s_9f3a`) would make cross-pack collision structurally impossible and is worth considering when ETL is written. See [../tooling/](../tooling/).
+
+## Answer normalization ignores punctuation *(open)*
+
+Text-answer matching (`normalizeAnswer`) folds case, diacritics, and whitespace but **not punctuation**. `located_in`'s data never exercised this; `capitals` does, hard — `Washington, D.C.`, `St. John's`, `N'Djamena` all carry punctuation a learner won't reliably type. The `capitals` pack works around it at authoring time (Wikidata `altLabel` aliases catch common forms like plain "Washington"), but that is per-datum insurance, not a fix. The open question is whether `normalizeAnswer` should also fold punctuation for every pack, and if so which marks — apostrophes and periods are safe, but a rule can't be so loose that two genuinely different answers collapse together. This is an engine change (it touches [identity.md](identity.md)'s label/alias matching), deferred out of the `capitals` slice.

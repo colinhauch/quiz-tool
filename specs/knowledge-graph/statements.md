@@ -20,6 +20,14 @@ This does not remove the need for a *card* (`statement` + hidden slot): recall a
 
 The rule applies only where a functional direction exists. **Symmetric relations have none** — `borders` is many-to-many both ways — so they store one edge (`symmetric: true`) and are enumerate-many in either direction. Orientation is a property of the relation type, decided once when the relation is defined, not per statement.
 
+### A second constraint today: the engine hides only the object
+
+> **[UNREVIEWED]** — reconstructed from a pack-authoring decision plus a current code limitation. Confirm the MVP engine still hides the object slot only, and that this corollary is a real authoring rule rather than a passing artifact of that limitation.
+
+The orientation convention decides direction from the *data* (functional side becomes the object). A relation like `has_capital` is nearly one-to-one — a country has one capital, a capital serves one country — so the convention alone doesn't force a direction. What breaks the tie today is the **engine**: question selection hides the object slot only, so whatever sits in the object is the answer the learner produces. Orient the relation to put the *single quizzed answer* in the object.
+
+That is why the capitals pack stores `has_capital` **country→city**: hiding the object asks "what is the capital of France?" — the canonical drill, and distinct from `located_in`. The reverse (`capital_of`, city→country) would, under object-only hiding, ask "Paris is the capital of what?", collapsing into a near-duplicate of `located_in`. Once the engine can hide the subject, this tiebreak weakens and the choice returns to pedagogy; until then it is a hard authoring constraint.
+
 ## Why statements carry provenance
 
 Every statement records which pack introduced it and where it originally came from. Two reasons:
