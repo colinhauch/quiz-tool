@@ -32,6 +32,16 @@ Manifest, plus any combination of entity types, relation types, entities, statem
 
 This composability matters more than it sounds. A `borders` pack that adds only statements over countries a `core-countries` pack already defined ships **no entity file at all** — it depends on the other pack and asserts new facts about its entities. Content layers over shared identity instead of duplicating it, which is what makes packs feel like a graph extension rather than a bundle. Wikidata Q-IDs are what make it possible — see [../knowledge-graph/identity.md](../knowledge-graph/identity.md).
 
+## Active packs merge into one graph
+
+Several installed packs don't run side by side; they are **merged into a single graph** before any question is drawn. Entities union by Q-ID (the same `Q142` shipped by two packs is one node — the merge rule in [../knowledge-graph/identity.md](../knowledge-graph/identity.md)), statements concatenate, and each pack's per-relation generators combine into one table keyed by relation. Selection then draws uniformly across every quizzable statement in the union, so the packs **interweave** — the payoff the whole design is for. A question's origin survives the merge in its statement-ID prefix (`cc:`, `cap:`), which is what the cardId already carries; nothing else has to track provenance for the merge to stay honest.
+
+Merging is cheap precisely because a loaded pack is three mergeable fields — entities, statements, generators — so coexistence is a union, not an integration. That is why adding the second pack cost data and a loader change, not an engine change.
+
+**Which packs are active is a selection decision, configured at startup.** One, another, or several, defaulting to all installed. This eventually belongs to the learner — a pack picker in the UI — but until there are enough packs to make the control earn its keep, a startup config gives "one, the other, or both" with no contract or UI change.
+
+Two things this section leaves open. **The picker is not built** — selection is a config knob, and moving it into the UI is a contract-plus-web change nobody has scoped. And **content is duplicated across packs**: when two packs each want the same country entities, today each ships its own copy and the merge dedupes by Q-ID. That works but wastes authoring and storage, and the composability story above (a pack that ships *no* entities and depends on `core-countries`) is the intended fix — unbuilt, because no shared `core-countries` pack exists yet. Worth resolving before a third pack repeats the countries a fourth time.
+
 ## Validate at build time, trust at runtime
 
 Packs are validated when built and again when installed, and **the runtime engine never defensively parses** — no optional chaining through pack data, no "what if the relation isn't registered" branches downstream.
@@ -39,6 +49,8 @@ Packs are validated when built and again when installed, and **the runtime engin
 This is a deliberate trade: the paranoia is concentrated at one boundary so the runtime can be written as if the data is correct. It's a correctness discipline, not a security perimeter — packs are first-party, so validation is there to catch our own mistakes early, where they're cheap, rather than deep in a quiz session. If you find yourself adding a defensive check in the engine, the check usually belongs in the validator instead.
 
 Validation covers the things that would otherwise fail deep in the runtime: relations are registered, subject and object types satisfy the relation's domain and range, literals match the declared datatype, qualifiers validate against the relation's schema, entity references resolve, assets exist, and relation-type IDs don't collide with installed packs.
+
+**None of this validator exists yet, and neither does the relation registry it checks against.** A relation is "real" today only because a generator is registered for it in the pack's code — there is no `relation_types.json` reader, no `domain`/`range`/`cardinality`/`qualifier_schema` enforcement. Both shipped packs (`core-cities`, `capitals`) therefore omit `relation_types.json` and declare their relations purely through generators; adding a declaration file now would be a document nothing reads, which reads as wired when it isn't. When the registry and validator get built, both packs get their `relation_types.json` together — the honest ordering is registry-then-declaration, not the reverse.
 
 ## Relation-type IDs are global, and redefinition is an error
 
