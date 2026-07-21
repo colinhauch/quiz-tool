@@ -12,6 +12,14 @@
 
 While packs are hand-built, enforcing these by hand is fine — but they are *validation rules the importer owns*, and the manual check is just their MVP implementation. Namespacing IDs by pack (e.g. `borders@1.0.0:s_9f3a`) would make cross-pack collision structurally impossible and is worth considering when ETL is written. See [../tooling/](../tooling/).
 
-## Answer normalization ignores punctuation *(open)*
+## Answer normalization ignores punctuation *(resolved)*
 
-Text-answer matching (`normalizeAnswer`) folds case, diacritics, and whitespace but **not punctuation**. `located_in`'s data never exercised this; `capitals` does, hard — `Washington, D.C.`, `St. John's`, `N'Djamena` all carry punctuation a learner won't reliably type. The `capitals` pack works around it at authoring time (Wikidata `altLabel` aliases catch common forms like plain "Washington"), but that is per-datum insurance, not a fix. The open question is whether `normalizeAnswer` should also fold punctuation for every pack, and if so which marks — apostrophes and periods are safe, but a rule can't be so loose that two genuinely different answers collapse together. This is an engine change (it touches [identity.md](identity.md)'s label/alias matching), deferred out of the `capitals` slice.
+> **[UNREVIEWED]** Ready-for-human ticket #22: confirm the folded mark set is the one we want (esp. dropping apostrophes vs. spacing them, and hyphen → space).
+
+**The problem.** Capitals carry punctuation a learner won't type: `Washington, D.C.`, `St. John's`, `N'Djamena`, `Port-au-Prince`. `normalizeAnswer` folded case, diacritics, and whitespace but not punctuation, so the plainly-typed form was judged wrong. The capitals pack papered over this per-datum via Wikidata aliases — insurance, not a fix.
+
+**Resolution: fold a fixed, conservative mark set in `normalizeAnswer`, applied to every pack.** After diacritic folding:
+- **Hyphens → space** — so `Port-au-Prince` matches `port au prince`. Mapping to space (not deletion) leans on the existing whitespace collapse and keeps word boundaries.
+- **Periods, commas, apostrophes (straight `'` and curly `’`) dropped** — `Washington, D.C.` → `washington dc`, `St. John's` → `st johns`, `N'Djamena` → `ndjamena`.
+
+**Why a fixed set, not all `\p{Punctuation}`.** Aggressive folding risks collapsing genuinely distinct answers. A named set is auditable and testable, and the negative test asserts two different names carrying the same marks stay distinct. Broaden only when data demands it. Note this handles the punctuation *inside* a canonical label; matching a shorter alias (`Washington` for `Washington, D.C.`) is still an aliasing concern, not normalization's job. See [identity.md](identity.md).

@@ -15,6 +15,9 @@ const saoPaulo: Entity = {
   aliases: { en: ["Sao Paulo"] },
   types: ["city"],
 };
+const washington: Entity = { id: "Q61", labels: { en: "Washington, D.C." }, types: ["city"] };
+const ndjamena: Entity = { id: "Q3719", labels: { en: "N'Djamena" }, types: ["city"] };
+const portAuPrince: Entity = { id: "Q3748", labels: { en: "Port-au-Prince" }, types: ["city"] };
 
 describe("normalizeAnswer", () => {
   it("lowercases", () => {
@@ -34,6 +37,24 @@ describe("normalizeAnswer", () => {
     const decomposed = "São Paulo"; // a + combining tilde
     expect(normalizeAnswer(composed)).toBe(normalizeAnswer(decomposed));
   });
+
+  it("drops periods and commas", () => {
+    expect(normalizeAnswer("Washington, D.C.")).toBe("washington dc");
+  });
+
+  it("drops apostrophes (straight and curly)", () => {
+    expect(normalizeAnswer("St. John's")).toBe("st johns");
+    expect(normalizeAnswer("N’Djamena")).toBe("ndjamena");
+  });
+
+  it("folds hyphens to spaces", () => {
+    expect(normalizeAnswer("Port-au-Prince")).toBe("port au prince");
+  });
+
+  it("does not collapse two genuinely different answers", () => {
+    // Both carry periods; folding must not merge them.
+    expect(normalizeAnswer("St. John's")).not.toBe(normalizeAnswer("St. Louis"));
+  });
 });
 
 describe("matchesEntity", () => {
@@ -49,6 +70,13 @@ describe("matchesEntity", () => {
     ["Canada", usa, false],
     ["Sao Paulo", saoPaulo, true],
     ["são paulo", saoPaulo, true],
+    ["washington dc", washington, true],
+    ["Washington D.C.", washington, true],
+    ["Boston", washington, false],
+    ["ndjamena", ndjamena, true],
+    ["N'Djamena", ndjamena, true],
+    ["port au prince", portAuPrince, true],
+    ["Port-au-Prince", portAuPrince, true],
   ])("matches %j against %s → %s", (input, entity, expected) => {
     expect(matchesEntity(input, entity)).toBe(expected);
   });
