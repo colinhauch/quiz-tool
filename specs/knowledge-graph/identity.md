@@ -2,7 +2,7 @@
 
 ## Wikidata Q-IDs as canonical IDs
 
-Entities use Wikidata Q-IDs wherever the entity exists in Wikidata — `Q155` is Brazil, `Q1490` is Tokyo. Entities with no Wikidata counterpart (app-specific reifications, mostly) get a namespaced ID like `gq:us_mx_border`.
+Entities use Wikidata Q-IDs wherever the entity exists in Wikidata — `Q155` is Brazil, `Q1490` is Tokyo. Entities with no Wikidata counterpart get a namespaced ID like `gq:some_entity`.
 
 This looks like an arbitrary convention. It is doing four jobs:
 

@@ -33,6 +33,8 @@ pids/
 *.pid
 *.seed
 *.pid.lock
+*.sqlite
+*.sqlite-journal
 
 # Coverage
 coverage/
@@ -42,3 +44,6 @@ coverage/
 .cache/
 .parcel-cache/
 dist/
+
+# Claude Code local state (worktrees, job scratch)
+.claude/

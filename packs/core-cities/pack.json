@@ -1,0 +1,15 @@
+{
+  "id": "core-cities",
+  "version": "0.0.1",
+  "labels": { "en": "Core Cities" },
+  "descriptions": { "en": "A hand-written fixture: a handful of world cities and the countries they sit in." },
+  "engine_min_version": "0.0.0",
+  "depends": [],
+  "license": "CC0-1.0",
+  "credits": [{ "source": "hand-authored fixture", "retrieved": "2026-07-19" }],
+  "contents": {
+    "entities": "entities.jsonl",
+    "statements": "statements.jsonl",
+    "code": "index.ts"
+  }
+}

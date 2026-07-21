@@ -1,0 +1,6 @@
+{"id":"cc:tokyo-japan","subject":"Q1490","relation":"located_in","object":{"kind":"entity","id":"Q17"}}
+{"id":"cc:paris-france","subject":"Q90","relation":"located_in","object":{"kind":"entity","id":"Q142"}}
+{"id":"cc:london-uk","subject":"Q84","relation":"located_in","object":{"kind":"entity","id":"Q145"}}
+{"id":"cc:nyc-usa","subject":"Q60","relation":"located_in","object":{"kind":"entity","id":"Q30"}}
+{"id":"cc:chicago-usa","subject":"Q1297","relation":"located_in","object":{"kind":"entity","id":"Q30"}}
+{"id":"cc:saopaulo-brazil","subject":"Q1963","relation":"located_in","object":{"kind":"entity","id":"Q155"}}

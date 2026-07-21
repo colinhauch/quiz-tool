@@ -4,6 +4,8 @@
 
 ## How fuzzy should text-input matching be?
 
+**MVP decision: exact match only** — normalized case, matched against the entity's labels and stored aliases, nothing fuzzier. Aliases already cover the common variants ("Tokio"→Tokyo). The question below is the *post-MVP* one: how much leniency to add on top.
+
 Text input needs to accept "Sao Paulo" for "São Paulo" and probably "St. Petersburg" for "Saint Petersburg". Aliases are already stored per language, so the matching pool exists — the question is normalization aggressiveness.
 
 Too strict punishes typing rather than knowledge. Too loose accepts a wrong answer that happens to be close, and the answer log then records knowledge the learner doesn't have — which corrupts the insight aggregates, not just the one question. Erring loose is the safer direction for user experience and the more damaging one for data quality.
@@ -16,7 +18,9 @@ Currently hand-tagged per template. The alternative is deriving it from global a
 
 Derived difficulty is obviously better and needs data we won't have until the app has been used. The real question is whether the hand-tagged version is a stepping stone or a dead end: if difficulty is a template field now, does making it a per-statement computed value later mean templates lose the field, or gain a fallback?
 
-## Comparison questions strain the card model
+## Comparison questions strain the card model *(post-MVP)*
+
+Comparison questions are deferred past MVP; kept here so the concern isn't lost.
 
 A comparison is about two statements; a card is keyed to one. The current approach — a virtual card keyed to the pair, logging both statement IDs with one primary — is unproven.
 

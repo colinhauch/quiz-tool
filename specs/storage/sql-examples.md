@@ -33,19 +33,21 @@ CREATE INDEX idx_stmt_object   ON statements(object_entity, relation);
 
 CREATE TABLE answer_events (
   id TEXT PRIMARY KEY, user_id TEXT NOT NULL,
-  statement_id TEXT NOT NULL, direction TEXT NOT NULL,
-  template_id TEXT, input_mode TEXT, correct INTEGER NOT NULL,
-  answer_given JSON, distractors JSON, latency_ms INTEGER,
+  statement_ids JSON NOT NULL,      -- array; 1 for recall, 2+ for comparison
+  hidden JSON NOT NULL,             -- array of concealed slots/values; replaces `direction`
+  presented TEXT,                   -- the string shown to the user, for display
+  input_mode TEXT, correct INTEGER NOT NULL,
+  answer_given JSON, latency_ms INTEGER,
   asked_at TEXT NOT NULL, session_id TEXT
 );
 CREATE INDEX idx_ans_user_time ON answer_events(user_id, asked_at);
 
 CREATE TABLE cards (
-  user_id TEXT NOT NULL, statement_id TEXT NOT NULL, direction TEXT NOT NULL,
+  user_id TEXT NOT NULL, statement_id TEXT NOT NULL, hidden_slot TEXT NOT NULL,
   due TEXT, state TEXT NOT NULL DEFAULT 'new',
   algo TEXT, algo_state JSON, reps INTEGER DEFAULT 0, lapses INTEGER DEFAULT 0,
   last_review TEXT,
-  PRIMARY KEY (user_id, statement_id, direction)
+  PRIMARY KEY (user_id, statement_id, hidden_slot)
 );
 
 CREATE TABLE packs (
@@ -60,6 +62,6 @@ CREATE TABLE packs (
 
 **Two indexes on `statements`**, forward and reverse, because reverse questions query by object. Sets-are-queries means both directions are hot paths.
 
-**`answer_events` has no foreign key to `statements`** — deliberately, if this sketch is right. History must survive a statement being deprecated or a pack being uninstalled, so the log points at IDs it does not constrain. The original design mentioned a `statements_archive` for uninstall integrity; that table is not in this sketch, which is a gap.
+**`answer_events` has no foreign key to `statements`** — deliberately, if this sketch is right. History must survive a statement being deprecated or a pack being uninstalled, so the log points at IDs it does not constrain. That the fact tested lives in `statement_ids` as a JSON array (not a scalar FK column) reinforces this: joins from the log back to the graph go through the array, and "every answer touching statement X" is a JSON-array membership query rather than a column equality. The original design mentioned a `statements_archive` for uninstall integrity; that table is not in this sketch, which is a gap.
 
 **Region rollups** were intended to use a recursive CTE over `located_in` statements (city → prefecture → country → continent). Nothing here is precomputed. That query is the one most likely to force the graph-store question.

@@ -12,7 +12,25 @@ The closure matters more than either arm. It is what lets every consumer — the
 
 Reviewed 2026-07-17 against a live case: a territorial dispute feels like the archetypal third thing, and resolves to ordinary entity-valued statements — `s(Q_government_of_israel, claims, Q1218)`, `s(Q_state_of_palestine, claims, Q1218)`. Note the subjects: the claimants are *governments*, not countries. Getting that wrong is what makes a dispute look unrepresentable. Such facts are a later `disputed-land` pack; see [../tooling/mvp-bootstrap.md](../tooling/mvp-bootstrap.md).
 
-Literal datatypes (string, quantity, date, boolean) are **engine-level, not pack-level**. A pack cannot invent a datatype. This is the boundary that keeps validation and question generation writable at all — `literal_spread` distractors know what a quantity is, and could not know what an arbitrary pack-defined type is. Adding a datatype is an engine change with a version bump, and that friction is intentional.
+Literal datatypes (string, quantity, date, dateRange, boolean) are **engine-level, not pack-level**. This is the load-bearing split in the whole model: **the engine defines the literals — the kinds of data — and packs define the qualifiers that couch that data.** Literals have to be engine-level because validation and question generation reason about them directly: `literal_spread` distractors know what a quantity is, and couldn't know what an arbitrary pack-defined type is. Qualifiers, by contrast, aren't predictable enough to plan the engine around, so packs own them (see below). Adding a datatype is therefore an engine change with a version bump — a real cost, and the reason the literal set stays small and general enough to hold any *kind* of data.
+
+## Orient asymmetric relations in their functional direction
+
+When a relation is functional one way — each subject has at most one object (`cardinality: "one"`) — store it that way: the **many** side is the subject, the single determined value is the object. `located_in` is written city→country, never country→city, because a city sits in one country (functional) while a country holds many (not). This is already why the model stores `located_in` and *generates* `contains` rather than storing both — see `inverse_of` in [shapes.md](shapes.md) and "the inverse edge is never stored" in [../questions/](../questions/). The convention just names the principle behind that choice, so packs orient new relations the same way instead of flip-flopping.
+
+The payoff is that a statement's orientation is predictable, which is what lets **the slot a question hides carry meaning**. Hiding the object asks for the one determined value — "what country is Tokyo in?", exactly one answer, the MVP case. Hiding the subject asks to enumerate the many — "name a city in Japan", an open set that [falls out of a query](README.md#sets-fall-out-of-queries). Without the convention, "hide the object" would mean single-answer in one pack and enumerate-many in another, and the hidden slot would tell a generator nothing.
+
+This does not remove the need for a *card* (`statement` + hidden slot): recall and enumeration over the same fact stay different skills, tracked separately (see [../questions/](../questions/) and [../learning/](../learning/)). It makes the card's hidden slot well-defined rather than redundant — the convention is the precondition that gives the slot its single-answer-vs-enumerate meaning.
+
+The rule applies only where a functional direction exists. **Symmetric relations have none** — `borders` is many-to-many both ways — so they store one edge (`symmetric: true`) and are enumerate-many in either direction. Orientation is a property of the relation type, decided once when the relation is defined, not per statement.
+
+### A second constraint today: the engine hides only the object
+
+> **[UNREVIEWED]** — reconstructed from a pack-authoring decision plus a current code limitation. Confirm the MVP engine still hides the object slot only, and that this corollary is a real authoring rule rather than a passing artifact of that limitation.
+
+The orientation convention decides direction from the *data* (functional side becomes the object). A relation like `has_capital` is nearly one-to-one — a country has one capital, a capital serves one country — so the convention alone doesn't force a direction. What breaks the tie today is the **engine**: question selection hides the object slot only, so whatever sits in the object is the answer the learner produces. Orient the relation to put the *single quizzed answer* in the object.
+
+That is why the capitals pack stores `has_capital` **country→city**: hiding the object asks "what is the capital of France?" — the canonical drill, and distinct from `located_in`. The reverse (`capital_of`, city→country) would, under object-only hiding, ask "Paris is the capital of what?", collapsing into a near-duplicate of `located_in`. Once the engine can hide the subject, this tiebreak weakens and the choice returns to pedagogy; until then it is a hard authoring constraint.
 
 ## Why statements carry provenance
 
@@ -22,22 +40,24 @@ Every statement records which pack introduced it (`pack_id`) and where that part
 
 This is what makes hand-adding a statement cheap and honest — it goes in next to the generated ones, saying plainly that it is not one of them. That is not hypothetical: [../tooling/mvp-bootstrap.md](../tooling/mvp-bootstrap.md) *drops* cities its filter cannot state simply, and hand-authoring is the obvious way to patch a hole you dislike.
 
-**The MVP reads it.** The quiz card shows a subtle source line, so provenance is exercised from day one rather than written and trusted. It is also the right thing for a learning app to say: facts have origins, and the app should be willing to name them.
+**Surfacing it is the intent, not yet the build.** The design is for the quiz card to show a subtle source line, so provenance is exercised rather than written and trusted — but the shipped card (`QuestionResponse` is `{cardId, prompt, input}`) does not carry `source` yet. It is the right thing for a learning app to say once wired: facts have origins, and the app should be willing to name them.
 
 Two reasons this section previously gave, and why they are not the reason:
 
 - **Licensing and attribution** are real, but they are *pack-level*. A licence belongs to a pack; it never explains a field on every row.
 - **Pack update and uninstall** are made tractable by provenance — a pack update diffs by statement ID and deprecates rather than deletes; an uninstall deactivates a pack's statements; neither can dangle an answer event. This is a genuine benefit and worth keeping. But it needs only `pack_id`, and it explains nothing about `source`. An earlier version of this file called it "the real reason", displacing the author's; it was an agent's inference, and the MVP has neither update nor uninstall to exercise it. See [../packs/](../packs/).
 
-## Qualifiers, and the shared vocabulary problem
+## Qualifiers are pack-defined
 
-Qualifiers are per-statement metadata, validated against a schema declared by the relation type. Different relations legitimately need different qualifier vocabularies — a border has a length, a capital has a start date.
+Qualifiers are per-statement metadata that couches a fact — a border's length, a capital's start date, a name's period of use. Where literals are engine-level, **qualifiers are the pack's to define.** A pack declares the full set of qualifiers it uses and ships the tooling and explanation for working with them; the engine doesn't need a fixed qualifier vocabulary to function. This is deliberate: qualifier vocabularies vary too much between kinds of content to plan the engine around, so the engine provides the basic structure and each pack fills in the details it needs. See [../packs/](../packs/).
 
-But a small universal vocabulary is reserved by the engine and allowed on every statement: `start`, `end`, `as_of`, `note`. This exists to solve a coordination problem that would otherwise be unsolvable: **without it, one pack writes `from` and another writes `since`, and no temporal question template can ever span both.** Temporal templates key off `start`/`end` uniformly across all packs, which only works if all packs spell it the same way. The reserved set is small on purpose — it is a coordination floor, not a general-purpose metadata scheme.
+The engine may still *reserve* a few names by convention (`start`, `end`, `as_of`, `note`) so that packs which want temporal semantics spell them the same way — but for MVP it implements nothing special for them; a pack that uses `start` is just using one of its own declared qualifiers. Cross-pack coordination on a shared temporal vocabulary is a later concern, not an MVP one.
 
 ## Qualifiers are quizzable, and this was free
 
-Because answer events reference a statement rather than a bare triple, asking "when did Constantinople become Istanbul?" is just quizzing a qualifier of an existing statement. No new fact kind, no new log shape — the answer event records a direction of `qualifier:end` and everything else works unchanged.
+> Post-MVP: we don't quiz qualifiers yet. This section is here for the structural point it makes about the log, which *is* an MVP decision.
+
+Because answer events reference a statement rather than a bare triple, asking "when did Constantinople become Istanbul?" would be just quizzing a qualifier of an existing statement. No new fact kind, no new log shape — the answer event hides the `end` qualifier of that statement and everything else works unchanged.
 
 This is a good illustration of why the log references statements. Had it referenced subject/relation/object triples, qualifier questions would have needed a parallel logging path.
 
