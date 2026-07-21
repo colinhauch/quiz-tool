@@ -8,9 +8,9 @@ Preserved from the original design document. The *reasoning* lives in [README.md
 {
   "id": "Q1490",                      // Wikidata Q-ID convention
   "types": ["city"],                  // one or more; types are declared by packs
-  "labels":  { "en": "Tokyo", "ja": "東京" },              // BCP-47 language codes
-  "aliases": { "en": ["Tokio", "Edo"], "ja": ["江戸"] },   // display synonyms, not history
-  "descriptions": { "en": "capital and largest city of Japan" },  // disambiguation
+  "labels":  { "en": "Tokyo" },                 // BCP-47 language codes; MVP fills `en` only
+  "aliases": { "en": ["Tokio", "Edo"] },        // strings to recall it by; unread in the MVP
+  "descriptions": { "en": "capital and largest city of Japan" },  // disambiguation; usable, but never where it leaks an answer
   "media": [ { "kind": "image", "asset": "assets/tokyo_skyline.jpg", "caption_key": "skyline" } ],
   "pack_id": "core-cities@1.0.0",
   "source": "wikidata",
@@ -83,7 +83,11 @@ Qualifiers are pack-defined (see [statements.md](statements.md)). These names re
   "relation": "borders",
   "object": { "entity": "Q414" },    // Argentina
   "qualifiers": { "length_km": 1261 },
-  "rank": "normal",                  // "preferred" | "normal" | "deprecated"
+  // NO `rank` in the MVP — not on the type, not in the pack. The bootstrap filter
+  // resolves conflicts at generation time, so every statement is current by
+  // construction. See ../knowledge-graph/statements.md and ../tooling/mvp-bootstrap.md.
+  // It returns as "preferred" | "normal" | "deprecated" with a second pack, a pack
+  // update that retracts a claim, or the first temporal facts.
   "pack_id": "borders@1.0.0",
   "source": "wikidata:Q155#P47",
   "created": "2026-07-14T00:00:00Z",

@@ -14,7 +14,13 @@ The cost: any single fact is more awkward to read than it would be in a purpose-
 
 ## Three object kinds, and why
 
-**Entities are kept thin.** Their job is identity and display — labels, aliases, descriptions, media. They *can* hold more, but the strong default is that anything you might ask a question about belongs in a statement rather than an entity field. The reason is worth internalizing: the moment a population lives on the entity, it is a fact the scheduler cannot see and the answer log cannot reference — invisible to the whole learning apparatus. Keeping entities thin is what stops them from quietly becoming the "real" data model while the statements starve.
+**Entities are thin identity records.** They carry identity and display — labels, aliases, descriptions, media — and nothing else.
+
+The rule: **a fact belongs in a statement.** The moment a population lives on the entity, it is a fact the scheduler cannot see and the answer log cannot reference — invisible to the whole learning apparatus. This is what keeps entities from accreting into the "real" data model.
+
+The line is **dates, sources, and disputes**, not quizzability. A thing that can be true during a period, cited, or disagreed with is a fact, and belongs in a statement. A display string does not become a fact by being quizzable — an entity's name is both a field and (with dates) a statement, in different roles. See [identity.md](identity.md).
+
+> An earlier version of this rule read *"anything you could ask a question about lives in a statement, never in an entity field."* Too strong, and agent-written: it makes labels illegal, since a name is an answer. Corrected 2026-07-17.
 
 **Relation types are registered definitions, not strings.** A statement's relation must reference a real registered type. A relation type is a pack artifact: it carries the relation's qualifier vocabulary, its type constraints, and the handler and question-generator code for facts that use it. Registration is what keeps the graph coherent — a relation means one thing everywhere it appears, and its behavior travels with its definition rather than being re-guessed by the engine.
 

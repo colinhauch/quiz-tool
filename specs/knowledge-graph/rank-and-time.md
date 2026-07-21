@@ -1,5 +1,12 @@
 # Rank and Time
 
+> **[UNREVIEWED]** — Rank *semantics* are deliberately out of scope until the work that needs them arrives (a second pack, a pack update, or the first temporal facts). **The MVP has no rank at all** — see [statements.md](statements.md) and [../tooling/mvp-bootstrap.md](../tooling/mvp-bootstrap.md). Read this as a design sketch, not a decided mechanism.
+>
+> Two observations from live Wikidata (2026-07-17) that this file should be re-read against when its turn comes, because they were not known when it was written:
+>
+> - **`preferred` is rare, not the default.** Dijon's only country claim is `normal`. The fallback below ("preferred, falling back to normal") does handle this — but a reader would guess the common case is `preferred`, and it is not.
+> - **Rank does not resolve the hard case.** Jerusalem has *two* `preferred` country claims — Israel and Palestine — separated by a qualifier, not by rank. "Ask for preferred" returns two answers and the template cannot choose. Wikidata's rank is an editorial layer that declines to adjudicate exactly where the world does, so a design that treats rank as a total order over truth will break on real data.
+
 How the graph represents a world that changes, without lying about the past.
 
 ## Statements are never deleted
