@@ -27,3 +27,7 @@ Deferred from the MVP, which fills `en` only and reads only `labels`. Entities k
 ## Descriptions in the UI
 
 - [ ] **Decide which surfaces may show an entity's `description`.** It leaks: Tokyo's is "capital and largest city of Japan", which gives away a city→country question. Cities: never display. The general rule belongs with question generation — see [specs/questions/](specs/questions/).
+
+## Admin / Developer UI for viewing and interacting with data
+
+- [ ] It would be great to have a UI that could navigate the file structure of the repo and display visually the .jsonl files of entities and statements. We can use their wikidata ID's to make that UI very clearly understandable. We could love the wikipedia data for statments. We could make it easy to edit the data in place, manually. Something like that would be really helpful. We could see what entities are in a pack. We could see what statements are made in a pack. 
