@@ -42,6 +42,16 @@ Merging is cheap precisely because a loaded pack is three mergeable fields — e
 
 Two things this section leaves open. **The picker is not built** — selection is a config knob, and moving it into the UI is a contract-plus-web change nobody has scoped. And **content is duplicated across packs**: when two packs each want the same country entities, today each ships its own copy and the merge dedupes by Q-ID. That works but wastes authoring and storage, and the composability story above (a pack that ships *no* entities and depends on `core-countries`) is the intended fix — unbuilt, because no shared `core-countries` pack exists yet. Worth resolving before a third pack repeats the countries a fourth time.
 
+## A pack is an authoring unit, not a runtime-selectable one
+
+> **[UNREVIEWED]** — reframe landed with #26; check it against the composability and update-lifecycle sections below, which still describe packs as installable/depended-upon units.
+
+A pack is an **authoring + versioning tranche**: how we chunk and version the content while writing it. It is *not* a unit the runtime installs, activates, or resolves dependencies for. Everything authored is loaded into **one graph, always** — the loader concatenates every tranche's statements and merges every tranche's generators into a single relation→generator table, with entities coming from the one tranche that owns them (others may ship statements only). See the loader at `packages/server/src/pack-loader.ts`.
+
+This reverses an earlier draft (`82fa5fc`) that modelled packs as a *selectable runtime set* — `GEO_PACKS`, an active-set, a cross-pack entity union. That machinery was stripped: there is no active-set selection and no dependency resolution at load time.
+
+**Per-topic filtering of what gets quizzed is a future query over the assembled graph, not a loader-level pack boundary.** When we want "only capitals right now," that is a filter applied when selecting a statement to ask — not a decision about which tranches to load.
+
 ## Validate at build time, trust at runtime
 
 Packs are validated when built and again when installed, and **the runtime engine never defensively parses** — no optional chaining through pack data, no "what if the relation isn't registered" branches downstream.

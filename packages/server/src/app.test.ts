@@ -5,7 +5,7 @@ import { answerLogSchema, answerResponseSchema, questionResponseSchema } from "@
 import type { Entity, Generator, Pack, Statement } from "@geo/engine";
 import { afterEach, describe, expect, it } from "vitest";
 import { createApp } from "./app.js";
-import { loadCoreCitiesPack } from "./pack-loader.js";
+import { loadAllPacks } from "./pack-loader.js";
 import { type AnswerStore, createAnswerStore, openDatabase } from "./storage.js";
 
 const locatedIn: Generator = ({ statement, graph }) => ({
@@ -238,7 +238,7 @@ describe("full loop over the real fixture pack and a temp-file database", () => 
     dir = mkdtempSync(join(tmpdir(), "geo-loop-"));
     const db = openDatabase(join(dir, "answers.sqlite"));
     const store = createAnswerStore(db);
-    const app = createApp({ pack: loadCoreCitiesPack(), store, rng: () => 0 });
+    const app = createApp({ pack: loadAllPacks(), store, rng: () => 0 });
 
     const question = questionResponseSchema.parse(await (await app.request("/question")).json());
     expect(question.prompt).toBe("What country is Tokyo in?");
