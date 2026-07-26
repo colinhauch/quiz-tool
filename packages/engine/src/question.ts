@@ -1,4 +1,4 @@
-import { makeCardId } from "./card.js";
+import { enumerateCards, makeCardId } from "./card.js";
 import { createGraph } from "./graph.js";
 import type { HiddenSlot, Pack, RenderedQuestion, Statement } from "./types.js";
 
@@ -25,16 +25,18 @@ export function generateQuestion(
 }
 
 /**
- * Picks a random quizzable card and renders it. MVP hides the object of a
- * `located_in` statement — there is no scheduler; selection is a uniform
- * random draw. `rng` is injected so selection is deterministic under test.
+ * Picks a random quizzable card and renders it. A card is a statement paired
+ * with one of the hidden slots its relation supports, so a bidirectional
+ * relation contributes two cards (object- and subject-hidden) and each is drawn
+ * with equal weight. There is no scheduler; selection is a uniform random draw.
+ * `rng` is injected so selection is deterministic under test.
  */
 export function selectQuestion(pack: Pack, rng: () => number = Math.random): RenderedQuestion {
-  const candidates = pack.statements.filter((s) => isQuizzable(pack, s));
-  if (candidates.length === 0) throw new Error("no quizzable statements in pack");
+  const cards = enumerateCards(pack).filter((card) => isQuizzable(pack, card.statement));
+  if (cards.length === 0) throw new Error("no quizzable statements in pack");
 
-  const statement = candidates[Math.floor(rng() * candidates.length)];
-  if (!statement) throw new Error("card selection out of range");
+  const card = cards[Math.floor(rng() * cards.length)];
+  if (!card) throw new Error("card selection out of range");
 
-  return generateQuestion(pack, statement, "object");
+  return generateQuestion(pack, card.statement, card.hiddenSlot);
 }

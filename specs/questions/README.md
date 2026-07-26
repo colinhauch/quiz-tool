@@ -18,7 +18,9 @@ The generation path: the scheduler picks a card, the card names a statement and 
 
 Knowing that Tokyo is in Japan and being able to produce "Tokyo" when asked for a city in Japan are **different skills**. They are tracked separately, and that decision propagates all the way into the card key — see [../learning/](../learning/). The two questions differ in *what the question hides*: the object in one, the subject in the other.
 
-A question over one statement can hide the object, the subject, or a qualifier. **MVP hides the object** — "what country is Tokyo in?" over `located_in` — the simplest case, and the one that needs no inverse phrasing.
+A question over one statement can hide the object, the subject, or a qualifier. The walking skeleton hid the object only — "what country is Tokyo in?" over `located_in`. **As of #27 the engine hides the subject too**, declared per-relation (`Pack.hiddenSlots`); a bidirectional relation like `has_capital` is quizzed both ways. Qualifier-hiding stays post-MVP.
+
+> **[UNREVIEWED]** — the #27 code facts are current; confirm this framing (subject-hidden as a plain per-relation capability, distinct from the still-unbuilt enumerate-many case below) reads as intended.
 
 Which slot is which isn't arbitrary: statements are oriented so the functional (many-to-one) side is the subject, so hiding the object always asks for a single determined value and hiding the subject always enumerates a set. That convention — see [../knowledge-graph/statements.md](../knowledge-graph/statements.md#orient-asymmetric-relations-in-their-functional-direction) — is what makes the hidden slot in a card key mean something consistent across packs.
 

@@ -46,17 +46,28 @@ export interface AnswerResult {
 }
 
 /**
- * Judges a typed answer against the card's hidden entity. For an object-hidden
- * card the target is the statement's object (the country); correct means the
- * input matches one of that entity's names. Returns the canonical label either
- * way, so a wrong answer can still be shown what was expected.
+ * Judges a typed answer against the card's hidden entity. The hidden slot names
+ * which entity is the target: an object-hidden card grades against the object
+ * (the country in "what country is Tokyo in?"), a subject-hidden card against
+ * the subject (the country in "Bern is the capital of what country?"). Correct
+ * means the input matches one of that entity's names; the canonical label comes
+ * back either way, so a wrong answer can still be shown what was expected.
  */
 export function checkAnswer(pack: Pack, cardId: string, input: string): AnswerResult {
-  const { statement } = findCard(pack, cardId);
-  if (statement.object.kind !== "entity") {
-    throw new Error(`card ${cardId} hides a literal object, unsupported in MVP`);
+  const { statement, hiddenSlot } = findCard(pack, cardId);
+
+  let targetId: string;
+  if (hiddenSlot === "subject") {
+    targetId = statement.subject;
+  } else if (hiddenSlot === "object") {
+    if (statement.object.kind !== "entity") {
+      throw new Error(`card ${cardId} hides a literal object, unsupported in MVP`);
+    }
+    targetId = statement.object.id;
+  } else {
+    throw new Error(`card ${cardId} hides ${hiddenSlot}, unsupported in MVP`);
   }
 
-  const target = createGraph(pack.entities).getEntity(statement.object.id);
+  const target = createGraph(pack.entities).getEntity(targetId);
   return { correct: matchesEntity(input, target), acceptedAnswer: target.labels.en };
 }
