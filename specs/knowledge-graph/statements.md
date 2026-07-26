@@ -24,13 +24,15 @@ This does not remove the need for a *card* (`statement` + hidden slot): recall a
 
 The rule applies only where a functional direction exists. **Symmetric relations have none** — `borders` is many-to-many both ways — so they store one edge (`symmetric: true`) and are enumerate-many in either direction. Orientation is a property of the relation type, decided once when the relation is defined, not per statement.
 
-### A second constraint today: the engine hides only the object
+### The engine can now hide the subject too (was: object-only)
 
-> **[UNREVIEWED]** — reconstructed from a pack-authoring decision plus a current code limitation. Confirm the MVP engine still hides the object slot only, and that this corollary is a real authoring rule rather than a passing artifact of that limitation.
+> **[UNREVIEWED]** — the code facts are current (see #27); confirm the *authoring* takeaway — that `has_capital` should still be stored country→city now that either slot is quizzable — reads as intended.
 
-The orientation convention decides direction from the *data* (functional side becomes the object). A relation like `has_capital` is nearly one-to-one — a country has one capital, a capital serves one country — so the convention alone doesn't force a direction. What breaks the tie today is the **engine**: question selection hides the object slot only, so whatever sits in the object is the answer the learner produces. Orient the relation to put the *single quizzed answer* in the object.
+The engine hid the object slot only through the MVP walking skeleton. That is no longer true: as of #27, which slots a relation is quizzed on is **declared per-relation** (`Pack.hiddenSlots`, keyed by relation id; a relation that declares nothing stays object-only), `selectQuestion` draws each supported (statement, slot) card with equal weight, and `checkAnswer` grades a subject-hidden card against the statement's **subject** entity — mirroring the object-hidden path. `located_in` keeps declaring nothing (object-only: "name a city in Japan" is enumerate-many, still unbuilt); a bidirectional relation like `has_capital` declares `["object", "subject"]`.
 
-That is why the capitals pack stores `has_capital` **country→city**: hiding the object asks "what is the capital of France?" — the canonical drill, and distinct from `located_in`. The reverse (`capital_of`, city→country) would, under object-only hiding, ask "Paris is the capital of what?", collapsing into a near-duplicate of `located_in`. Once the engine can hide the subject, this tiebreak weakens and the choice returns to pedagogy; until then it is a hard authoring constraint.
+This weakens what used to be a hard tiebreak. The orientation convention decides direction from the *data* (functional side becomes the object), but a relation like `has_capital` is nearly one-to-one — a country has one capital, a capital serves one country — so the convention alone doesn't force a direction. Under object-only hiding, the engine broke the tie: whatever sat in the object was the answer, so you oriented the relation to put the single quizzed answer there. That pressure is gone.
+
+The capitals pack still stores `has_capital` **country→city**, but the reason is now pedagogy, not engine limitation. From that one orientation the engine quizzes **both** directions: hiding the object asks "what is the capital of France?" (the canonical drill), hiding the subject asks "Bern is the capital of what country?". Storing the reverse (`capital_of`, city→country) would buy nothing the two hidden slots don't already give, and would double-store a fact — so the functional-side-is-object convention decides it, as it does for any relation.
 
 ## Why statements carry provenance
 

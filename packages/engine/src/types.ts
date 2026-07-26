@@ -44,7 +44,11 @@ export interface Statement {
   object: ObjectSlot;
 }
 
-/** Which slot a question conceals. MVP hides the object only. */
+/**
+ * Which slot a question conceals. Object- and subject-hiding are implemented;
+ * which a relation supports is declared per-relation (see `Pack.hiddenSlots`).
+ * Qualifier-hiding is reserved but unbuilt.
+ */
 export type HiddenSlot = "subject" | "object" | `qualifier:${string}`;
 
 /** Read access into the graph, handed to generators so they can resolve labels. */
@@ -82,6 +86,13 @@ export interface Pack {
   entities: Map<string, Entity>;
   statements: Statement[];
   generators: Record<string, Generator>;
+  /**
+   * Which hidden slots each relation can be quizzed on, keyed by relation id.
+   * A relation absent here (or the whole map omitted) is object-hidden only —
+   * the MVP default — so packs that never quiz the subject need declare nothing.
+   * A bidirectional relation like `capital` lists `["object", "subject"]`.
+   */
+  hiddenSlots?: Record<string, HiddenSlot[]>;
 }
 
 /** A rendered question ready to cross the HTTP seam. Carries no answer. */

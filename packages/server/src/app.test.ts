@@ -28,6 +28,32 @@ function fixturePack(): Pack {
   };
 }
 
+// A `capital` relation quizzed both ways, so the answer log has a subject-hidden
+// card to re-derive a prompt for.
+const capital: Generator = ({ statement, hiddenSlot, graph }) => {
+  const country = graph.getEntity(statement.subject).labels.en;
+  const city = graph.getEntity((statement.object as { id: string }).id).labels.en;
+  return hiddenSlot === "subject"
+    ? { prompt: `${city} is the capital of what country?`, input: "text" }
+    : { prompt: `What is the capital of ${country}?`, input: "text" };
+};
+
+function bidiPack(): Pack {
+  const entities: Entity[] = [
+    { id: "Q39", labels: { en: "Switzerland" }, types: ["country"] },
+    { id: "Q70", labels: { en: "Bern" }, types: ["city"] },
+  ];
+  const statements: Statement[] = [
+    { id: "cap:switzerland-bern", subject: "Q39", relation: "capital", object: { kind: "entity", id: "Q70" } },
+  ];
+  return {
+    entities: new Map(entities.map((e) => [e.id, e])),
+    statements,
+    generators: { capital },
+    hiddenSlots: { capital: ["object", "subject"] },
+  };
+}
+
 function memoryStore(): AnswerStore {
   return createAnswerStore(openDatabase(":memory:"));
 }
@@ -169,6 +195,22 @@ describe("GET /answers", () => {
     const res = await createApp({ pack: fixturePack(), store }).request("/answers");
     const [entry] = answerLogSchema.parse(await res.json());
     expect(entry?.question).toBe("What country is Tokyo in?");
+  });
+
+  it("re-derives a subject-hidden card's question text from its card", async () => {
+    const store = memoryStore();
+    await createApp({ pack: bidiPack(), store, now: () => new Date("2026-07-19T12:00:00.000Z") }).request(
+      "/answer",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ cardId: "cap:switzerland-bern:subject", input: "Switzerland" }),
+      },
+    );
+    const res = await createApp({ pack: bidiPack(), store }).request("/answers");
+    const [entry] = answerLogSchema.parse(await res.json());
+    expect(entry?.question).toBe("Bern is the capital of what country?");
+    expect(entry?.correct).toBe(true);
   });
 
   it("falls back to the raw cardId when the card no longer resolves", async () => {

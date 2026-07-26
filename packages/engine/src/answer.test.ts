@@ -121,3 +121,44 @@ describe("checkAnswer", () => {
     expect(() => checkAnswer(makePack(), "cc:nope:object", "x")).toThrow(/unknown card/);
   });
 });
+
+// A `capital` statement quizzable both ways; the pack declares both slots so
+// the subject-hidden card resolves.
+const switzerland: Entity = { id: "Q39", labels: { en: "Switzerland" }, types: ["country"] };
+const bern: Entity = { id: "Q70", labels: { en: "Bern" }, types: ["city"] };
+
+const capitalStatements: Statement[] = [
+  { id: "cap:switzerland-bern", subject: "Q39", relation: "capital", object: { kind: "entity", id: "Q70" } },
+];
+
+function makeCapitalPack(): Pack {
+  return {
+    entities: new Map([switzerland, bern].map((e) => [e.id, e])),
+    statements: capitalStatements,
+    generators: {},
+    hiddenSlots: { capital: ["object", "subject"] },
+  };
+}
+
+describe("checkAnswer, subject-hidden", () => {
+  it("grades against the statement's subject entity", () => {
+    expect(checkAnswer(makeCapitalPack(), "cap:switzerland-bern:subject", "Switzerland")).toEqual({
+      correct: true,
+      acceptedAnswer: "Switzerland",
+    });
+  });
+
+  it("rejects a wrong subject answer but reveals the accepted label", () => {
+    expect(checkAnswer(makeCapitalPack(), "cap:switzerland-bern:subject", "France")).toEqual({
+      correct: false,
+      acceptedAnswer: "Switzerland",
+    });
+  });
+
+  it("still grades the object-hidden card of the same statement against the object", () => {
+    expect(checkAnswer(makeCapitalPack(), "cap:switzerland-bern:object", "Bern")).toEqual({
+      correct: true,
+      acceptedAnswer: "Bern",
+    });
+  });
+});
