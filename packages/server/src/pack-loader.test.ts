@@ -134,4 +134,23 @@ describe("loadAllPacks", () => {
     expect(p.entities.get(saoPaulo?.subject ?? "")?.labels.en).toBe("São Paulo");
     expect(p.entities.get("Q1963")?.labels.en).toBe("Khartoum");
   });
+
+  it("includes continental-countries pack with country→continent statements", () => {
+    const p = loadAllPacks();
+
+    // continental-countries ships statements for every country in core-geo
+    const franceStatement = p.statements.find((s) => s.id === "cc:france");
+    expect(franceStatement).toBeDefined();
+    expect(franceStatement?.subject).toBe("Q42");
+    expect(franceStatement?.relation).toBe("located_in");
+    expect(franceStatement?.object).toEqual({ kind: "entity", id: "Q46" });
+
+    // Verify France (Q42) and Europe (Q46) are both in core-geo
+    expect(p.entities.get("Q42")?.labels.en).toBe("France");
+    expect(p.entities.get("Q46")?.labels.en).toBe("Europe");
+
+    // continental-countries interweaves with other tranches: 150+ continent questions
+    const continentQuestions = p.statements.filter((s) => s.id?.startsWith("cc:") && s.relation === "located_in");
+    expect(continentQuestions.length).toBeGreaterThanOrEqual(150);
+  });
 });
