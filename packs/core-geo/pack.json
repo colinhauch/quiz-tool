@@ -1,0 +1,13 @@
+{
+  "id": "core-geo",
+  "version": "1.0.0",
+  "labels": { "en": "Core Geography" },
+  "descriptions": { "en": "The sole owner of shared geographic entities: continents, sovereign countries, capital cities, and core cities. Entities only — no statements, no generators. Published from a curated Q-ID list via fetch-entities.mjs." },
+  "engine_min_version": "0.0.0",
+  "depends": [],
+  "license": "CC0-1.0",
+  "credits": [{ "source": "wikidata", "retrieved": "2026-07-25" }],
+  "contents": {
+    "entities": "entities.jsonl"
+  }
+}

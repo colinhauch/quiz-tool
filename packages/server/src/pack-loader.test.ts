@@ -118,9 +118,20 @@ describe("two-tranche graph over the server seam", () => {
 });
 
 describe("loadAllPacks", () => {
-  it("assembles the shipped tranches into one graph, unchanged for today's single pack", () => {
+  it("assembles the shipped tranches into one graph with core-geo as sole entity owner", () => {
     const p = loadAllPacks();
     expect(p.statements.length).toBeGreaterThan(0);
     expect(p.generators.located_in).toBeTypeOf("function");
+
+    // core-geo owns the entities: continents are first-class, and core-cities'
+    // statements resolve against core-geo (it ships none of its own).
+    expect(p.entities.get("Q46")?.labels.en).toBe("Europe");
+    expect(p.entities.get("Q46")?.types).toContain("continent");
+
+    // The São Paulo statement points at Q174 (São Paulo), not the old wrong
+    // Q1963 (which is Khartoum, kept in core-geo as Sudan's capital).
+    const saoPaulo = p.statements.find((s) => s.id === "cc:saopaulo-brazil");
+    expect(p.entities.get(saoPaulo?.subject ?? "")?.labels.en).toBe("São Paulo");
+    expect(p.entities.get("Q1963")?.labels.en).toBe("Khartoum");
   });
 });

@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import type { Entity, Generator, Pack, Statement } from "@geo/engine";
 import * as coreCities from "@geo/pack-core-cities";
+import * as coreGeo from "@geo/pack-core-geo";
 
 /**
  * The one piece of pack IO in the system. The engine stays pure by never
@@ -26,6 +27,13 @@ export interface Tranche {
  * Adding a tranche is a data change behind this seam plus an entry here.
  */
 export const tranches: Tranche[] = [
+  // core-geo is entities-only: the sole owner of every shared geographic
+  // entity (continents, countries, capitals, core cities). It ships no
+  // statements and no generators, so it yields no questions on its own —
+  // it supplies the identity other tranches' statements resolve against.
+  { packDir: coreGeo.packDir, generators: {} },
+  // core-cities ships only city→country `located_in` statements over
+  // core-geo's entities (it owns none of its own).
   { packDir: coreCities.packDir, generators: coreCities.generators },
 ];
 
