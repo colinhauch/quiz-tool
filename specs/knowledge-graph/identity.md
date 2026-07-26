@@ -20,11 +20,17 @@ The dependency this creates: we have inherited an external ID space we do not co
 
 What would reopen this: a merge or deletion hitting an entity a user has answer history against. That is the case where a stale ID stops being a data problem — the ID is the join key between the pack and the answer log, so a *silently wrong* Q-ID is worse than a missing one. Nothing in the MVP detects it. This is not worth solving before it happens, but it is worth recognising quickly when it does.
 
-## Merging entities across packs
+## One tranche owns each entity — no cross-pack merge
 
-When two installed packs both define `Q155`, the records merge rather than collide: labels, aliases, and types union; per-field conflicts resolve in pack-installation order, later pack winning.
+> **[UNREVIEWED]** — rewritten for single-entity-ownership (ticket #28). The code now *rejects* a doubly-owned Q-ID rather than merging it (`assembleGraph` in `packages/server/src/pack-loader.ts` throws). Confirm the reframe reads as intended and that dropping the union merge rule loses nothing we relied on.
 
-**Statements never conflict this way,** because each statement is its own record with its own ID. Two packs asserting different capitals of Brazil produce two statements, not a conflict — and that is correct, because they might both be true at different times. Disagreement is **represented rather than resolved**: it stays in the data instead of being settled at install time. The merge rule only has to handle display fields, which is why it can be this simple.
+Exactly one authored tranche owns each entity. `core-geo` is the sole owner of every shared geographic entity — continents, countries, capital cities, core cities — and every other tranche ships statements over those entities, never entities of its own. So when the app assembles its one graph, a Q-ID appearing in two tranches is an **authoring error**, not something to reconcile: the assembler throws rather than unioning.
+
+This deletes a rule an earlier design leaned on. That draft had two packs each define `Q155` and **merged** the records — labels, aliases, and types unioned, per-field conflicts resolved in install order (later pack winning). Under single ownership that path is unreachable: two owners is the error case, so there is nothing to merge, and the install-order-dependent "later pack wins" semantics go with it. Why the reframe: we author and own every pack, so the composability/merge machinery was solving a distribution problem we don't have. See [../packs/README.md](../packs/README.md) and [[pack-as-authoring-tranche]].
+
+**Continents are entities too.** `core-geo` ships the seven continents as first-class entities with their own Q-IDs (`Q46` Europe, `Q48` Asia, `Q15` Africa, …), not as an enum. That is what lets "which continent is X in?" grade through the same entity-matching path as every other question — the answer is an entity, matched by label and aliases, with no continent-specific code anywhere.
+
+**Statements never conflict this way,** because each statement is its own record with its own ID. Two packs asserting different capitals of Brazil produce two statements, not a conflict — and that is correct, because they might both be true at different times. Disagreement is **represented rather than resolved**: it stays in the data instead of being settled at assembly time.
 
 **What represents it is an open question, not a solved one.** An earlier version of this file said disagreement is represented "via rank and temporal qualifiers", which overstated things: the MVP has one pack and [no rank at all](statements.md), so cross-pack disagreement has never been exercised, let alone solved. Rank is a sketch of one mechanism.
 

@@ -5,6 +5,7 @@
     { "path": "./packages/engine" },
     { "path": "./packages/server" },
     { "path": "./packages/web" },
-    { "path": "./packs/core-cities" }
+    { "path": "./packs/core-cities" },
+    { "path": "./packs/core-geo" }
   ]
 }

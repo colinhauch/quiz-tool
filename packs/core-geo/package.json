@@ -1,0 +1,9 @@
+{
+  "name": "@geo/pack-core-geo",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./index.ts"
+  }
+}
