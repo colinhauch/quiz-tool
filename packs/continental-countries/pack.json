@@ -1,0 +1,13 @@
+{
+  "id": "continental-countries",
+  "version": "0.0.1",
+  "labels": { "en": "Continental Countries" },
+  "descriptions": { "en": "Country→continent `located_in` statements over entities owned by core-geo. Object-hidden: 'What continent is X in?'" },
+  "engine_min_version": "0.0.0",
+  "license": "CC0-1.0",
+  "credits": [{ "source": "Wikidata", "retrieved": "2026-07-26" }],
+  "contents": {
+    "statements": "statements.jsonl",
+    "code": "index.ts"
+  }
+}
