@@ -30,4 +30,14 @@ Deferred from the MVP, which fills `en` only and reads only `labels`. Entities k
 
 ## Admin / Developer UI for viewing and interacting with data
 
-- [ ] It would be great to have a UI that could navigate the file structure of the repo and display visually the .jsonl files of entities and statements. We can use their wikidata ID's to make that UI very clearly understandable. We could love the wikipedia data for statments. We could make it easy to edit the data in place, manually. Something like that would be really helpful. We could see what entities are in a pack. We could see what statements are made in a pack. 
+A visual, interactive explorer and editor for knowledge graph data. Split-pane layout: file tree (left) + entity inspector (right). When clicking an entity, show its details and all statements pointing in/out. 
+
+**Core features:**
+- [ ] **Split-pane file browser + entity inspector.** Click entity → right pane shows details, statements, relationships.
+- [ ] **Graph visualization.** Force-directed graph view showing entity relationships; hover to see relationship definitions.
+- [ ] **Relationship schema panel.** Searchable reference of all relation types with cardinality and constraints.
+- [ ] **Search & filter.** Find entities by type, tag, wikidata ID, or label.
+- [ ] **In-place editing.** Edit entity properties and statements without leaving the browser.
+- [ ] **Validation mode.** Flag orphaned entities, missing required fields, duplicate statements.
+- [ ] **Pack diff view.** Show what changed between pack versions.
+- [ ] **Wikidata integration.** Link statements to Wikipedia data for context and bulk lookup.
