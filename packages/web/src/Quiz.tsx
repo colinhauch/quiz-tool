@@ -1,5 +1,5 @@
 import type { AnswerResponse, QuestionResponse } from "@geo/contract";
-import { type FormEvent, useCallback, useEffect, useState } from "react";
+import { type FormEvent, useCallback, useEffect, useRef, useState } from "react";
 
 /** Where the browser reaches the Node server; `/api` is proxied in dev (see vite.config.ts). */
 const QUESTION_URL = "/api/question";
@@ -30,6 +30,7 @@ type View =
 export function Quiz() {
   const [view, setView] = useState<View>({ state: "loading" });
   const [input, setInput] = useState("");
+  const nextButtonRef = useRef<HTMLButtonElement>(null);
 
   const loadQuestion = useCallback(async () => {
     setView({ state: "loading" });
@@ -45,6 +46,12 @@ export function Quiz() {
   useEffect(() => {
     void loadQuestion();
   }, [loadQuestion]);
+
+  useEffect(() => {
+    if (view.state === "answered") {
+      nextButtonRef.current?.focus();
+    }
+  }, [view.state]);
 
   async function submitAnswer(event: FormEvent, question: QuestionResponse) {
     event.preventDefault();
@@ -100,7 +107,12 @@ export function Quiz() {
               </strong>{" "}
               The answer is {view.result.acceptedAnswer}.
             </p>
-            <button className="btn-primary" type="button" onClick={() => void loadQuestion()}>
+            <button
+              ref={nextButtonRef}
+              className="btn-primary"
+              type="button"
+              onClick={() => void loadQuestion()}
+            >
               Next question
             </button>
           </>
