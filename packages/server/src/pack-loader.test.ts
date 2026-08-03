@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { questionResponseSchema } from "@geo/contract";
-import type { Entity, Generator, Pack, Statement } from "@geo/engine";
+import { type Entity, findCard, generateQuestion, type Generator, type Pack, type Statement } from "@geo/engine";
 import { afterEach, describe, expect, it } from "vitest";
 import { createApp } from "./app.js";
 import { assembleGraph, loadAllPacks, loadTranche } from "./pack-loader.js";
@@ -141,16 +141,40 @@ describe("loadAllPacks", () => {
     // continental-countries ships statements for every country in core-geo
     const franceStatement = p.statements.find((s) => s.id === "cc:france");
     expect(franceStatement).toBeDefined();
-    expect(franceStatement?.subject).toBe("Q42");
-    expect(franceStatement?.relation).toBe("located_in");
+    expect(franceStatement?.subject).toBe("Q142");
+    expect(franceStatement?.relation).toBe("located_in_continent");
     expect(franceStatement?.object).toEqual({ kind: "entity", id: "Q46" });
 
-    // Verify France (Q42) and Europe (Q46) are both in core-geo
-    expect(p.entities.get("Q42")?.labels.en).toBe("France");
+    // Verify France (Q142) and Europe (Q46) are both in core-geo
+    expect(p.entities.get("Q142")?.labels.en).toBe("France");
     expect(p.entities.get("Q46")?.labels.en).toBe("Europe");
 
     // continental-countries interweaves with other tranches: 150+ continent questions
-    const continentQuestions = p.statements.filter((s) => s.id?.startsWith("cc:") && s.relation === "located_in");
+    const continentQuestions = p.statements.filter(
+      (s) => s.id?.startsWith("cc:") && s.relation === "located_in_continent",
+    );
     expect(continentQuestions.length).toBeGreaterThanOrEqual(150);
+  });
+
+  // Regression for #38: both packs registered a generator under `located_in`,
+  // so the flat relation→generator table let the last tranche loaded win and
+  // every city question rendered as a continent question ("What continent is
+  // Tokyo in?" grading against Japan). Distinct relation ids keep both
+  // generators reachable — the real guard is the unbuilt relation registry (#23).
+  it("keeps each tranche's generator reachable: city and continent questions don't collide", () => {
+    const p = loadAllPacks();
+
+    expect(p.generators.located_in).toBeTypeOf("function");
+    expect(p.generators.located_in_continent).toBeTypeOf("function");
+
+    const city = findCard(p, "cc:tokyo-japan:object");
+    expect(generateQuestion(p, city.statement, city.hiddenSlot).prompt).toBe(
+      "What country is Tokyo in?",
+    );
+
+    const country = findCard(p, "cc:france:object");
+    expect(generateQuestion(p, country.statement, country.hiddenSlot).prompt).toBe(
+      "What continent is France in?",
+    );
   });
 });

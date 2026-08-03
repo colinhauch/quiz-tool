@@ -36,7 +36,7 @@ export const tranches: Tranche[] = [
   // core-cities ships only city→country `located_in` statements over
   // core-geo's entities (it owns none of its own).
   { packDir: coreCities.packDir, generators: coreCities.generators },
-  // continental-countries ships only country→continent `located_in` statements
+  // continental-countries ships only country→continent `located_in_continent` statements
   // over core-geo's entities (it owns none of its own).
   { packDir: continentalCountries.packDir, generators: continentalCountries.generators },
 ];

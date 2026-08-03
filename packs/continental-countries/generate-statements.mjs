@@ -115,7 +115,7 @@ async function main() {
     const statement = {
       id: `cc:${countrySlug}`,
       subject: countryId,
-      relation: "located_in",
+      relation: "located_in_continent",
       object: { kind: "entity", id: continentId },
     };
 
