@@ -10,6 +10,7 @@
   "dependencies": {
     "@geo/contract": "workspace:*",
     "@geo/engine": "workspace:*",
+    "@geo/pack-continental-countries": "workspace:*",
     "@geo/pack-core-cities": "workspace:*",
     "@geo/pack-core-geo": "workspace:*",
     "@hono/node-server": "^1.13.8",

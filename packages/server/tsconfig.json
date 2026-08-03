@@ -9,6 +9,8 @@
   "references": [
     { "path": "../contract" },
     { "path": "../engine" },
-    { "path": "../../packs/core-cities" }
+    { "path": "../../packs/core-geo" },
+    { "path": "../../packs/core-cities" },
+    { "path": "../../packs/continental-countries" }
   ]
 }
