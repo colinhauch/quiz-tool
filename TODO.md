@@ -41,3 +41,12 @@ A visual, interactive explorer and editor for knowledge graph data. Split-pane l
 - [ ] **Validation mode.** Flag orphaned entities, missing required fields, duplicate statements.
 - [ ] **Pack diff view.** Show what changed between pack versions.
 - [ ] **Wikidata integration.** Link statements to Wikipedia data for context and bulk lookup.
+
+## Parametric Map
+
+- The idea is for entities that have available lat-long data to have that able to be displayed for the user.
+- We could have a world map (stylized, custom-svg or google map interface) that zooms into the lat-long of the entity or entities involved in the current question. 
+
+## Fix UI focus shift after answer submission
+
+- UI currently keeps focus on displayed result instead of shifting focus to the "next question button".
