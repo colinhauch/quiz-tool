@@ -3,6 +3,14 @@
 - **Be extremely brief.** You may sacrifice grammar for the sake of concision.
 - **When a decision gets made or something is learned that changes future work, record it.** See the "Updating the specs" section for details.
 
+# Running long-lived processes
+
+Run servers yourself — but **never with a shell `&`**. That detaches from the harness: invisible to the user, no handle, survives the conversation.
+
+Use the Bash tool's `run_in_background: true` instead. The user sees it in the UI, output comes back via `TaskOutput`, `TaskStop` kills it. For short checks, `timeout 15 <cmd>` in the foreground is simpler. (See also `/run`.)
+
+Shut down what you start, in the same session. Identify before killing — `ps -o pid,ppid,lstart,command -p <pids>` — since ports surface unrelated processes (VS Code helpers, other projects).
+
 # Geography Learning Engine
 
 A quiz app that teaches world geography from a knowledge graph, tracks every answer, and surfaces knowledge gaps. TypeScript. Pre-implementation — the design exists, the code does not.
