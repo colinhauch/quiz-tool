@@ -1,0 +1,631 @@
+/*
+ * PROTOTYPE — Packs tab redesign explorations (throwaway).
+ * Three structurally different variants (A/B/C), switchable via ?variant=.
+ * Fold the winner into Packs.tsx + index.css, then delete this file and
+ * Packs.prototype.tsx. Reuses the app's tokens (index.css :root) and the
+ * global .btn-primary. All classes namespaced `pv-` to avoid collisions.
+ */
+
+/* ── Shared scaffolding ──────────────────────────────────── */
+/* Break out of the app's narrow 680px main column so the grid/builder
+   layouts have room; centered on the viewport. */
+.pv-break {
+  width: min(1040px, 94vw);
+  margin-left: 50%;
+  transform: translateX(-50%);
+}
+.pv-head {
+  margin-bottom: 1.5rem;
+}
+.pv-title {
+  font-family: var(--serif);
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  color: var(--indigo);
+  line-height: 1.1;
+}
+.pv-sub {
+  margin-top: 0.35rem;
+  color: rgba(39, 24, 126, 0.7);
+  font-size: 1rem;
+}
+
+/* A quiet reusable topo swatch, tinted per surface by background color. */
+.pv-topo {
+  background-image: url(/contour-indigo.svg);
+  background-repeat: no-repeat;
+  background-size: 260% auto;
+}
+
+/* Sticky commit bar shared by A and B. */
+.pv-bar {
+  position: sticky;
+  bottom: 1rem;
+  margin-top: 1.75rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.85rem 1rem 0.85rem 1.35rem;
+  background: var(--indigo);
+  color: var(--platinum);
+  border-radius: 0.6rem;
+  box-shadow: 0 8px 24px rgba(39, 24, 126, 0.22);
+}
+.pv-bar__count {
+  font-family: var(--serif);
+  font-size: 1.05rem;
+  line-height: 1.25;
+}
+.pv-bar__count b {
+  font-weight: 700;
+}
+.pv-bar__note {
+  font-size: 0.8rem;
+  color: var(--periwinkle);
+  margin-top: 0.1rem;
+}
+.pv-bar__spacer {
+  flex: 1;
+}
+.pv-bar .btn-primary {
+  width: auto;
+  padding: 0.7rem 1.4rem;
+  white-space: nowrap;
+}
+.pv-bar .btn-primary:disabled {
+  background: rgba(174, 184, 254, 0.25);
+  color: rgba(241, 242, 246, 0.55);
+  cursor: not-allowed;
+}
+
+/* ════════════════════════════════════════════════════════════
+   VARIANT A — Map shelf: a grid of self-contained pack cards.
+   The whole card is the include toggle; no separate detail pane.
+   ════════════════════════════════════════════════════════════ */
+.pv-a__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1rem;
+}
+
+.pv-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  background: #fff;
+  border: 1px solid rgba(39, 24, 126, 0.1);
+  border-radius: 0.6rem;
+  padding: 0;
+  overflow: hidden;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  transition: transform 0.08s, box-shadow 0.2s, border-color 0.2s, opacity 0.2s;
+}
+.pv-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(39, 24, 126, 0.12);
+}
+.pv-card:focus-visible {
+  outline: 3px solid var(--cornflower);
+  outline-offset: 2px;
+}
+/* Included: full color, cornflower spine, a ring. Excluded: flat + dimmed. */
+.pv-card--out {
+  opacity: 0.72;
+}
+.pv-card--in {
+  border-color: var(--cornflower);
+  box-shadow: inset 4px 0 0 var(--cornflower), 0 2px 8px rgba(39, 24, 126, 0.08);
+}
+
+.pv-card__band {
+  min-height: 3.25rem;
+  padding: 0.6rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(120deg, var(--periwinkle), var(--cornflower));
+}
+.pv-card--out .pv-card__band {
+  background: linear-gradient(120deg, #e4e6f2, #cdd2ee);
+}
+.pv-card__eyebrow {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--indigo);
+}
+/* The include mark: a checkable pill sitting on the band. */
+.pv-mark {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.55);
+  color: var(--indigo);
+  font-size: 0.9rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.pv-card--in .pv-mark {
+  background: var(--orange);
+  color: #fff;
+}
+
+.pv-card__body {
+  padding: 0.9rem 1rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+.pv-card__label {
+  font-family: var(--serif);
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--indigo);
+  line-height: 1.15;
+}
+.pv-card__desc {
+  margin-top: 0.4rem;
+  font-size: 0.85rem;
+  color: rgba(39, 24, 126, 0.72);
+  line-height: 1.45;
+  flex: 1;
+}
+.pv-card__foot {
+  margin-top: 0.9rem;
+  padding-top: 0.7rem;
+  border-top: 1px solid rgba(39, 24, 126, 0.1);
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+}
+.pv-card__count {
+  font-family: var(--serif);
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--indigo);
+}
+.pv-card__count-label {
+  font-size: 0.8rem;
+  color: rgba(39, 24, 126, 0.6);
+}
+.pv-card__src {
+  margin-left: auto;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(39, 24, 126, 0.5);
+}
+
+/* ════════════════════════════════════════════════════════════
+   VARIANT B — Atlas contents: editorial single-column list.
+   Hairline rules, per-row switch, inline-expanding detail.
+   ════════════════════════════════════════════════════════════ */
+.pv-b {
+  background: #fff;
+  border-radius: 0.6rem;
+  box-shadow: 0 2px 8px rgba(39, 24, 126, 0.08);
+  padding: 0.5rem 1.75rem;
+}
+.pv-b__lead {
+  padding: 1.4rem 0 1.1rem;
+  border-bottom: 2px solid var(--indigo);
+  font-family: var(--serif);
+  font-size: 1.35rem;
+  line-height: 1.4;
+  color: var(--indigo);
+}
+.pv-b__lead b {
+  font-weight: 700;
+}
+.pv-b__lead .pv-b__pending {
+  display: block;
+  margin-top: 0.3rem;
+  font-family: var(--sans);
+  font-size: 0.82rem;
+  color: var(--orange-hover);
+  font-weight: 600;
+}
+
+.pv-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.1rem 0;
+  border-bottom: 1px solid rgba(39, 24, 126, 0.12);
+}
+.pv-b ul {
+  list-style: none;
+}
+.pv-b li:last-child .pv-row {
+  border-bottom: none;
+}
+
+.pv-swatch {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 0.5rem;
+  background-color: var(--periwinkle);
+  background-position: 40% 55%;
+  flex-shrink: 0;
+}
+.pv-row--out .pv-swatch {
+  filter: grayscale(0.65);
+  opacity: 0.7;
+}
+
+.pv-row__main {
+  min-width: 0;
+  text-align: left;
+  background: none;
+  border: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  padding: 0;
+}
+.pv-row__label {
+  font-family: var(--serif);
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--indigo);
+  line-height: 1.15;
+}
+.pv-row__label .pv-caret {
+  font-size: 0.7em;
+  color: var(--cornflower);
+  margin-left: 0.4rem;
+}
+.pv-row__desc {
+  font-size: 0.88rem;
+  color: rgba(39, 24, 126, 0.72);
+}
+.pv-row__meta {
+  margin-top: 0.15rem;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: rgba(39, 24, 126, 0.55);
+}
+
+/* Switch — the include toggle. */
+.pv-switch {
+  position: relative;
+  width: 3rem;
+  height: 1.6rem;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  background: rgba(39, 24, 126, 0.18);
+  transition: background 0.18s;
+  flex-shrink: 0;
+}
+.pv-switch[aria-pressed="true"] {
+  background: var(--orange);
+}
+.pv-switch::after {
+  content: "";
+  position: absolute;
+  top: 0.2rem;
+  left: 0.2rem;
+  width: 1.2rem;
+  height: 1.2rem;
+  border-radius: 999px;
+  background: #fff;
+  transition: transform 0.18s;
+}
+.pv-switch[aria-pressed="true"]::after {
+  transform: translateX(1.4rem);
+}
+.pv-switch:focus-visible {
+  outline: 3px solid var(--cornflower);
+  outline-offset: 2px;
+}
+
+.pv-drawer {
+  grid-column: 1 / -1;
+  margin-top: 0.4rem;
+  padding: 1rem 1.1rem;
+  background: rgba(174, 184, 254, 0.14);
+  border-radius: 0.5rem;
+  display: flex;
+  gap: 2.5rem;
+  flex-wrap: wrap;
+}
+.pv-drawer p {
+  margin: 0 0 0.6rem;
+  font-size: 0.9rem;
+  color: rgba(39, 24, 126, 0.82);
+  flex-basis: 100%;
+}
+.pv-drawer dt {
+  font-size: 0.66rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(39, 24, 126, 0.55);
+}
+.pv-drawer dd {
+  font-family: var(--serif);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--indigo);
+}
+.pv-drawer__credit {
+  flex-basis: 100%;
+  font-size: 0.72rem;
+  color: rgba(39, 24, 126, 0.5);
+}
+
+/* ════════════════════════════════════════════════════════════
+   VARIANT C — Study-set builder: available packs + a live queue
+   summary that stages checked→included changes before Save.
+   ════════════════════════════════════════════════════════════ */
+.pv-c {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 20rem;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.pv-c__avail {
+  background: #fff;
+  border-radius: 0.6rem;
+  box-shadow: 0 2px 8px rgba(39, 24, 126, 0.08);
+  padding: 1.25rem 1.4rem;
+}
+.pv-c__avail h2 {
+  font-family: var(--serif);
+  font-size: 1.15rem;
+  color: var(--indigo);
+  margin-bottom: 0.9rem;
+}
+.pv-c__avail ul {
+  list-style: none;
+}
+.pv-avail {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.9rem;
+  padding: 0.85rem 0;
+  border-bottom: 1px solid rgba(39, 24, 126, 0.1);
+}
+.pv-c__avail li:last-child .pv-avail {
+  border-bottom: none;
+}
+.pv-avail__text {
+  flex: 1;
+  min-width: 0;
+}
+.pv-avail__label {
+  font-family: var(--serif);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--indigo);
+}
+.pv-avail__desc {
+  font-size: 0.82rem;
+  color: rgba(39, 24, 126, 0.7);
+  line-height: 1.4;
+}
+.pv-avail__count {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(39, 24, 126, 0.5);
+  margin-top: 0.2rem;
+}
+.pv-addbtn {
+  flex-shrink: 0;
+  padding: 0.4rem 0.85rem;
+  border-radius: 999px;
+  font-family: var(--sans);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.pv-addbtn--add {
+  background: #fff;
+  border: 1px solid var(--cornflower);
+  color: var(--cornflower);
+}
+.pv-addbtn--add:hover {
+  background: rgba(117, 139, 253, 0.1);
+}
+.pv-addbtn--in {
+  background: rgba(74, 143, 111, 0.12);
+  border: 1px solid transparent;
+  color: var(--green-text);
+}
+.pv-addbtn--in:hover {
+  background: var(--red-bg);
+  color: var(--red-text);
+}
+
+/* The queue summary — sticky, the emotional center of this variant. */
+.pv-queue {
+  position: sticky;
+  top: 1.5rem;
+  background: var(--indigo);
+  color: var(--platinum);
+  border-radius: 0.6rem;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(39, 24, 126, 0.2);
+}
+.pv-queue__topo {
+  padding: 1.3rem 1.4rem 1rem;
+  background-image: url(/contour-periwinkle.svg);
+  background-repeat: no-repeat;
+  background-size: 200% auto;
+  background-position: 60% 30%;
+}
+.pv-queue__eyebrow {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--periwinkle);
+}
+.pv-queue__num {
+  font-family: var(--serif);
+  font-size: 3rem;
+  font-weight: 700;
+  line-height: 1;
+  margin-top: 0.2rem;
+}
+.pv-queue__num-label {
+  font-size: 0.85rem;
+  color: var(--periwinkle);
+}
+.pv-queue__body {
+  padding: 0 1.4rem 1.3rem;
+}
+.pv-queue__list {
+  list-style: none;
+  margin: 0 0 0.5rem;
+}
+.pv-queue__item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0;
+  font-size: 0.9rem;
+  border-bottom: 1px solid rgba(174, 184, 254, 0.2);
+}
+.pv-queue__item span {
+  flex: 1;
+}
+.pv-queue__item small {
+  color: var(--periwinkle);
+  font-size: 0.75rem;
+}
+.pv-queue__x {
+  background: none;
+  border: none;
+  color: var(--periwinkle);
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  padding: 0.1rem 0.2rem;
+}
+.pv-queue__x:hover {
+  color: #fff;
+}
+
+/* Staged changes — makes the checked↔included seam legible. */
+.pv-staged {
+  margin: 0.8rem 0;
+  padding: 0.7rem 0.85rem;
+  background: rgba(255, 134, 0, 0.14);
+  border-radius: 0.45rem;
+}
+.pv-staged__title {
+  font-size: 0.66rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--orange);
+  margin-bottom: 0.35rem;
+}
+.pv-staged__line {
+  font-size: 0.83rem;
+  line-height: 1.5;
+}
+.pv-staged__line--add b {
+  color: #b7f7cf;
+}
+.pv-staged__line--rem b {
+  color: #ffc7c7;
+}
+.pv-queue__saved {
+  font-size: 0.82rem;
+  color: var(--periwinkle);
+  margin: 0.6rem 0 0.9rem;
+}
+.pv-queue__actions {
+  display: flex;
+  gap: 0.6rem;
+}
+.pv-queue .btn-primary {
+  width: auto;
+  flex: 1;
+  padding: 0.7rem 1rem;
+}
+.pv-queue .btn-primary:disabled {
+  background: rgba(174, 184, 254, 0.25);
+  color: rgba(241, 242, 246, 0.5);
+  cursor: not-allowed;
+}
+.pv-queue__discard {
+  background: none;
+  border: 1px solid rgba(174, 184, 254, 0.4);
+  color: var(--platinum);
+  border-radius: 0.375rem;
+  padding: 0.7rem 0.9rem;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.pv-queue__discard:hover {
+  background: rgba(174, 184, 254, 0.15);
+}
+
+/* ── Floating variant switcher (dev only) ────────────────── */
+.pv-switcher {
+  position: fixed;
+  bottom: 1.25rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.5rem;
+  background: #14103f;
+  color: #fff;
+  border-radius: 999px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+  font-family: var(--sans);
+}
+.pv-switcher button {
+  background: none;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  font-size: 1.1rem;
+  display: grid;
+  place-items: center;
+}
+.pv-switcher button:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+.pv-switcher__label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0 0.6rem;
+  white-space: nowrap;
+}
+.pv-switcher__label b {
+  color: var(--orange);
+}
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media (max-width: 620px) {
+  .pv-c {
+    grid-template-columns: 1fr;
+  }
+  .pv-queue {
+    position: static;
+  }
+}
