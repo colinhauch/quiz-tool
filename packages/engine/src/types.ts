@@ -36,12 +36,33 @@ export type Literal =
  */
 export type ObjectSlot = { kind: "entity"; id: string } | { kind: "literal"; literal: Literal };
 
-/** The atomic unit of knowledge; every logged answer references one by ID. */
+/**
+ * The atomic unit of knowledge; every logged answer references one by ID.
+ *
+ * `pack` is the one field that is not on disk: the loader stamps it as it
+ * reads, so provenance is resolved once, by the side that knows it, rather
+ * than inferred downstream. It is required rather than optional so the runtime
+ * never has to ask whether a statement knows where it came from — the earlier
+ * arrangement guessed the pack from the `id` prefix in the UI, and mislabelled
+ * 193 of 199 statements because two packs share the `cc:` prefix (#40).
+ */
 export interface Statement {
   id: string;
   subject: string;
   relation: string;
   object: ObjectSlot;
+  /** The id of the pack that authored it. Stamped at load; never on disk. */
+  pack: string;
+}
+
+/**
+ * What the graph remembers about a pack it absorbed: enough to say where a
+ * question came from, and no more. The pack's data has already been merged
+ * away by the time this is read.
+ */
+export interface PackInfo {
+  id: string;
+  labels: LocalizedText;
 }
 
 /**
@@ -87,6 +108,12 @@ export interface Pack {
   statements: Statement[];
   generators: Record<string, Generator>;
   /**
+   * The packs that went into this graph, keyed by id — the only place a pack's
+   * own identity survives assembly. Read to label a question with where it came
+   * from; a statement's `pack` is the key.
+   */
+  packs: Map<string, PackInfo>;
+  /**
    * Which hidden slots each relation can be quizzed on, keyed by relation id.
    * A relation absent here (or the whole map omitted) is object-hidden only —
    * the MVP default — so packs that never quiz the subject need declare nothing.
@@ -101,4 +128,8 @@ export interface RenderedQuestion {
   cardId: string;
   prompt: string;
   input: "text";
+  /** Which pack authored the statement behind this question. */
+  packId: string;
+  /** That pack's display name, for the client to show. English only for now. */
+  packLabel: string;
 }

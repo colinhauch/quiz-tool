@@ -58,6 +58,14 @@ A pack that defines no relations of its own — `core-geo`, which ships only ent
 - **`depends`** implied a resolution step that does not exist and is not needed: entity single-ownership means load order cannot change the assembled graph. A missing dependency surfaces as a validator error naming the absent pack, which is the only thing resolution would have bought.
 - **`engine_min_version`** is meaningless while packs ship inside the app — they version together.
 
+## The `pack` field on a statement is stamped, not authored
+
+An in-memory `Statement` carries a `pack` field naming the pack it came from. That field is **not** in `statements.jsonl` and must never be written there. The loader stamps it while reading, at the one moment a row and its manifest are both in hand.
+
+Authoring it would be a second source of truth for something the directory already says — the same mistake `contents` and `depends` made. Deriving it later is worse: the frontend used to read the pack off the statement id's prefix, and mislabelled 193 of 199 questions because `core-cities` and `continental-countries` both prefix ids `cc:` and nothing enforces prefix uniqueness (#40). Provenance is resolved once, by the side that knows it.
+
+The field is required rather than optional, so the runtime never branches on whether a statement knows where it came from. The cost is that a hand-built graph (in tests) must supply it; the fixture helpers stamp it the way the loader does.
+
 ## Load-time validation
 
 Run by the loader at boot, and by `pnpm packs:validate` on demand. The runtime never re-checks — see [README.md](README.md). Any failure stops the load with the offending pack named.

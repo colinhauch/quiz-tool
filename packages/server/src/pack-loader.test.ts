@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { questionResponseSchema } from "@geo/contract";
-import type { Entity, Generator, HiddenSlot, Statement } from "@geo/engine";
+import { type Entity, type Generator, generateQuestion, type HiddenSlot, type Statement } from "@geo/engine";
 import { afterEach, describe, expect, it } from "vitest";
 import { createApp } from "./app.js";
 import { assembleGraph, discoverPacks, type LoadedPack, loadAllPacks, loadPack } from "./pack-loader.js";
@@ -18,10 +18,15 @@ const capitalOf: Generator = ({ statement, graph }) => ({
   input: "text",
 });
 
+/**
+ * A pack as `loadPack` would have returned it. Statements are given without a
+ * `pack` field and stamped here, exactly as the real loader stamps them — so a
+ * fixture cannot claim provenance its pack doesn't have.
+ */
 function loadedPack(
   id: string,
   entities: Entity[],
-  statements: Statement[],
+  statements: Omit<Statement, "pack">[],
   relations: Record<string, { generator: Generator; hiddenSlots?: HiddenSlot[] }>,
 ): LoadedPack {
   return {
@@ -37,7 +42,7 @@ function loadedPack(
       ),
     },
     entities: new Map(entities.map((e) => [e.id, e])),
-    statements,
+    statements: statements.map((statement) => ({ ...statement, pack: id })),
     generators: Object.fromEntries(Object.entries(relations).map(([r, { generator }]) => [r, generator])),
   };
 }
@@ -148,7 +153,13 @@ describe("assembleGraph", () => {
   // a new field a type error rather than a field that never gets populated.
   it("populates every field of the assembled graph shape", () => {
     const merged = assemble([entityOwner, statementsOnly]);
-    expect(Object.keys(merged).sort()).toEqual(["entities", "generators", "hiddenSlots", "statements"]);
+    expect(Object.keys(merged).sort()).toEqual([
+      "entities",
+      "generators",
+      "hiddenSlots",
+      "packs",
+      "statements",
+    ]);
   });
 });
 
@@ -204,6 +215,19 @@ describe("loadPack", () => {
     expect(loaded.entities.size).toBe(0);
     expect(loaded.statements.map((s) => s.id)).toEqual(["cap:tokyo"]);
     expect(loaded.generators).toEqual({});
+  });
+
+  // #40: provenance is stamped at load, off the manifest, not authored on disk
+  // and not inferred later from the statement id.
+  it("stamps each statement with the id of the pack it was read from", async () => {
+    dir = makeTempPacksDir();
+    writePack(dir, "stamped", {
+      statements: [{ id: "cc:tokyo", subject: "Q1490", relation: "capital_of", object: { kind: "entity", id: "Q17" } }],
+    });
+
+    const [source] = discoverPacks(pathToFileURL(`${dir}/`));
+    const loaded = await loadPack(source!);
+    expect(loaded.statements[0]?.pack).toBe("stamped");
   });
 
   it("loads an entities-only pack — no statements.jsonl, no index.ts", async () => {
@@ -275,6 +299,8 @@ describe("adding a pack touches nothing outside its own directory", () => {
       cardId: "new:tokyo:object",
       prompt: "What country is Tokyo the capital of?",
       input: "text",
+      packId: "newcomer",
+      packLabel: "Newcomer",
     });
   });
 });
@@ -299,12 +325,42 @@ describe("two-pack graph over the server seam", () => {
       cardId: "cc:tokyo:object",
       prompt: "What country is Tokyo in?",
       input: "text",
+      packId: "owner",
+      packLabel: "owner",
     });
     expect(last).toEqual({
       cardId: "cap:tokyo:object",
       prompt: "What country is Tokyo the capital of?",
       input: "text",
+      packId: "statements-only",
+      packLabel: "statements-only",
     });
+  });
+
+  // The #40 regression, stated as the condition that broke it: two packs whose
+  // statement ids share a prefix. The UI used to read the prefix, so the pack
+  // with more statements labelled the other's questions too. Nothing enforces
+  // prefix uniqueness — provenance must not depend on it.
+  it("labels two packs sharing a statement-id prefix distinctly", () => {
+    const cities = loadedPack(
+      "core-cities",
+      [
+        { id: "Q1490", labels: { en: "Tokyo" }, types: ["city"] },
+        { id: "Q17", labels: { en: "Japan" }, types: ["country"] },
+      ],
+      [{ id: "cc:tokyo", subject: "Q1490", relation: "located_in", object: { kind: "entity", id: "Q17" } }],
+      { located_in: { generator: locatedIn } },
+    );
+    const continents = loadedPack(
+      "continental-countries",
+      [],
+      [{ id: "cc:japan", subject: "Q17", relation: "on_continent", object: { kind: "entity", id: "Q1490" } }],
+      { on_continent: { generator: capitalOf } },
+    );
+
+    const merged = assemble([cities, continents]);
+    const labels = merged.statements.map((s) => generateQuestion(merged, s, "object").packLabel);
+    expect(labels).toEqual(["core-cities", "continental-countries"]);
   });
 });
 

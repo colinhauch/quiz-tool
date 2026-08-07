@@ -10,7 +10,7 @@ function loaded(
   parts: {
     manifest?: Partial<PackManifest>;
     entities?: Entity[];
-    statements?: Statement[];
+    statements?: Omit<Statement, "pack">[];
     generators?: Record<string, Generator>;
     dirName?: string;
   } = {},
@@ -21,7 +21,8 @@ function loaded(
     dir: new URL(`file:///packs/${id}/`),
     manifest: { id, version: "0.0.1", labels: { en: id }, ...parts.manifest },
     entities: new Map((parts.entities ?? []).map((e) => [e.id, e])),
-    statements: parts.statements ?? [],
+    // Stamped here as `loadPack` stamps it, so no fixture can claim a pack it isn't from.
+    statements: (parts.statements ?? []).map((statement) => ({ ...statement, pack: id })),
     generators: parts.generators ?? {},
   };
 }

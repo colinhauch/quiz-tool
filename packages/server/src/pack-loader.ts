@@ -1,5 +1,13 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
-import type { Entity, Generator, HiddenSlot, LocalizedText, Pack, Statement } from "@geo/engine";
+import type {
+  Entity,
+  Generator,
+  HiddenSlot,
+  LocalizedText,
+  Pack,
+  PackInfo,
+  Statement,
+} from "@geo/engine";
 import { type RelationRegistry, validatePacks } from "./pack-validator.js";
 
 /**
@@ -130,7 +138,12 @@ function readJsonl<T>(file: string, dir: URL): T[] {
  */
 export async function loadPack(source: PackSource): Promise<LoadedPack> {
   const entities = new Map(readJsonl<Entity>(ENTITIES, source.dir).map((e) => [e.id, e]));
-  const statements = readJsonl<Statement>(STATEMENTS, source.dir);
+  // `pack` is stamped here rather than authored: this is the one moment a
+  // statement and the manifest it came from are both in hand. On-disk rows stay
+  // free of a field that would only ever repeat the directory they sit in.
+  const statements = readJsonl<Omit<Statement, "pack">>(STATEMENTS, source.dir).map(
+    (statement): Statement => ({ ...statement, pack: source.manifest.id }),
+  );
 
   const generatorModule = new URL(GENERATORS, source.dir);
   const generators = existsSync(generatorModule)
@@ -157,9 +170,13 @@ export async function loadPack(source: PackSource): Promise<LoadedPack> {
 export function assembleGraph(packs: LoadedPack[], registry: RelationRegistry): Pack {
   const entities = new Map<string, Entity>();
   const statements: Statement[] = [];
+  const sources = new Map<string, PackInfo>();
   for (const pack of packs) {
     for (const [id, entity] of pack.entities) entities.set(id, entity);
     statements.push(...pack.statements);
+    // A pack's identity is the one thing assembly must not dissolve: it is what
+    // a question's eyebrow reads, and later what a pack filter keys on (#20).
+    sources.set(pack.id, { id: pack.id, labels: pack.manifest.labels });
   }
 
   const generators: Record<string, Generator> = {};
@@ -178,7 +195,7 @@ export function assembleGraph(packs: LoadedPack[], registry: RelationRegistry): 
   // Written as a whole object rather than mutated into shape, so adding a field
   // to `Pack` is a type error here rather than a field that silently never gets
   // populated — which is exactly how `hiddenSlots` went missing (#34).
-  const graph: Required<Pack> = { entities, statements, generators, hiddenSlots };
+  const graph: Required<Pack> = { entities, statements, generators, hiddenSlots, packs: sources };
   return graph;
 }
 
