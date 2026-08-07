@@ -310,31 +310,16 @@ describe("two-pack graph over the server seam", () => {
 
   it("interweaves questions from both packs over one graph", async () => {
     const merged = assemble([entityOwner, statementsOnly]);
+    const app = createApp({ pack: merged, store: memoryStore() });
 
-    // rng=0 lands on the first (located_in) statement, rng≈1 on the last (capital_of).
-    const first = questionResponseSchema.parse(
-      await (await createApp({ pack: merged, store: memoryStore(), rng: () => 0 }).request("/question")).json(),
-    );
-    const last = questionResponseSchema.parse(
-      await (
-        await createApp({ pack: merged, store: memoryStore(), rng: () => 0.999 }).request("/question")
-      ).json(),
-    );
+    // A pass is without replacement, so two draws exhaust this two-card graph
+    // and must yield one question from each pack — that is what interweaving
+    // means. Which order they arrive in is the shuffle's business.
+    const first = questionResponseSchema.parse(await (await app.request("/question")).json());
+    const second = questionResponseSchema.parse(await (await app.request("/question")).json());
 
-    expect(first).toEqual({
-      cardId: "cc:tokyo:object",
-      prompt: "What country is Tokyo in?",
-      input: "text",
-      packId: "owner",
-      packLabel: "owner",
-    });
-    expect(last).toEqual({
-      cardId: "cap:tokyo:object",
-      prompt: "What country is Tokyo the capital of?",
-      input: "text",
-      packId: "statements-only",
-      packLabel: "statements-only",
-    });
+    expect([first.packId, second.packId].sort()).toEqual(["owner", "statements-only"]);
+    expect([first.cardId, second.cardId].sort()).toEqual(["cap:tokyo:object", "cc:tokyo:object"]);
   });
 
   // The #40 regression, stated as the condition that broke it: two packs whose

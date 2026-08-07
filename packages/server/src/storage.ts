@@ -32,6 +32,64 @@ interface AnswerRow {
 }
 
 /**
+ * Which packs the learner has chosen to be quizzed on.
+ *
+ * A singleton preference, not per-user: this system has no user concept, and
+ * inventing one to hold a set of checkboxes would be backwards. It lives beside
+ * the answer log because it is learner state, but it is emphatically *not* part
+ * of the log — selection governs what will be asked and never what was.
+ *
+ * `read` returns `null` on a first run, which the caller turns into "every
+ * question-yielding pack". The absence is kept distinct from the empty set on
+ * purpose: empty is refused everywhere, so it must never arise from a default.
+ */
+export interface SelectionStore {
+  read(): string[] | null;
+  write(packIds: string[]): void;
+}
+
+/**
+ * Persists the pack selection. The whole set is rewritten on every save rather
+ * than diffed — it is a handful of rows, and a replace cannot half-apply the
+ * way an add/remove pair can.
+ */
+export function createSelectionStore(db: Database.Database): SelectionStore {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS pack_selection (
+      pack_id TEXT PRIMARY KEY
+    )
+  `);
+  // A one-row table recording that a selection was saved at all, so a learner
+  // who deselects everything but one pack is not mistaken for a first run.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS pack_selection_state (
+      id INTEGER PRIMARY KEY CHECK (id = 1),
+      saved_at TEXT NOT NULL
+    )
+  `);
+
+  const selectAll = db.prepare("SELECT pack_id AS packId FROM pack_selection ORDER BY pack_id");
+  const wasSaved = db.prepare("SELECT 1 FROM pack_selection_state WHERE id = 1");
+  const clear = db.prepare("DELETE FROM pack_selection");
+  const insert = db.prepare("INSERT INTO pack_selection (pack_id) VALUES (?)");
+  const markSaved = db.prepare(
+    "INSERT INTO pack_selection_state (id, saved_at) VALUES (1, ?) ON CONFLICT(id) DO UPDATE SET saved_at = excluded.saved_at",
+  );
+
+  return {
+    read() {
+      if (!wasSaved.get()) return null;
+      return (selectAll.all() as { packId: string }[]).map((row) => row.packId);
+    },
+    write: db.transaction((packIds: string[]) => {
+      clear.run();
+      for (const packId of packIds) insert.run(packId);
+      markSaved.run(new Date().toISOString());
+    }),
+  };
+}
+
+/**
  * Opens (or creates) an answer store over a better-sqlite3 database. Callers
  * own the database's lifecycle: pass a file path via {@link openDatabase} for
  * the real app, or an in-memory db under test.

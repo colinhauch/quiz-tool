@@ -109,6 +109,38 @@ This replaced a stopgap where the frontend parsed the `cardId` prefix (`cc:tokyo
 
 The answer log stores no pack id. It already records the statement, and a statement belongs to exactly one pack, so provenance stays derivable at read time — the same way the question text is derived rather than stored. See [../storage/](../storage/).
 
+## The learner selects packs
+
+> **[UNREVIEWED]** — decided in a design session against #20 and built in the same pass. Confirm the three-state vocabulary (focused / checked / included) is the distinction you want the UI to carry, and that a server-side singleton is the right home for the selection.
+
+The learner picks a set of packs, and **every question they are asked comes from that set**. Selection is a *hard eligibility constraint*, not a weighting hint: a deselected pack is never drawn from, however clever the scheduler later becomes. This is compatible with "packs are not load-time-selectable" precisely because it is a **draw-time** filter — the deselected pack stays loaded, resolvable, and merely ineligible.
+
+**Only packs that yield questions are selectable.** `core-geo` is entities-only, so it can never appear in the picker: a checkbox for it would do nothing whichever way it was set.
+
+**The selection is server-side persisted state** — a singleton preference, because this system has no user concept and inventing one to hold a set of checkboxes would be backwards. It lives beside the answer log with `GET /packs` and `PUT /packs` over it. The alternative, a client-owned query parameter on each draw, keeps the server stateless and was the cheaper build, but loses the selection whenever the learner changes browser.
+
+**First run selects everything; the empty set is refused.** Defaulting to all means introducing the picker regresses nothing. Empty is rejected at the picker *and* at the contract boundary — treating it as "unfiltered" would have the UI show every box clear while questions kept arriving, which is the app lying about its own state.
+
+**Selection never touches the answer log.** It governs what will be asked and nothing else: history is never hidden, filtered, or rewritten when a pack is deselected, and `/answer` and `/answers` keep resolving recorded cards against the *full* graph. This is precisely why deselection must not unload anything — a card recorded from a now-deselected pack still has to resolve, or old rows blank out and old submissions 404.
+
+### Three states the UI keeps apart
+
+The picker distinguishes what a naive checkbox list would conflate, and the words matter because two of them are easy to both call "selected":
+
+- **focused** — whose details you are reading. Changes nothing.
+- **checked** — your pending edit, held in the browser.
+- **included** — what the server actually draws from, changed only on Save.
+
+Reading about a pack is therefore free, and no question you are asked changes until you commit. Save is the seam between *checked* and *included*.
+
+### The queue, and what is deliberately not decided
+
+Filtering is applied when the **question queue** is built, not per draw. The queue is the ordered list of cards ahead of the learner; deselecting removes that pack's cards from it, and selecting folds the new pack's cards in among the ones still queued, so the learner keeps their place. Drawing is therefore *without replacement* — a full pass shows every card once before any repeats — where the old per-request uniform draw could ask the same thing twice running.
+
+**The scheduler itself is deliberately not designed.** The queue exists because the picker needs somewhere for "what you'll be asked next" to live; it is the smallest thing that gives deselection a visible, correct meaning. How a queue is ordered, how a newly included pack folds in, and what happens at the end of a pass are all *scheduling policy* and belong to the scheduler session. `packages/engine/src/queue.ts` says so at the top. Don't build on its ordering guarantees.
+
+Two constraints do survive whatever the scheduler becomes. Card *resolution* must keep seeing the full graph even when *selection* does not. And **pack filtering does not fix question mix**: `continental-countries` ships 193 statements against `core-cities`' 6, so any selection containing both is ~97% continent questions. That is a weighting problem, and no amount of filtering addresses it.
+
 ## Updates preserve history
 
 A pack update diffs by statement ID: new statements insert, changed statements update in place, and **removed statements become deprecated rather than deleted** — because answer events reference them and history must stay resolvable.

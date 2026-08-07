@@ -317,6 +317,214 @@ body {
   color: var(--red);
 }
 
+/* ── Pack picker: a shelf of packs ───────────────────────── */
+/* Each pack is a self-contained card that is itself the include toggle; there
+   is no separate detail pane. A sticky bar carries the queue count and Save —
+   the seam between a pending toggle (checked) and what the server draws from. */
+.packs__head {
+  margin-bottom: 1.5rem;
+}
+
+.packs__title {
+  font-family: var(--serif);
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  color: var(--indigo);
+  line-height: 1.1;
+}
+
+.packs__sub {
+  margin-top: 0.35rem;
+  color: rgba(39, 24, 126, 0.7);
+  font-size: 1rem;
+}
+
+.packs__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1rem;
+}
+
+.pack-card {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  background: #fff;
+  border: 1px solid rgba(39, 24, 126, 0.1);
+  border-radius: 0.6rem;
+  padding: 0;
+  overflow: hidden;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  transition: transform 0.08s, box-shadow 0.2s, border-color 0.2s, opacity 0.2s;
+}
+
+.pack-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(39, 24, 126, 0.12);
+}
+
+.pack-card:focus-visible {
+  outline: 3px solid var(--cornflower);
+  outline-offset: 2px;
+}
+
+/* Included: full colour, a cornflower spine, a soft lift. Available: flat and
+   dimmed, so the shelf reads at a glance as "in" versus "set aside". */
+.pack-card--out {
+  opacity: 0.72;
+}
+
+.pack-card--in {
+  border-color: var(--cornflower);
+  box-shadow: inset 4px 0 0 var(--cornflower), 0 2px 8px rgba(39, 24, 126, 0.08);
+}
+
+.pack-card__band {
+  min-height: 3.25rem;
+  padding: 0.6rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(120deg, var(--periwinkle), var(--cornflower));
+}
+
+.pack-card--out .pack-card__band {
+  background: linear-gradient(120deg, #e4e6f2, #cdd2ee);
+}
+
+.pack-card__eyebrow {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--indigo);
+}
+
+/* The include mark: a checkable pill that fills orange once the pack is in. */
+.pack-card__mark {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.55);
+  color: var(--indigo);
+  font-size: 0.9rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.pack-card--in .pack-card__mark {
+  background: var(--orange);
+  color: #fff;
+}
+
+.pack-card__body {
+  padding: 0.9rem 1rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.pack-card__label {
+  font-family: var(--serif);
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--indigo);
+  line-height: 1.15;
+}
+
+.pack-card__desc {
+  margin-top: 0.4rem;
+  font-size: 0.85rem;
+  color: rgba(39, 24, 126, 0.72);
+  line-height: 1.45;
+  flex: 1;
+}
+
+.pack-card__foot {
+  margin-top: 0.9rem;
+  padding-top: 0.7rem;
+  border-top: 1px solid rgba(39, 24, 126, 0.1);
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+}
+
+.pack-card__count {
+  font-family: var(--serif);
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--indigo);
+}
+
+.pack-card__count-label {
+  font-size: 0.8rem;
+  color: rgba(39, 24, 126, 0.6);
+}
+
+.pack-card__src {
+  margin-left: auto;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(39, 24, 126, 0.5);
+}
+
+/* Sticky commit bar: the queue count, an unsaved note, and Save. */
+.packs__bar {
+  position: sticky;
+  bottom: 1rem;
+  margin-top: 1.75rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.85rem 1rem 0.85rem 1.35rem;
+  background: var(--indigo);
+  color: var(--platinum);
+  border-radius: 0.6rem;
+  box-shadow: 0 8px 24px rgba(39, 24, 126, 0.22);
+}
+
+.packs__bar-count {
+  font-family: var(--serif);
+  font-size: 1.05rem;
+  line-height: 1.25;
+}
+
+.packs__bar-count b {
+  font-weight: 700;
+}
+
+.packs__bar-note {
+  font-size: 0.8rem;
+  color: var(--periwinkle);
+  margin-top: 0.1rem;
+}
+
+.packs__bar-note--warn {
+  color: #ffc7c7;
+}
+
+.packs__bar-spacer {
+  flex: 1;
+}
+
+.packs__bar .btn-primary {
+  width: auto;
+  padding: 0.7rem 1.4rem;
+  white-space: nowrap;
+}
+
+.packs__bar .btn-primary:disabled {
+  background: rgba(174, 184, 254, 0.25);
+  color: rgba(241, 242, 246, 0.55);
+  cursor: not-allowed;
+}
+
 /* ── Responsive ──────────────────────────────────────────── */
 @media (max-width: 480px) {
   .app-title {
@@ -330,5 +538,8 @@ body {
   }
   .quiz-prompt {
     font-size: 1.25rem;
+  }
+  .packs__title {
+    font-size: 1.6rem;
   }
 }

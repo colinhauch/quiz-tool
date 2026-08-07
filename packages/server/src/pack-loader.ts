@@ -175,8 +175,9 @@ export function assembleGraph(packs: LoadedPack[], registry: RelationRegistry): 
     for (const [id, entity] of pack.entities) entities.set(id, entity);
     statements.push(...pack.statements);
     // A pack's identity is the one thing assembly must not dissolve: it is what
-    // a question's eyebrow reads, and later what a pack filter keys on (#20).
-    sources.set(pack.id, { id: pack.id, labels: pack.manifest.labels });
+    // a question's eyebrow reads, and what the picker lists and filters on (#20).
+    const { id, labels, version, descriptions, license, credits } = pack.manifest;
+    sources.set(pack.id, { id, labels, version, descriptions, license, credits });
   }
 
   const generators: Record<string, Generator> = {};

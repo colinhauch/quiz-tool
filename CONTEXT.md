@@ -51,3 +51,25 @@ _Avoid_: Renderer, formatter, template function
 **Distractor**:
 A plausible but wrong option offered alongside the correct one in a multiple-choice question.
 _Avoid_: Decoy, foil, wrong answer
+
+**Question Queue**:
+The ordered cards ahead of the learner. Pack filtering is applied when it is built, and drawing takes from its head, so a pass asks every card once before repeating any. Provisional — the scheduler owns its ordering policy.
+_Avoid_: Deck, playlist, buffer, backlog
+
+### Selection
+
+**Included**:
+A pack the queue currently draws from. The committed state, changed only by saving. This is what "selected" means when the subject is the server.
+_Avoid_: Active, enabled, selected, on
+
+**Checked**:
+A pack ticked in the picker but not yet saved — a pending edit living in the browser. Never the same word as *included*, because the gap between them is the entire point of the Save button.
+_Avoid_: Selected, chosen, staged
+
+**Focused**:
+The pack whose details the picker is showing. A reading state that changes nothing about what gets asked.
+_Avoid_: Selected, active, current, highlighted
+
+**Answer Log**:
+The append-only record of every answer, keyed by card. It records what *was* asked; selection governs what *will be*. Never filtered or rewritten when a pack is deselected.
+_Avoid_: History, results, attempts

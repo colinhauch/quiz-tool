@@ -85,6 +85,67 @@ export const answerLogEntrySchema = z
 
 export type AnswerLogEntry = z.infer<typeof answerLogEntrySchema>;
 
+/**
+ * One selectable pack, as the picker shows it: its identity, whatever the
+ * manifest says about it, and whether it is currently being drawn from.
+ *
+ * The descriptive fields are optional because `pack.json` makes them optional —
+ * the picker renders what a pack chose to say about itself rather than
+ * demanding a shape packs don't have. `cardCount` is the honest number for a
+ * quiz ("how many questions is this?"), which is not the statement count: a
+ * bidirectional relation yields two cards per statement.
+ */
+export const packSummarySchema = z
+  .object({
+    id: z.string().min(1),
+    label: z.string().min(1),
+    description: z.string().optional(),
+    version: z.string().min(1),
+    license: z.string().optional(),
+    credits: z.array(z.object({ source: z.string(), retrieved: z.string() })).optional(),
+    statementCount: z.number().int().nonnegative(),
+    cardCount: z.number().int().nonnegative(),
+    /** Whether this pack is in the committed selection — not the checkbox's pending state. */
+    included: z.boolean(),
+  })
+  .strict();
+
+export type PackSummary = z.infer<typeof packSummarySchema>;
+
+/**
+ * `GET /packs` — the packs a learner can choose between, plus how many
+ * questions are queued ahead of them under the current selection.
+ *
+ * Only packs that yield questions appear. `core-geo` ships entities and no
+ * statements, so it can never be quizzed and would be a checkbox that does
+ * nothing (see `specs/packs/README.md`).
+ */
+export const packListSchema = z
+  .object({
+    packs: z.array(packSummarySchema),
+    /** Cards remaining in the current pass. Display only. */
+    queued: z.number().int().nonnegative(),
+  })
+  .strict();
+
+export type PackList = z.infer<typeof packListSchema>;
+
+/**
+ * `PUT /packs` — the learner's committed pack selection.
+ *
+ * At least one pack: an empty selection is refused here, at the seam, rather
+ * than being quietly treated as "no filter". Letting empty mean unfiltered
+ * would have the UI show every checkbox clear while the learner is still asked
+ * questions — the app telling them a lie about its own state.
+ */
+export const packSelectionRequestSchema = z
+  .object({
+    packIds: z.array(z.string().min(1)).min(1),
+  })
+  .strict();
+
+export type PackSelectionRequest = z.infer<typeof packSelectionRequestSchema>;
+
 /** `GET /answers` response — the recorded answers, most recent first. */
 export const answerLogSchema = z.array(answerLogEntrySchema);
 
