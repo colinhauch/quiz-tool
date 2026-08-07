@@ -1,11 +1,8 @@
 {
-  "name": "@geo/pack-core-cities",
-  "version": "0.0.1",
+  "name": "@geo/packs",
+  "version": "0.0.0",
   "private": true,
   "type": "module",
-  "exports": {
-    ".": "./index.ts"
-  },
   "dependencies": {
     "@geo/engine": "workspace:*"
   }

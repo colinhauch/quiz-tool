@@ -44,13 +44,17 @@ This composability matters more than it sounds. A `borders` pack that adds only 
 
 ## Packs are discovered, not compiled in
 
-> **[UNREVIEWED]** — rewritten for the discovery shift ([ADR-0001](../../docs/adr/0001-packs-are-discovered-not-compiled-in.md)), replacing the earlier account of hand-wired tranches. Confirm the framing, and that keeping packs in-repo (rather than loadable from anywhere) is the intended stopping point.
+> **[UNREVIEWED]** — rewritten for the discovery shift ([ADR-0001](../../docs/adr/0001-packs-are-discovered-not-compiled-in.md)), replacing the earlier account of hand-wired packs. Confirm the framing, and that keeping packs in-repo (rather than loadable from anywhere) is the intended stopping point.
 
 The server **scans `packs/*` at boot** and loads whatever it finds. A pack is a directory: a manifest, some `.jsonl`, and an optional `index.ts`. There is no per-pack workspace package, no dependency the server declares, and no list of packs anywhere in the source.
 
 This replaced an arrangement where each pack was a workspace package that the server depended on and named in a hard-coded array — five build-file edits before a single fact was read. `packs/` is now one workspace package rather than one per pack, which keeps generator code inside `tsc -b` and keeps `@geo/engine` resolvable, while costing nothing per pack.
 
 **Packs still live in this repo and ship with the app.** Loading them from a configurable directory outside the tree was considered and deliberately not taken; it settles the open question in [../deployment/](../deployment/) in favour of bundled packs.
+
+**Loading is asynchronous, and that is inherent.** A discovered pack is not known at compile time, so its generator module has to be imported dynamically — there is nothing to `import` statically. `loadAllPacks()` therefore returns a promise, and the server awaits it at boot. This is the one thing discovery cost that the hand-wired arrangement did not: static imports were synchronous. It buys back far more than it costs, but it does mean any future consumer of the loader is async too.
+
+**Discovery made the missing registry more urgent, not less — and proved it in the same commit.** Generators are still merged last-write-wins, and load order is now alphabetical rather than hand-written. That silently *inverted* the #38 collision: under the old hard-coded array `continental-countries` loaded last and every city question read "What continent is Tokyo in?"; under directory-name order `core-cities` loads last and every continent question reads "What country is Afghanistan in?". Same defect, opposite direction, no code change — which is precisely the argument that ordering must never be load-bearing, and that the relation registry ([#23](https://github.com/colinhauch/quiz-tool/issues/23)) is the fix rather than a careful choice of order.
 
 **A pack is an authoring and versioning unit, not a runtime-selectable one.** Everything discovered is loaded, always. There is no active-set, no `GEO_PACKS`, no install/uninstall lifecycle, and no dependency resolution — entity single-ownership means load order cannot change the result. Filtering *what gets quizzed* by topic is a query over the assembled graph, not a boundary the loader enforces. An earlier draft (`82fa5fc`) modelled packs as a selectable runtime set with a cross-pack entity union; that machinery was stripped.
 

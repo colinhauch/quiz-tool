@@ -1,53 +1,89 @@
-import { existsSync, readFileSync } from "node:fs";
-import type { Entity, Generator, Pack, Statement } from "@geo/engine";
-import * as continentalCountries from "@geo/pack-continental-countries";
-import * as coreCities from "@geo/pack-core-cities";
-import * as coreGeo from "@geo/pack-core-geo";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
+import type { Entity, Generator, LocalizedText, Pack, Statement } from "@geo/engine";
 
 /**
  * The one piece of pack IO in the system. The engine stays pure by never
- * touching disk; the server reads every authored tranche's data files here and
- * hands the engine one already-assembled {@link Pack}.
+ * touching disk; the server finds every authored pack under `packs/`, reads its
+ * data files here, and hands the engine one already-assembled graph.
  *
- * A "pack" is an authoring + versioning unit, not a runtime-selectable one:
- * everything authored is loaded into a single graph, always. There is no
- * active-set selection and no dependency resolution — per-topic *filtering of
- * what's quizzed* is a future query over the assembled graph, not a boundary
+ * Packs are **discovered, not compiled in**: there is no list of packs in
+ * application source, and no pack is a workspace package the server depends on.
+ * Adding a pack is creating a directory with a `pack.json` — see
+ * [ADR-0001](../../../docs/adr/0001-packs-are-discovered-not-compiled-in.md)
+ * and `specs/packs/format.md`.
+ *
+ * A pack is an authoring + versioning unit, not a load-time-selectable one:
+ * everything discovered is loaded into a single graph, always. Filtering *what
+ * gets quizzed* is a draw-time query over the assembled graph, not a boundary
  * this loader enforces. See `specs/packs/README.md`.
  */
 
-/** An authored tranche: its data directory plus its question generators (code). */
-export interface Tranche {
-  packDir: URL;
-  generators: Record<string, Generator>;
+/**
+ * Where packs live, relative to this module's source. Resolves correctly under
+ * tsx/vitest, which is how the app runs; a compiled build would sit at a
+ * different depth and need this passed in — which is why every entry point
+ * below takes the directory as an argument.
+ */
+export const PACKS_DIR = new URL("../../../packs/", import.meta.url);
+
+/** The files a pack may ship, all found by convention rather than declared. */
+const MANIFEST = "pack.json";
+const ENTITIES = "entities.jsonl";
+const STATEMENTS = "statements.jsonl";
+const GENERATORS = "index.ts";
+
+/**
+ * A pack's manifest. Only the fields something actually reads are typed here —
+ * `contents`, `depends` and `engine_min_version` were removed precisely because
+ * nothing read them and all three had drifted (see `specs/packs/format.md`).
+ * `relations` is declared in the format spec and is read by the registry, which
+ * is not built yet (#23); it is deliberately absent rather than typed-and-ignored.
+ */
+export interface PackManifest {
+  id: string;
+  version: string;
+  labels: LocalizedText;
+  descriptions?: LocalizedText;
+  license?: string;
+  credits?: { source: string; retrieved: string }[];
+}
+
+/** A pack directory found on disk: where its files live, plus its manifest. */
+export interface PackSource {
+  dir: URL;
+  manifest: PackManifest;
+}
+
+/** The module a pack's optional `index.ts` exports: its question generators. */
+interface GeneratorModule {
+  generators?: Record<string, Generator>;
 }
 
 /**
- * Every authored tranche this server ships. All are loaded, always. One tranche
- * owns the entities; others may ship only statements over those entities.
- * Adding a tranche is a data change behind this seam plus an entry here.
+ * Every pack directory under `packsDir`, in directory-name order. A directory
+ * without a `pack.json` is not a pack and is skipped, so build output and
+ * stray files can sit alongside without becoming content.
+ *
+ * Order is fixed only so that failures and logs read the same way twice —
+ * assembly is order-independent by construction (entities have one owner, so
+ * no load order can change the resulting graph).
  */
-export const tranches: Tranche[] = [
-  // core-geo is entities-only: the sole owner of every shared geographic
-  // entity (continents, countries, capitals, core cities). It ships no
-  // statements and no generators, so it yields no questions on its own —
-  // it supplies the identity other tranches' statements resolve against.
-  { packDir: coreGeo.packDir, generators: {} },
-  // core-cities ships only city→country `located_in` statements over
-  // core-geo's entities (it owns none of its own).
-  { packDir: coreCities.packDir, generators: coreCities.generators },
-  // continental-countries ships only country→continent `located_in` statements
-  // over core-geo's entities (it owns none of its own).
-  { packDir: continentalCountries.packDir, generators: continentalCountries.generators },
-];
+export function discoverPacks(packsDir: URL = PACKS_DIR): PackSource[] {
+  return readdirSync(packsDir, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => new URL(`${entry.name}/`, packsDir))
+    .filter((dir) => existsSync(new URL(MANIFEST, dir)))
+    .sort((a, b) => a.href.localeCompare(b.href))
+    .map((dir) => ({ dir, manifest: JSON.parse(readFileSync(new URL(MANIFEST, dir), "utf8")) as PackManifest }));
+}
 
 /**
- * Parse a `.jsonl` file (one JSON object per line) relative to a tranche dir,
- * returning `[]` when the file is absent — a statement-only tranche ships no
+ * Parse a `.jsonl` file (one JSON object per line) relative to a pack dir,
+ * returning `[]` when the file is absent — a statement-only pack ships no
  * `entities.jsonl` and still loads.
  */
-function readJsonl<T>(file: string, packDir: URL): T[] {
-  const url = new URL(file, packDir);
+function readJsonl<T>(file: string, dir: URL): T[] {
+  const url = new URL(file, dir);
   if (!existsSync(url)) return [];
   return readFileSync(url, "utf8")
     .split("\n")
@@ -56,23 +92,37 @@ function readJsonl<T>(file: string, packDir: URL): T[] {
 }
 
 /**
- * Loads one tranche from local disk: its entities and statements off `.jsonl`,
- * its generators from the tranche's code. The runtime trusts the data, per the
- * validate-at-build/install discipline in `specs/packs/README.md`.
+ * Loads one discovered pack off local disk: its entities and statements from
+ * `.jsonl`, its generators from `index.ts` if it has one. Every file is
+ * optional — `core-geo` ships only entities and has no generator module at all.
+ *
+ * Async because generators are imported dynamically: a discovered pack is not
+ * known at compile time, so there is nothing to `import` statically. The
+ * runtime trusts what it reads; checking is the validator's job (#23).
  */
-export function loadTranche(tranche: Tranche): Pack {
-  const entities = new Map(readJsonl<Entity>("entities.jsonl", tranche.packDir).map((e) => [e.id, e]));
-  const statements = readJsonl<Statement>("statements.jsonl", tranche.packDir);
-  return { entities, statements, generators: tranche.generators };
+export async function loadPack(source: PackSource): Promise<Pack> {
+  const entities = new Map(readJsonl<Entity>(ENTITIES, source.dir).map((e) => [e.id, e]));
+  const statements = readJsonl<Statement>(STATEMENTS, source.dir);
+
+  const generatorModule = new URL(GENERATORS, source.dir);
+  const generators = existsSync(generatorModule)
+    ? (((await import(generatorModule.href)) as GeneratorModule).generators ?? {})
+    : {};
+
+  return { entities, statements, generators };
 }
 
 /**
- * Assembles authored tranches into one graph: statements concatenated and
- * generators merged into one relation→generator table, with each entity owned
- * by exactly one tranche. Entities are *not* unioned across tranches — a Q-ID
- * appearing in two tranches is an authoring error, not a silent collapse — so
- * statement-only tranches resolve against the single owner. Question selection
- * then draws uniformly across the merged statements, so tranches interweave.
+ * Assembles loaded packs into one graph: statements concatenated and generators
+ * merged into one relation→generator table, with each entity owned by exactly
+ * one pack. Entities are *not* unioned — a Q-ID appearing in two packs is an
+ * authoring error, not a silent collapse — so statement-only packs resolve
+ * against the single owner. Question selection then draws uniformly across the
+ * merged statements, so packs **interweave**.
+ *
+ * Generators are still merged last-write-wins, which is how two packs both
+ * claiming `located_in` silently broke every city question (#38). The registry
+ * that makes that an error is #23; discovery deliberately lands with it.
  */
 export function assembleGraph(packs: Pack[]): Pack {
   const entities = new Map<string, Entity>();
@@ -80,7 +130,7 @@ export function assembleGraph(packs: Pack[]): Pack {
   const generators: Record<string, Generator> = {};
   for (const pack of packs) {
     for (const [id, entity] of pack.entities) {
-      if (entities.has(id)) throw new Error(`entity ${id} is owned by more than one tranche`);
+      if (entities.has(id)) throw new Error(`entity ${id} is owned by more than one pack`);
       entities.set(id, entity);
     }
     statements.push(...pack.statements);
@@ -90,9 +140,9 @@ export function assembleGraph(packs: Pack[]): Pack {
 }
 
 /**
- * Loads and assembles every authored tranche into the single graph the server
+ * Discovers, loads and assembles every pack into the single graph the server
  * serves. The server's one call to build its content.
  */
-export function loadAllPacks(): Pack {
-  return assembleGraph(tranches.map(loadTranche));
+export async function loadAllPacks(packsDir: URL = PACKS_DIR): Promise<Pack> {
+  return assembleGraph(await Promise.all(discoverPacks(packsDir).map(loadPack)));
 }

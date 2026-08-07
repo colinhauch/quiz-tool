@@ -1,0 +1,13 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "."
+  },
+  // Every pack's generator module, globbed. This is the whole reason `packs/`
+  // is one workspace package: pack code stays typechecked by `tsc -b` without
+  // a per-pack package.json/tsconfig.json, so adding a pack touches no build
+  // file. Packs with no generators (entities-only) simply match nothing.
+  "include": ["*/index.ts"],
+  "references": [{ "path": "../packages/engine" }]
+}

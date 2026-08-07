@@ -6,11 +6,8 @@
     "types": ["node"]
   },
   "include": ["src"],
-  "references": [
-    { "path": "../contract" },
-    { "path": "../engine" },
-    { "path": "../../packs/core-geo" },
-    { "path": "../../packs/core-cities" },
-    { "path": "../../packs/continental-countries" }
-  ]
+  // No reference to `packs`: the server discovers packs at boot and imports
+  // their generator modules dynamically, so there is deliberately no
+  // compile-time edge from application source to any pack (ADR-0001).
+  "references": [{ "path": "../contract" }, { "path": "../engine" }]
 }
