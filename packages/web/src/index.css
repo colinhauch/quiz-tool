@@ -317,6 +317,155 @@ body {
   color: var(--red);
 }
 
+/* ── Pack picker ─────────────────────────────────────────── */
+/* Two columns: the list you act on, the details you read. Collapses to one
+   column on narrow screens, list first — choosing matters more than reading. */
+.packs {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.packs__list {
+  background: #fff;
+  border-radius: 0.5rem;
+  border-left: 4px solid var(--cornflower);
+  box-shadow: 0 2px 8px rgba(39, 24, 126, 0.08);
+  padding: 1.5rem;
+}
+
+.packs__heading {
+  font-family: var(--serif);
+  font-size: 1.25rem;
+  color: var(--indigo);
+  margin-bottom: 1rem;
+}
+
+.packs__list ul {
+  list-style: none;
+  margin-bottom: 1rem;
+}
+
+.pack-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: 0.375rem;
+  border: 1px solid transparent;
+}
+
+/* Focus is a reading state, so it is marked quietly — a tint and a rule, not a
+   selection colour that would compete with the checkbox for meaning. */
+.pack-row--focused {
+  background: rgba(174, 184, 254, 0.18);
+  border-color: var(--periwinkle);
+}
+
+.pack-row input[type="checkbox"] {
+  width: 1.1rem;
+  height: 1.1rem;
+  accent-color: var(--indigo);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.pack-row__label {
+  flex: 1;
+  font-weight: 600;
+  color: var(--indigo);
+  cursor: pointer;
+}
+
+.pack-row__details {
+  background: none;
+  border: none;
+  font-family: var(--sans);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--cornflower);
+  cursor: pointer;
+  padding: 0.25rem;
+}
+
+.pack-row__details:hover {
+  color: var(--indigo);
+}
+
+.packs__status {
+  font-size: 0.85rem;
+  color: rgba(39, 24, 126, 0.7);
+  margin-bottom: 1rem;
+}
+
+.packs__warning {
+  margin-top: 0.75rem;
+  font-size: 0.85rem;
+  color: var(--red-text);
+}
+
+.packs__list .btn-primary:disabled {
+  background: var(--periwinkle);
+  color: rgba(39, 24, 126, 0.55);
+  cursor: not-allowed;
+}
+
+.pack-detail {
+  background: #fff;
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 8px rgba(39, 24, 126, 0.08);
+  padding: 1.5rem;
+}
+
+.pack-detail__title {
+  font-family: var(--serif);
+  font-size: 1.5rem;
+  color: var(--indigo);
+  margin: 0.5rem 0 0.25rem;
+}
+
+.pack-detail__meta {
+  font-size: 0.8rem;
+  color: rgba(39, 24, 126, 0.6);
+  margin-bottom: 1rem;
+}
+
+.pack-detail__description {
+  color: var(--indigo);
+  margin-bottom: 1.25rem;
+}
+
+.pack-detail__facts {
+  display: flex;
+  gap: 2.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(39, 24, 126, 0.1);
+}
+
+.pack-detail__facts dt {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(39, 24, 126, 0.6);
+}
+
+.pack-detail__facts dd {
+  font-family: var(--serif);
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--indigo);
+}
+
+.pack-detail__credits {
+  margin-top: 1.25rem;
+  font-size: 0.75rem;
+  color: rgba(39, 24, 126, 0.55);
+}
+
 /* ── Responsive ──────────────────────────────────────────── */
 @media (max-width: 480px) {
   .app-title {
@@ -330,5 +479,8 @@ body {
   }
   .quiz-prompt {
     font-size: 1.25rem;
+  }
+  .packs {
+    grid-template-columns: 1fr;
   }
 }

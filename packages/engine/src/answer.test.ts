@@ -88,7 +88,7 @@ const statements: Statement[] = [
 ];
 
 /** Grading never reads provenance, but a graph is not well-formed without it. */
-const packs = new Map([["test-pack", { id: "test-pack", labels: { en: "Test Pack" } }]]);
+const packs = new Map([["test-pack", { id: "test-pack", labels: { en: "Test Pack" }, version: "0.0.1" }]]);
 
 function makePack(): Pack {
   return {

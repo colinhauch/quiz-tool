@@ -9,7 +9,14 @@
 export * from "./types.js";
 export { createGraph } from "./graph.js";
 export { makeCardId, findCard, enumerateCards, supportedSlots, type Card } from "./card.js";
-export { generateQuestion, selectQuestion } from "./question.js";
+export { generateQuestion } from "./question.js";
+export {
+  buildQueue,
+  drawNext,
+  applySelection,
+  type Queue,
+  type Rng,
+} from "./queue.js";
 export {
   normalizeAnswer,
   acceptedAnswers,

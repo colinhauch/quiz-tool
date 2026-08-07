@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { generateQuestion, selectQuestion } from "./question.js";
+import { generateQuestion } from "./question.js";
 import type { Entity, Generator, Pack, PackInfo, Statement } from "./types.js";
 
 // Every fixture statement comes from one pack. In the real system the loader
 // stamps `pack` and registers the manifest; here both are spelled out so a
 // generated question can be checked for the provenance it carries.
-const TEST_PACK: PackInfo = { id: "test-pack", labels: { en: "Test Pack" } };
+const TEST_PACK: PackInfo = { id: "test-pack", labels: { en: "Test Pack" }, version: "0.0.1" };
 const packs = new Map([[TEST_PACK.id, TEST_PACK]]);
 const provenance = { packId: TEST_PACK.id, packLabel: TEST_PACK.labels.en };
 
@@ -57,42 +57,6 @@ describe("generateQuestion", () => {
   });
 });
 
-describe("selectQuestion", () => {
-  it("picks a card deterministically from an injected rng", () => {
-    // rng at the top of the range selects the last candidate.
-    const q = selectQuestion(makePack(), () => 0.99);
-    expect(q).toEqual({
-      cardId: "S2:object",
-      prompt: "What country is Paris in?",
-      input: "text",
-      ...provenance,
-    });
-  });
-
-  it("picks the first candidate when rng is 0", () => {
-    const q = selectQuestion(makePack(), () => 0);
-    expect(q.cardId).toBe("S1:object");
-  });
-
-  it("only considers statements whose relation has a generator", () => {
-    const pack = makePack();
-    pack.statements.push({
-      id: "S3",
-      subject: "Q17",
-      relation: "capital",
-      object: { kind: "entity", id: "Q1490" },
-      pack: TEST_PACK.id,
-    });
-    // Even at the top of the range, the ungeneratable `capital` card is skipped.
-    expect(selectQuestion(pack, () => 0.99).cardId).toBe("S2:object");
-  });
-
-  it("throws when the pack has no quizzable statements", () => {
-    const pack: Pack = { ...makePack(), generators: {} };
-    expect(() => selectQuestion(pack)).toThrow(/no quizzable/);
-  });
-});
-
 // A `capital` relation quizzable both ways: hide the object ("What is the
 // capital of France?") or the subject ("Bern is the capital of what country?").
 const bern: Entity = { id: "Q70", labels: { en: "Bern" }, types: ["city"] };
@@ -137,15 +101,4 @@ describe("subject-hidden questions", () => {
     expect(q.prompt).not.toContain("Switzerland");
   });
 
-  it("selectQuestion can pick the subject-hidden slot of a bidirectional relation", () => {
-    // Two cards from one statement: [S_cap:object, S_cap:subject]. rng near the
-    // top of the range selects the second (subject) card.
-    const q = selectQuestion(makeBidiPack(), () => 0.99);
-    expect(q.cardId).toBe("S_cap:subject");
-  });
-
-  it("selectQuestion still picks the object-hidden slot at the low end", () => {
-    const q = selectQuestion(makeBidiPack(), () => 0);
-    expect(q.cardId).toBe("S_cap:object");
-  });
 });

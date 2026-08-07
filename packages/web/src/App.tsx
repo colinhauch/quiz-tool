@@ -1,14 +1,16 @@
 import { useState } from "react";
 import { AnswerLog } from "./AnswerLog.js";
+import { Packs } from "./Packs.js";
 import { Quiz } from "./Quiz.js";
 
-type Tab = "quiz" | "answers";
+type Tab = "quiz" | "answers" | "packs";
 
 /**
  * The app shell: an Indigo header band (carrying the topographic texture) with
- * the title and a two-item nav, then the active view. Each tab mounts a fresh
+ * the title and a three-item nav, then the active view. Each tab mounts a fresh
  * component, so switching to "My answers" refetches the log and picks up
- * anything just answered — enough navigation for the walking skeleton.
+ * anything just answered, and returning to the quiz draws from whatever pack
+ * selection was just saved — enough navigation for the walking skeleton.
  */
 export function App() {
   const [tab, setTab] = useState<Tab>("quiz");
@@ -30,11 +32,18 @@ export function App() {
             >
               My answers
             </button>
+            <button type="button" aria-current={tab === "packs"} onClick={() => setTab("packs")}>
+              Packs
+            </button>
           </nav>
         </div>
       </header>
 
-      <main className="app-main">{tab === "quiz" ? <Quiz /> : <AnswerLog />}</main>
+      <main className="app-main">
+        {tab === "quiz" && <Quiz />}
+        {tab === "answers" && <AnswerLog />}
+        {tab === "packs" && <Packs />}
+      </main>
     </>
   );
 }

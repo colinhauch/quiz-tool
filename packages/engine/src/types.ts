@@ -57,12 +57,22 @@ export interface Statement {
 
 /**
  * What the graph remembers about a pack it absorbed: enough to say where a
- * question came from, and no more. The pack's data has already been merged
- * away by the time this is read.
+ * question came from, and enough to describe the pack to a learner choosing
+ * between them. The pack's *data* has been merged away by the time this is
+ * read; this is what survives of its identity.
+ *
+ * Everything past `labels` is descriptive text the engine never interprets —
+ * it comes off `pack.json` and goes to the picker unchanged. It lives here so
+ * the assembled graph stays the single thing the server needs to answer both
+ * "where did this question come from" and "what can I be quizzed on".
  */
 export interface PackInfo {
   id: string;
   labels: LocalizedText;
+  version: string;
+  descriptions?: LocalizedText;
+  license?: string;
+  credits?: { source: string; retrieved: string }[];
 }
 
 /**

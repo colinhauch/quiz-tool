@@ -1,15 +1,26 @@
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { answerLogSchema, answerResponseSchema, questionResponseSchema } from "@geo/contract";
-import { type Entity, enumerateCards, type Generator, makeCardId, type Pack, type Statement } from "@geo/engine";
+import {
+  answerLogSchema,
+  answerResponseSchema,
+  packListSchema,
+  questionResponseSchema,
+} from "@geo/contract";
+import { type Entity, enumerateCards, type Generator, type Pack, type Statement } from "@geo/engine";
 import { afterEach, describe, expect, it } from "vitest";
 import { createApp } from "./app.js";
 import { loadAllPacks } from "./pack-loader.js";
-import { type AnswerStore, createAnswerStore, openDatabase } from "./storage.js";
+import {
+  type AnswerStore,
+  createAnswerStore,
+  createSelectionStore,
+  openDatabase,
+  type SelectionStore,
+} from "./storage.js";
 
 /** The pack every fixture graph is assembled from, as the loader would register it. */
-const TEST_PACK = { id: "test-pack", labels: { en: "Test Pack" } };
+const TEST_PACK = { id: "test-pack", labels: { en: "Test Pack" }, version: "0.0.1" };
 const packs = new Map([[TEST_PACK.id, TEST_PACK]]);
 
 const locatedIn: Generator = ({ statement, graph }) => ({
@@ -254,17 +265,17 @@ describe("full loop over the real fixture pack and a temp-file database", () => 
     const store = createAnswerStore(db);
     const pack = await loadAllPacks();
 
-    // Aim the draw at a specific card rather than assuming it sits at index 0.
-    // Packs are discovered in directory-name order now, so which statement is
-    // first is an artefact of the directory listing and not something a test
-    // about the answer loop should depend on.
+    // Draw until Tokyo comes up rather than aiming rng at it: the queue shuffles,
+    // so no seed reliably lands on one card. A pass is without replacement, so
+    // every card arrives within one lap of the queue — which this also proves.
+    const app = createApp({ pack, store });
     const cards = enumerateCards(pack);
-    const tokyo = cards.findIndex((c) => makeCardId(c.statement.id, c.hiddenSlot) === "cc:tokyo-japan:object");
-    expect(tokyo).toBeGreaterThanOrEqual(0);
-    const app = createApp({ pack, store, rng: () => (tokyo + 0.5) / cards.length });
 
-    const question = questionResponseSchema.parse(await (await app.request("/question")).json());
-    expect(question.cardId).toBe("cc:tokyo-japan:object");
+    let question = questionResponseSchema.parse(await (await app.request("/question")).json());
+    for (let draws = 1; question.cardId !== "cc:tokyo-japan:object"; draws++) {
+      expect(draws).toBeLessThanOrEqual(cards.length);
+      question = questionResponseSchema.parse(await (await app.request("/question")).json());
+    }
 
     const res = await app.request("/answer", {
       method: "POST",
@@ -290,5 +301,178 @@ describe("full loop over the real fixture pack and a temp-file database", () => 
       },
     ]);
     db.close();
+  });
+});
+
+
+/**
+ * A two-pack graph for the picker: `cities` yields one card, `continents` two,
+ * and `core-geo` yields none at all — the entities-only shape that must never
+ * appear as a checkbox.
+ */
+function pickerGraph(): Pack {
+  const info = (id: string, label: string) => ({
+    id,
+    labels: { en: label },
+    version: "1.2.3",
+    descriptions: { en: `All about ${label}.` },
+    license: "CC0-1.0",
+    credits: [{ source: "Wikidata", retrieved: "2026-07-26" }],
+  });
+  const statements: Statement[] = [
+    { id: "cc:tokyo", subject: "Q1490", relation: "located_in", object: { kind: "entity", id: "Q17" }, pack: "cities" },
+    { id: "k:jp", subject: "Q1490", relation: "on_continent", object: { kind: "entity", id: "Q17" }, pack: "continents" },
+    { id: "k:fr", subject: "Q17", relation: "on_continent", object: { kind: "entity", id: "Q1490" }, pack: "continents" },
+  ];
+  const entities: Entity[] = [
+    { id: "Q1490", labels: { en: "Tokyo" }, types: ["city"] },
+    { id: "Q17", labels: { en: "Japan" }, types: ["country"] },
+  ];
+  return {
+    entities: new Map(entities.map((e) => [e.id, e])),
+    statements,
+    generators: { located_in: locatedIn, on_continent: locatedIn },
+    packs: new Map(
+      [info("cities", "Cities"), info("continents", "Continents"), info("core-geo", "Core Geography")].map((p) => [
+        p.id,
+        p,
+      ]),
+    ),
+  };
+}
+
+function memorySelection(): SelectionStore {
+  return createSelectionStore(openDatabase(":memory:"));
+}
+
+async function packList(app: ReturnType<typeof createApp>) {
+  return packListSchema.parse(await (await app.request("/packs")).json());
+}
+
+function putPacks(app: ReturnType<typeof createApp>, packIds: string[]) {
+  return app.request("/packs", {
+    method: "PUT",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ packIds }),
+  });
+}
+
+describe("GET /packs", () => {
+  it("lists the selectable packs with what their manifests say about them", async () => {
+    const list = await packList(createApp({ pack: pickerGraph(), store: memoryStore() }));
+    expect(list.packs.map((p) => p.id)).toEqual(["cities", "continents"]);
+    expect(list.packs[0]).toMatchObject({
+      id: "cities",
+      label: "Cities",
+      description: "All about Cities.",
+      version: "1.2.3",
+      license: "CC0-1.0",
+      credits: [{ source: "Wikidata", retrieved: "2026-07-26" }],
+      statementCount: 1,
+      cardCount: 1,
+      included: true,
+    });
+  });
+
+  // core-geo is entities-only: a checkbox for it would do nothing either way.
+  it("omits a pack that yields no questions", async () => {
+    const list = await packList(createApp({ pack: pickerGraph(), store: memoryStore() }));
+    expect(list.packs.map((p) => p.id)).not.toContain("core-geo");
+  });
+
+  it("reports how many questions are queued", async () => {
+    const app = createApp({ pack: pickerGraph(), store: memoryStore() });
+    expect((await packList(app)).queued).toBe(3);
+    await app.request("/question");
+    expect((await packList(app)).queued).toBe(2);
+  });
+
+  // First run selects everything, so adding the picker regresses nothing.
+  it("includes every pack on a first run", async () => {
+    const app = createApp({ pack: pickerGraph(), store: memoryStore(), selection: memorySelection() });
+    expect((await packList(app)).packs.every((p) => p.included)).toBe(true);
+  });
+});
+
+describe("PUT /packs", () => {
+  it("stops drawing questions from a deselected pack", async () => {
+    const app = createApp({ pack: pickerGraph(), store: memoryStore() });
+    expect((await putPacks(app, ["continents"])).status).toBe(200);
+
+    // A pass is without replacement, so a few draws cover the whole selection.
+    for (let i = 0; i < 4; i++) {
+      const q = questionResponseSchema.parse(await (await app.request("/question")).json());
+      expect(q.packId).toBe("continents");
+    }
+  });
+
+  it("reports the new selection back through GET /packs", async () => {
+    const app = createApp({ pack: pickerGraph(), store: memoryStore() });
+    await putPacks(app, ["continents"]);
+    const list = await packList(app);
+    expect(list.packs.find((p) => p.id === "cities")?.included).toBe(false);
+    expect(list.packs.find((p) => p.id === "continents")?.included).toBe(true);
+  });
+
+  it("folds a re-included pack back into the queue", async () => {
+    const app = createApp({ pack: pickerGraph(), store: memoryStore() });
+    await putPacks(app, ["continents"]);
+    await putPacks(app, ["cities", "continents"]);
+    expect((await packList(app)).queued).toBe(3);
+  });
+
+  it("persists the selection so a restart keeps it", async () => {
+    const selection = createSelectionStore(openDatabase(":memory:"));
+    await putPacks(createApp({ pack: pickerGraph(), store: memoryStore(), selection }), ["continents"]);
+
+    // A second app over the same store is what a restart looks like.
+    const list = await packList(createApp({ pack: pickerGraph(), store: memoryStore(), selection }));
+    expect(list.packs.find((p) => p.id === "cities")?.included).toBe(false);
+    expect(list.packs.find((p) => p.id === "continents")?.included).toBe(true);
+  });
+
+  // Empty is refused rather than treated as "unfiltered", which would have the
+  // UI show every box clear while questions kept arriving.
+  it("refuses an empty selection", async () => {
+    const app = createApp({ pack: pickerGraph(), store: memoryStore() });
+    expect((await putPacks(app, [])).status).toBe(400);
+  });
+
+  it("refuses a pack that is not selectable", async () => {
+    const app = createApp({ pack: pickerGraph(), store: memoryStore() });
+    expect((await putPacks(app, ["core-geo"])).status).toBe(400);
+    expect((await putPacks(app, ["nonesuch"])).status).toBe(400);
+  });
+
+  // The constraint the whole design rests on: deselecting must never make
+  // history unreadable. /answer and /answers resolve against the full graph.
+  it("leaves the answer log readable after its pack is deselected", async () => {
+    const store = memoryStore();
+    const app = createApp({ pack: pickerGraph(), store });
+
+    // Answer the cities card, then deselect cities entirely.
+    let cardId = "";
+    for (let i = 0; i < 3 && !cardId; i++) {
+      const q = questionResponseSchema.parse(await (await app.request("/question")).json());
+      if (q.packId === "cities") cardId = q.cardId;
+    }
+    expect(cardId).toBe("cc:tokyo:object");
+    const answer = () =>
+      app.request("/answer", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ cardId, input: "Japan" }),
+      });
+    await answer();
+
+    await putPacks(app, ["continents"]);
+
+    // Still answerable, and still rendered with its real prompt rather than a
+    // fallback to the raw cardId.
+    expect((await answer()).status).toBe(200);
+
+    const log = answerLogSchema.parse(await (await app.request("/answers")).json());
+    expect(log).toHaveLength(2);
+    expect(log[0]?.question).toBe("What country is Tokyo in?");
   });
 });
