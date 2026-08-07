@@ -7,11 +7,15 @@ const tokyo: QuestionResponse = {
   cardId: "cc:tokyo-japan:object",
   prompt: "What country is Tokyo in?",
   input: "text",
+  packId: "core-cities",
+  packLabel: "Cities & Countries",
 };
 const paris: QuestionResponse = {
   cardId: "cc:paris-france:object",
   prompt: "What country is Paris in?",
   input: "text",
+  packId: "continental-countries",
+  packLabel: "Continents & Countries",
 };
 
 /**
@@ -41,6 +45,16 @@ describe("Quiz", () => {
     stubFetch([tokyo], { correct: true, acceptedAnswer: "Japan" });
     render(<Quiz />);
     expect(await screen.findByText("What country is Tokyo in?")).toBeInTheDocument();
+  });
+
+  // #40: the eyebrow reads the label the server resolved. It used to be derived
+  // from the cardId prefix here, which both packs below share — `paris` is the
+  // case that was mislabelled.
+  it("shows the pack label the server sent, not one derived from the cardId", async () => {
+    stubFetch([paris], { correct: true, acceptedAnswer: "France" });
+    render(<Quiz />);
+    expect(await screen.findByText("Continents & Countries")).toBeInTheDocument();
+    expect(screen.queryByText("Cities & Countries")).not.toBeInTheDocument();
   });
 
   it("shows an error message when the question fetch fails", async () => {

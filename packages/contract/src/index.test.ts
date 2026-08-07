@@ -18,10 +18,25 @@ describe("contract", () => {
 });
 
 describe("questionResponseSchema", () => {
-  const question = { cardId: "S1:object", prompt: "What country is Tokyo in?", input: "text" };
+  const question = {
+    cardId: "S1:object",
+    prompt: "What country is Tokyo in?",
+    input: "text",
+    packId: "core-cities",
+    packLabel: "Cities & Countries",
+  };
 
   it("validates a well-formed rendered question", () => {
     expect(questionResponseSchema.parse(question)).toEqual(question);
+  });
+
+  // Provenance is not optional on the seam: a question with no pack behind it
+  // would render a blank eyebrow rather than fail, which is how the mislabelling
+  // in #40 stayed invisible.
+  it("rejects a question missing its pack", () => {
+    const { packId: _packId, ...withoutPack } = question;
+    expect(questionResponseSchema.safeParse(withoutPack).success).toBe(false);
+    expect(questionResponseSchema.safeParse({ ...question, packLabel: "" }).success).toBe(false);
   });
 
   it("rejects an empty prompt", () => {

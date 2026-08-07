@@ -83,15 +83,19 @@ describe("matchesEntity", () => {
 });
 
 const statements: Statement[] = [
-  { id: "cc:tokyo-japan", subject: "Q1490", relation: "located_in", object: { kind: "entity", id: "Q17" } },
-  { id: "cc:nyc-usa", subject: "Q60", relation: "located_in", object: { kind: "entity", id: "Q30" } },
+  { id: "cc:tokyo-japan", subject: "Q1490", relation: "located_in", object: { kind: "entity", id: "Q17" }, pack: "test-pack" },
+  { id: "cc:nyc-usa", subject: "Q60", relation: "located_in", object: { kind: "entity", id: "Q30" }, pack: "test-pack" },
 ];
+
+/** Grading never reads provenance, but a graph is not well-formed without it. */
+const packs = new Map([["test-pack", { id: "test-pack", labels: { en: "Test Pack" } }]]);
 
 function makePack(): Pack {
   return {
     entities: new Map([japan, usa, saoPaulo].map((e) => [e.id, e])),
     statements,
     generators: {},
+    packs,
   };
 }
 
@@ -128,7 +132,13 @@ const switzerland: Entity = { id: "Q39", labels: { en: "Switzerland" }, types: [
 const bern: Entity = { id: "Q70", labels: { en: "Bern" }, types: ["city"] };
 
 const capitalStatements: Statement[] = [
-  { id: "cap:switzerland-bern", subject: "Q39", relation: "capital", object: { kind: "entity", id: "Q70" } },
+  {
+    id: "cap:switzerland-bern",
+    subject: "Q39",
+    relation: "capital",
+    object: { kind: "entity", id: "Q70" },
+    pack: "test-pack",
+  },
 ];
 
 function makeCapitalPack(): Pack {
@@ -137,6 +147,7 @@ function makeCapitalPack(): Pack {
     statements: capitalStatements,
     generators: {},
     hiddenSlots: { capital: ["object", "subject"] },
+    packs,
   };
 }
 

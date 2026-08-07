@@ -8,6 +8,10 @@ import { createApp } from "./app.js";
 import { loadAllPacks } from "./pack-loader.js";
 import { type AnswerStore, createAnswerStore, openDatabase } from "./storage.js";
 
+/** The pack every fixture graph is assembled from, as the loader would register it. */
+const TEST_PACK = { id: "test-pack", labels: { en: "Test Pack" } };
+const packs = new Map([[TEST_PACK.id, TEST_PACK]]);
+
 const locatedIn: Generator = ({ statement, graph }) => ({
   prompt: `What country is ${graph.getEntity(statement.subject).labels.en} in?`,
   input: "text",
@@ -19,12 +23,13 @@ function fixturePack(): Pack {
     { id: "Q17", labels: { en: "Japan" }, types: ["country"] },
   ];
   const statements: Statement[] = [
-    { id: "S1", subject: "Q1490", relation: "located_in", object: { kind: "entity", id: "Q17" } },
+    { id: "S1", subject: "Q1490", relation: "located_in", object: { kind: "entity", id: "Q17" }, pack: TEST_PACK.id },
   ];
   return {
     entities: new Map(entities.map((e) => [e.id, e])),
     statements,
     generators: { located_in: locatedIn },
+    packs,
   };
 }
 
@@ -44,13 +49,20 @@ function bidiPack(): Pack {
     { id: "Q70", labels: { en: "Bern" }, types: ["city"] },
   ];
   const statements: Statement[] = [
-    { id: "cap:switzerland-bern", subject: "Q39", relation: "capital", object: { kind: "entity", id: "Q70" } },
+    {
+      id: "cap:switzerland-bern",
+      subject: "Q39",
+      relation: "capital",
+      object: { kind: "entity", id: "Q70" },
+      pack: TEST_PACK.id,
+    },
   ];
   return {
     entities: new Map(entities.map((e) => [e.id, e])),
     statements,
     generators: { capital },
     hiddenSlots: { capital: ["object", "subject"] },
+    packs,
   };
 }
 
@@ -74,6 +86,8 @@ describe("server app", () => {
       cardId: "S1:object",
       prompt: "What country is Tokyo in?",
       input: "text",
+      packId: TEST_PACK.id,
+      packLabel: TEST_PACK.labels.en,
     });
   });
 

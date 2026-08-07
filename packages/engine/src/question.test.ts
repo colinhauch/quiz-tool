@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { generateQuestion, selectQuestion } from "./question.js";
-import type { Entity, Generator, Pack, Statement } from "./types.js";
+import type { Entity, Generator, Pack, PackInfo, Statement } from "./types.js";
+
+// Every fixture statement comes from one pack. In the real system the loader
+// stamps `pack` and registers the manifest; here both are spelled out so a
+// generated question can be checked for the provenance it carries.
+const TEST_PACK: PackInfo = { id: "test-pack", labels: { en: "Test Pack" } };
+const packs = new Map([[TEST_PACK.id, TEST_PACK]]);
+const provenance = { packId: TEST_PACK.id, packLabel: TEST_PACK.labels.en };
 
 const tokyo: Entity = { id: "Q1490", labels: { en: "Tokyo" }, types: ["city"] };
 const paris: Entity = { id: "Q90", labels: { en: "Paris" }, types: ["city"] };
@@ -13,8 +20,8 @@ const locatedIn: Generator = ({ statement, graph }) => ({
 });
 
 const statements: Statement[] = [
-  { id: "S1", subject: "Q1490", relation: "located_in", object: { kind: "entity", id: "Q17" } },
-  { id: "S2", subject: "Q90", relation: "located_in", object: { kind: "entity", id: "Q142" } },
+  { id: "S1", subject: "Q1490", relation: "located_in", object: { kind: "entity", id: "Q17" }, pack: TEST_PACK.id },
+  { id: "S2", subject: "Q90", relation: "located_in", object: { kind: "entity", id: "Q142" }, pack: TEST_PACK.id },
 ];
 
 function makePack(): Pack {
@@ -22,13 +29,19 @@ function makePack(): Pack {
     entities: new Map([tokyo, paris, japan, france].map((e) => [e.id, e])),
     statements,
     generators: { located_in: locatedIn },
+    packs,
   };
 }
 
 describe("generateQuestion", () => {
   it("renders an object-hidden located_in statement into a prompt", () => {
     const q = generateQuestion(makePack(), statements[0]!, "object");
-    expect(q).toEqual({ cardId: "S1:object", prompt: "What country is Tokyo in?", input: "text" });
+    expect(q).toEqual({
+      cardId: "S1:object",
+      prompt: "What country is Tokyo in?",
+      input: "text",
+      ...provenance,
+    });
   });
 
   it("never leaks the answer into the rendered question", () => {
@@ -48,7 +61,12 @@ describe("selectQuestion", () => {
   it("picks a card deterministically from an injected rng", () => {
     // rng at the top of the range selects the last candidate.
     const q = selectQuestion(makePack(), () => 0.99);
-    expect(q).toEqual({ cardId: "S2:object", prompt: "What country is Paris in?", input: "text" });
+    expect(q).toEqual({
+      cardId: "S2:object",
+      prompt: "What country is Paris in?",
+      input: "text",
+      ...provenance,
+    });
   });
 
   it("picks the first candidate when rng is 0", () => {
@@ -63,6 +81,7 @@ describe("selectQuestion", () => {
       subject: "Q17",
       relation: "capital",
       object: { kind: "entity", id: "Q1490" },
+      pack: TEST_PACK.id,
     });
     // Even at the top of the range, the ungeneratable `capital` card is skipped.
     expect(selectQuestion(pack, () => 0.99).cardId).toBe("S2:object");
@@ -92,6 +111,7 @@ const bidiStatement: Statement = {
   subject: "Q39",
   relation: "capital",
   object: { kind: "entity", id: "Q70" },
+  pack: TEST_PACK.id,
 };
 
 function makeBidiPack(): Pack {
@@ -100,6 +120,7 @@ function makeBidiPack(): Pack {
     statements: [bidiStatement],
     generators: { capital },
     hiddenSlots: { capital: ["object", "subject"] },
+    packs,
   };
 }
 
@@ -110,6 +131,7 @@ describe("subject-hidden questions", () => {
       cardId: "S_cap:subject",
       prompt: "Bern is the capital of what country?",
       input: "text",
+      ...provenance,
     });
     // The concealed subject (the answer) never appears in the prompt.
     expect(q.prompt).not.toContain("Switzerland");

@@ -18,14 +18,22 @@ export type Health = z.infer<typeof healthSchema>;
 
 /**
  * `GET /question` — a rendered question ready to display. It carries a stable
- * `cardId` for the card being asked, the prompt, and the input mode. It
- * deliberately does NOT carry the answer: the seam must never reveal it.
+ * `cardId` for the card being asked, the prompt, the input mode, and which pack
+ * the question came from. It deliberately does NOT carry the answer: the seam
+ * must never reveal it.
+ *
+ * Provenance crosses the seam resolved rather than raw: the client is handed a
+ * label to show, not an id to interpret. The UI used to derive the pack from
+ * the `cardId` prefix, which coupled it to the id format and got the answer
+ * wrong once two packs shared a prefix (#40).
  */
 export const questionResponseSchema = z
   .object({
     cardId: z.string().min(1),
     prompt: z.string().min(1),
     input: z.literal("text"),
+    packId: z.string().min(1),
+    packLabel: z.string().min(1),
   })
   .strict();
 

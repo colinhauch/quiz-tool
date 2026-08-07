@@ -5,22 +5,6 @@ import { type FormEvent, useCallback, useEffect, useRef, useState } from "react"
 const QUESTION_URL = "/api/question";
 const ANSWER_URL = "/api/answer";
 
-/**
- * Human display name per pack, keyed by the `cardId` prefix (e.g. "cc:..." →
- * core-cities). STOPGAP: the pack a question came from is inferred from the
- * cardId here; it should instead travel on QuestionResponse from a pack's own
- * metadata once multiple packs are interwoven. See specs/packs/README.md
- * ("Which pack a question came from isn't in the contract yet").
- */
-const PACK_LABELS: Record<string, string> = {
-  cc: "Cities & Countries",
-};
-
-function packLabel(cardId: string): string {
-  const code = cardId.split(":")[0] ?? "";
-  return PACK_LABELS[code] ?? code.toUpperCase();
-}
-
 type View =
   | { state: "loading" }
   | { state: "error" }
@@ -76,7 +60,7 @@ export function Quiz() {
   return (
     <div className="quiz-card">
       <div className="quiz-card__strip">
-        <span className="quiz-card__eyebrow">{packLabel(view.question.cardId)}</span>
+        <span className="quiz-card__eyebrow">{view.question.packLabel}</span>
       </div>
       <div className="quiz-card__body">
         <p className="quiz-prompt">{view.question.prompt}</p>
