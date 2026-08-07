@@ -22,6 +22,14 @@ The alternatives, and why each lost:
 
 **It re-grounds the storage argument.** [../storage/](../storage/) argues for SQLite partly on the basis that "the database is a file, and later it ships inside the app." That reasoning silently assumed a Node or native process — a premise nobody had actually decided. This decision supplies it. The argument was sound; it was resting on an unstated foundation, and now it isn't.
 
-## Still open: bundled or downloaded packs
+## Settled: packs are bundled
 
-Whether packs ship inside app builds or are fetched at runtime is still undecided. The platform choice above does not settle it — a local web app can do either — and it affects nothing in the pack format; see [../packs/](../packs/). It decides a real part of the app architecture and stays open.
+> **[UNREVIEWED]** — resolves what this section previously left open, per [ADR-0001](../../docs/adr/0001-packs-are-discovered-not-compiled-in.md). Confirm bundling is the intended stopping point rather than a way station.
+
+Packs ship inside the app rather than being fetched at runtime. They live in `packs/` in this repo and the server discovers them by scanning that directory at boot.
+
+The question stayed open for a while because the platform choice above genuinely doesn't force it — a local web app can do either. What settled it was working out who packs are actually *for*. The pull toward downloadable packs came from an aspiration that other people might author them; once that was set aside in favour of reducing *our own* authoring cost, fetching bought nothing and cost a distribution story, a fetch-and-cache path, and a trust boundary. See [../packs/](../packs/).
+
+What did survive from the downloadable framing is the part that was actually valuable: adding a pack requires no edit to any application source file. That is now true of bundled packs too, which is most of what "downloadable" was really being asked to deliver.
+
+Reversing this is cheap by construction — discovery reads a directory, and making that directory configurable is a small change. The decision that would be expensive to unwind is the trust boundary, and bundling is the conservative side of it.

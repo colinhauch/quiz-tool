@@ -114,16 +114,16 @@ When you add, split, or promote a spec, update the table below.
 | Concept | Status | What's in it |
 |---|---|---|
 | [knowledge-graph/](knowledge-graph/) | mixed | The uniform fact model: entities, relation types, statements, rank. Why everything quizzable is one shape. Reviewed except one section in [statements.md](knowledge-graph/statements.md) (the object-only-hiding orientation corollary). |
-| [packs/](packs/) | reviewed | First-party, topic-scoped modules that ship data *and* the code to handle it. Why the engine runs the learning loop and packs supply the domain. |
+| [packs/](packs/) | mixed | First-party, topic-scoped modules that ship data *and* the code to handle it. Why the engine runs the learning loop and packs supply the domain. Reviewed except three sections rewritten for the discovery shift (phrasing-vs-judging, discovery, and the resolved provenance story); [format.md](packs/format.md) is wholly unreviewed. |
 | [questions/](questions/) | mixed | Turning facts into questions via pack-provided generator code. README reviewed (MVP scope marked); distractors.md, template-shape.md, open-questions.md unreviewed. |
 | [learning/](learning/) | unreviewed | What the user knows and what to ask next: the answer log, scheduling, insight and gap analysis. |
 | [storage/](storage/) | unreviewed | Persistence choices: why this database, what we liked, what would make us move. Includes the reference SQL schema. |
 | [product/](product/) | reviewed | Product and UX concepts. Why a sitting has no boundary, and what that buys. |
-| [deployment/](deployment/) | reviewed | How this ships and runs. Why the MVP is a local web app, and what that commits us to. |
+| [deployment/](deployment/) | mixed | How this ships and runs. Why the MVP is a local web app, and what that commits us to. Reviewed except the packs-are-bundled section, rewritten from an open question to a decision. |
 | [tooling/](tooling/) | mixed | Pack authoring and the Wikidata import pipeline. Constrains the pack format today; built post-MVP. [mvp-bootstrap.md](tooling/mvp-bootstrap.md) is reviewed except its second-pack (`capitals`) section; the README is a stub and unreviewed. |
 | [open-questions.md](open-questions.md) | reviewed | Undecided questions at the architecture level, spanning more than one concept. |
 
-Reference appendices sit beside their concept README: [knowledge-graph/shapes.md](knowledge-graph/shapes.md), [packs/format.md](packs/format.md), [questions/template-shape.md](questions/template-shape.md), [learning/interfaces.md](learning/interfaces.md), [storage/sql-examples.md](storage/sql-examples.md). All superseded by code once it exists; all unreviewed except [knowledge-graph/shapes.md](knowledge-graph/shapes.md) and [packs/format.md](packs/format.md).
+Reference appendices sit beside their concept README: [knowledge-graph/shapes.md](knowledge-graph/shapes.md), [packs/format.md](packs/format.md), [questions/template-shape.md](questions/template-shape.md), [learning/interfaces.md](learning/interfaces.md), [storage/sql-examples.md](storage/sql-examples.md). All superseded by code once it exists; all unreviewed except [knowledge-graph/shapes.md](knowledge-graph/shapes.md).
 
 ## Provenance
 
