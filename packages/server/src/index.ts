@@ -6,7 +6,9 @@ import { createAnswerStore, openDatabase } from "./storage.js";
 const port = Number(process.env.PORT ?? 3001);
 const dbFile = process.env.GEO_DB ?? "geo-quiz.sqlite";
 
-const pack = loadAllPacks();
+// Await: packs are discovered at boot and their generator modules imported
+// dynamically, so loading is async (see pack-loader.ts).
+const pack = await loadAllPacks();
 const store = createAnswerStore(openDatabase(dbFile));
 
 serve({ fetch: createApp({ pack, store }).fetch, port }, (info) => {

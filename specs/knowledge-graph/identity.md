@@ -20,11 +20,11 @@ The dependency this creates: we have inherited an external ID space we do not co
 
 What would reopen this: a merge or deletion hitting an entity a user has answer history against. That is the case where a stale ID stops being a data problem — the ID is the join key between the pack and the answer log, so a *silently wrong* Q-ID is worse than a missing one. Nothing in the MVP detects it. This is not worth solving before it happens, but it is worth recognising quickly when it does.
 
-## One tranche owns each entity — no cross-pack merge
+## One pack owns each entity — no cross-pack merge
 
 > **[UNREVIEWED]** — rewritten for single-entity-ownership (ticket #28). The code now *rejects* a doubly-owned Q-ID rather than merging it (`assembleGraph` in `packages/server/src/pack-loader.ts` throws). Confirm the reframe reads as intended and that dropping the union merge rule loses nothing we relied on.
 
-Exactly one authored tranche owns each entity. `core-geo` is the sole owner of every shared geographic entity — continents, countries, capital cities, core cities — and every other tranche ships statements over those entities, never entities of its own. So when the app assembles its one graph, a Q-ID appearing in two tranches is an **authoring error**, not something to reconcile: the assembler throws rather than unioning.
+Exactly one authored pack owns each entity. `core-geo` is the sole owner of every shared geographic entity — continents, countries, capital cities, core cities — and every other pack ships statements over those entities, never entities of its own. So when the app assembles its one graph, a Q-ID appearing in two packs is an **authoring error**, not something to reconcile: the assembler throws rather than unioning.
 
 This deletes a rule an earlier design leaned on. That draft had two packs each define `Q155` and **merged** the records — labels, aliases, and types unioned, per-field conflicts resolved in install order (later pack winning). Under single ownership that path is unreachable: two owners is the error case, so there is nothing to merge, and the install-order-dependent "later pack wins" semantics go with it. Why the reframe: we author and own every pack, so the composability/merge machinery was solving a distribution problem we don't have. See [../packs/README.md](../packs/README.md) and [[pack-as-authoring-tranche]].
 

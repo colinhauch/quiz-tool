@@ -44,13 +44,19 @@ This composability matters more than it sounds. A `borders` pack that adds only 
 
 ## Packs are discovered, not compiled in
 
-> **[UNREVIEWED]** — rewritten for the discovery shift ([ADR-0001](../../docs/adr/0001-packs-are-discovered-not-compiled-in.md)), replacing the earlier account of hand-wired tranches. Confirm the framing, and that keeping packs in-repo (rather than loadable from anywhere) is the intended stopping point.
+> **[UNREVIEWED]** — rewritten for the discovery shift ([ADR-0001](../../docs/adr/0001-packs-are-discovered-not-compiled-in.md)), replacing the earlier account of hand-wired packs. Confirm the framing, and that keeping packs in-repo (rather than loadable from anywhere) is the intended stopping point.
 
 The server **scans `packs/*` at boot** and loads whatever it finds. A pack is a directory: a manifest, some `.jsonl`, and an optional `index.ts`. There is no per-pack workspace package, no dependency the server declares, and no list of packs anywhere in the source.
 
 This replaced an arrangement where each pack was a workspace package that the server depended on and named in a hard-coded array — five build-file edits before a single fact was read. `packs/` is now one workspace package rather than one per pack, which keeps generator code inside `tsc -b` and keeps `@geo/engine` resolvable, while costing nothing per pack.
 
 **Packs still live in this repo and ship with the app.** Loading them from a configurable directory outside the tree was considered and deliberately not taken; it settles the open question in [../deployment/](../deployment/) in favour of bundled packs.
+
+**Loading is asynchronous, and that is inherent.** A discovered pack is not known at compile time, so its generator module has to be imported dynamically — there is nothing to `import` statically. `loadAllPacks()` therefore returns a promise, and the server awaits it at boot. This is the one thing discovery cost that the hand-wired arrangement did not: static imports were synchronous. It buys back far more than it costs, but it does mean any future consumer of the loader is async too.
+
+**Discovery made the missing registry more urgent, not less — and proved it on the way in.** Before the registry landed, generators were merged last-write-wins and load order went from hand-written to alphabetical. That silently *inverted* the #38 collision: under the old hard-coded array `continental-countries` loaded last and every city question read "What continent is Tokyo in?"; under directory-name order `core-cities` won and every continent question read "What country is Afghanistan in?". Same defect, opposite direction, no code change.
+
+That is the argument that **load order must never be load-bearing**. It no longer is: the assembled graph is built from the relation registry, where each relation has exactly one owning pack, so there is no merge step left for order to decide. Ordering is fixed at directory-name order purely so failures and logs read the same way twice.
 
 **A pack is an authoring and versioning unit, not a runtime-selectable one.** Everything discovered is loaded, always. There is no active-set, no `GEO_PACKS`, no install/uninstall lifecycle, and no dependency resolution — entity single-ownership means load order cannot change the result. Filtering *what gets quizzed* by topic is a query over the assembled graph, not a boundary the loader enforces. An earlier draft (`82fa5fc`) modelled packs as a selectable runtime set with a cross-pack entity union; that machinery was stripped.
 
@@ -85,6 +91,15 @@ This is a deliberate trade: the paranoia is concentrated at one boundary so the 
 **Loading fails hard.** A malformed manifest, a redefined relation, a statement whose relation is undeclared, or a reference to a missing entity stops the server with the pack named. Skipping the bad pack and warning was rejected: a warning in a scrollback is precisely how a pack quietly stops being quizzed and nobody notices.
 
 What the validator covers today is deliberately narrow — manifest shape, relation declaration and collision, entity references resolving, entity single-ownership. The richer checks the original design imagined (subject and object types satisfying a relation's domain and range, qualifier schemas, literal datatypes) need a type system for relations that does not exist yet, and adding the declaration before the checker reads it is how `contents` and `depends` became fiction. Registry first, then declaration.
+
+**It reports every problem, not the first.** An author who has just written a pack wants the whole list; failing fast turns one bad file into one error per run.
+
+**It paid for itself on the first run, which is the argument for it.** Pointed at the three packs we already shipped, the validator refused to boot on two defects that had been live and silent:
+
+- The `located_in` collision (#38) — the failure the rule was written for, still unfixed on `main` at the time.
+- Six statements (Fiji, Kiribati, Palau, Solomon Islands, Tuvalu, Vanuatu) pointing at `Q538`, Wikidata's Oceania-the-*region*, while `core-geo` owns `Q55643`, Oceania-the-*continent*. Nothing had ever noticed, because a dangling object reference is invisible until someone answers: the prompt renders off the subject, and only grading resolves the object — so those six questions displayed fine and 404'd on submit.
+
+The second is the more instructive one. It is not a rule anybody would have thought to write down, and no amount of reading the pack would have surfaced it; it needed the whole graph checked at once. That is the case for a validator over a convention.
 
 ## Which pack a question came from
 

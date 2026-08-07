@@ -2,7 +2,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { answerLogSchema, answerResponseSchema, questionResponseSchema } from "@geo/contract";
-import type { Entity, Generator, Pack, Statement } from "@geo/engine";
+import { type Entity, enumerateCards, type Generator, makeCardId, type Pack, type Statement } from "@geo/engine";
 import { afterEach, describe, expect, it } from "vitest";
 import { createApp } from "./app.js";
 import { loadAllPacks } from "./pack-loader.js";
@@ -238,10 +238,19 @@ describe("full loop over the real fixture pack and a temp-file database", () => 
     dir = mkdtempSync(join(tmpdir(), "geo-loop-"));
     const db = openDatabase(join(dir, "answers.sqlite"));
     const store = createAnswerStore(db);
-    const app = createApp({ pack: loadAllPacks(), store, rng: () => 0 });
+    const pack = await loadAllPacks();
+
+    // Aim the draw at a specific card rather than assuming it sits at index 0.
+    // Packs are discovered in directory-name order now, so which statement is
+    // first is an artefact of the directory listing and not something a test
+    // about the answer loop should depend on.
+    const cards = enumerateCards(pack);
+    const tokyo = cards.findIndex((c) => makeCardId(c.statement.id, c.hiddenSlot) === "cc:tokyo-japan:object");
+    expect(tokyo).toBeGreaterThanOrEqual(0);
+    const app = createApp({ pack, store, rng: () => (tokyo + 0.5) / cards.length });
 
     const question = questionResponseSchema.parse(await (await app.request("/question")).json());
-    expect(question.prompt).toBe("What country is Tokyo in?");
+    expect(question.cardId).toBe("cc:tokyo-japan:object");
 
     const res = await app.request("/answer", {
       method: "POST",

@@ -3,9 +3,7 @@
   "references": [
     { "path": "./packages/contract" },
     { "path": "./packages/engine" },
-    { "path": "./packs/core-geo" },
-    { "path": "./packs/core-cities" },
-    { "path": "./packs/continental-countries" },
+    { "path": "./packs" },
     { "path": "./packages/server" },
     { "path": "./packages/web" }
   ]

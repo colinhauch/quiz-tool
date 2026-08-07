@@ -2,13 +2,16 @@
   "id": "core-cities",
   "version": "0.0.1",
   "labels": { "en": "Core Cities" },
-  "descriptions": { "en": "A hand-written fixture: city→country `located_in` statements over entities owned by core-geo." },
-  "engine_min_version": "0.0.0",
-  "depends": [{ "id": "core-geo", "version": ">=1.0.0" }],
+  "descriptions": {
+    "en": "A hand-written fixture: city→country `located_in` statements over entities owned by core-geo."
+  },
   "license": "CC0-1.0",
   "credits": [{ "source": "hand-authored fixture", "retrieved": "2026-07-19" }],
-  "contents": {
-    "statements": "statements.jsonl",
-    "code": "index.ts"
+  "relations": {
+    "located_in": {
+      "labels": { "en": "is in country" },
+      "kind": "text",
+      "hiddenSlots": ["object"]
+    }
   }
 }

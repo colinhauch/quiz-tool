@@ -11,7 +11,8 @@
     "dev": "pnpm -r --parallel run dev",
     "build": "tsc -b",
     "typecheck": "tsc -b",
-    "test": "vitest run"
+    "test": "vitest run",
+    "packs:validate": "tsx packages/server/src/validate-packs.ts"
   },
   "devDependencies": {
     "@types/node": "^22.20.1",

@@ -20,7 +20,9 @@ packs/continental-countries/
 
 `.jsonl` (one JSON object per line) for the large files so they stay streamable and diff-friendly. A 300-city pack is either a big JSON array or a pleasant line-oriented file; the latter reviews in git.
 
-There is no per-pack `package.json` or `tsconfig.json`. `packs/` is a single workspace package, so generator code is typechecked and `@geo/engine` resolves, without any per-pack build files.
+There is no per-pack `package.json` or `tsconfig.json`. `packs/` is a single workspace package, so generator code is typechecked and `@geo/engine` resolves, without any per-pack build files. `packs/tsconfig.json` globs `*/index.ts`; a pack with no generators matches nothing and needs no opt-out.
+
+A directory without a `pack.json` is not a pack and is skipped, so build output can sit alongside content without becoming content.
 
 ## Manifest (`pack.json`)
 
