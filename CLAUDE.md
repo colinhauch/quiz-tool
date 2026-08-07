@@ -15,11 +15,13 @@ Shut down what you start, in the same session. Identify before killing — `ps -
 
 A quiz app that teaches world geography from a knowledge graph, tracks every answer, and surfaces knowledge gaps. TypeScript. Pre-implementation — the design exists, the code does not.
 
-## Two kinds of documentation
+## Three kinds of documentation
 
 **`/specs` — concepts and decisions.** Why the system is shaped the way it is: motivation, rationale, rejected alternatives, failed attempts, open questions. Organized by concept, because concepts are what the code tree can't express. Read these when you are about to **build something new** or make a structural decision.
 
 **`CLAUDE.md` files — implementation and development.** How to work in a given directory. Organized by directory, alongside the code. Read these when you are about to **maintain or extend existing code**.
+
+**`CONTEXT.md` and `docs/adr/` — vocabulary and decisions.** `CONTEXT.md` is the glossary: one canonical term per concept, and the synonyms to avoid. Use its words in code, issues, and prose. `docs/adr/` holds decisions that were hard to reverse and would otherwise look arbitrary. Both are maintained by `/domain-modeling`; see `docs/agents/domain.md`.
 
 **The code is the source of truth for how the system works.** If you can learn something by reading the code, read the code — specs deliberately do not restate it. Specs carry what the code cannot teach you. Memory files carry what is worth knowing without re-reading everything.
 

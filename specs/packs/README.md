@@ -8,75 +8,99 @@ The split is by *responsibility*, not by data-vs-nothing. The **engine** owns ev
 
 Concretely, a pack ships:
 
-- **Type definitions and handler code** for its entity types, relation types, and qualifiers — the engine doesn't hard-code how `borders` behaves; the pack does.
+- **The relations it defines**, declared in its manifest — their labels, which slots they can be quizzed on, and which question kind they use.
 - **The data itself** — the entity and statement rows.
-- **Question generators** — functions that turn this pack's statements into questions. See [../questions/](../questions/); this is the big move away from an engine-owned template registry.
+- **Question generators** — functions that turn this pack's statements into question content. See [../questions/](../questions/); this is the big move away from an engine-owned template registry.
 
-The only domain vocabulary the engine fixes is **literals** — the datatypes (`string`, `quantity`, `date`, `dateRange`, `boolean`) that its own generic machinery has to reason about (comparison logic, numeric distractors). Everything else about a domain lives in the pack. See [../knowledge-graph/statements.md](../knowledge-graph/statements.md) for why that line falls exactly there.
+Two things the engine keeps, because they are about learning rather than about geography. **Literals** — the datatypes (`string`, `quantity`, `date`, `dateRange`, `boolean`) its generic machinery has to reason about. And **question kinds** — the forms a question can take and therefore how its answer is judged. See [../knowledge-graph/statements.md](../knowledge-graph/statements.md) for why the literal line falls exactly there, and the next section for the question-kind line.
 
-The payoff is the project's central claim. Adding languages, currencies, borders, rivers, or religions later means writing a pack — not changing the engine, not breaking historical answer logs, not rearchitecting. The MVP ships one pack of world cities; everything after is content-plus-code, packaged together.
+**Why this reversed an earlier design.** An earlier draft made the engine own structure (entities, relations, qualifiers, *templates*) and packs own only semantics and data — templates were declarative data, question generation lived in the engine. That breaks the moment a relation needs question logic the engine can't express generically, and it forces a fixed qualifier vocabulary the engine has to anticipate. Since we own all packs anyway (below), there's no reason to keep domain logic out of them. Pushing generators into the pack means the engine never has to predict what a future domain needs — the pack brings its own understanding.
 
-**Why this reversed an earlier design.** An earlier draft made the engine own structure (entities, relations, qualifiers, *templates*) and packs own only semantics and data — templates were declarative data, question generation lived in the engine. That breaks the moment a relation needs question logic the engine can't express generically, and it forces a fixed qualifier vocabulary the engine has to anticipate. Since we own all packs anyway (below), there's no reason to keep domain logic out of them. Pushing handlers and generators into the pack means the engine never has to predict what a future domain needs — the pack brings its own understanding.
+## A pack owns phrasing; the engine owns judging
+
+> **[UNREVIEWED]** — new section recording the decision in [ADR-0002](../../docs/adr/0002-the-engine-owns-question-kinds.md). Confirm the domain/kind distinction is the line you want, and that pack-owned grading is genuinely rejected rather than deferred.
+
+The engine defines a **closed set of question kinds** — typed text today, multiple choice next, numeric and date later — and owns the grading for each. A pack declares which kind a relation is quizzed with and supplies the content; it does not decide whether an answer is right.
+
+This corrects a claim this spec used to make. It said adding currencies, borders, or rivers meant writing a pack and never changing the engine. That conflated **a new domain** with **a new question kind**, and it was already false for the second: rendered content was hard-wired to typed text, and grading resolved the hidden slot to an entity and string-matched its labels — so any relation with a literal object was unquizzable no matter how good its pack was. Multiple choice sat in `TODO.md` as "really easy for the continents pack" when no pack could express it at all.
+
+The honest version of the claim: **a new domain is a pack and nothing else; a new question kind is one engine change that every pack then benefits from.**
+
+Grading stays central for two reasons. Answer normalisation — diacritic folding, punctuation, whitespace — is a shared concern that would be reimplemented per pack and drift apart. And pack-owned grading would make the answer log's meaning depend on pack version, since a pack update could silently change how past answers would have been judged. History has to stay interpretable; see [../storage/](../storage/).
 
 ## Packs are first-party, and topic-scoped
 
 **We author and own every pack; they live in this repo.** A pack is not a third-party plugin — it is a way of chunking an effectively infinite graph of entities and relationships into something manageable, organized by topic. "The 100 most populated cities, their countries, and their populations" is a pack. It is small, simple data plus the modest code to quiz it.
 
-This changes the trust story completely. Because pack code is *our* code, shipping executable handlers and generators in a pack is not a security boundary to defend — it is just code organization. Validation still earns its keep (below), but as a correctness aid, not a sandbox.
+This changes the trust story completely. Because pack code is *our* code, shipping executable generators in a pack is not a security boundary to defend — it is just code organization. Validation still earns its keep (below), but as a correctness aid, not a sandbox.
 
-The MVP pack is deliberately simple data; the *capability* for richer per-pack handling exists for topics that need it later, but nothing about MVP requires it.
+**Outside contributors are not the goal, and understanding why matters.** Packs were shaped partly by an aspiration that other people might contribute them, which pulled toward a plugin architecture — sandboxing, a registry, declarative-only content. That aspiration was examined and set aside: the real driver is *our own* authoring cost. Every decision here follows from that. If third-party packs ever become a goal, the trust boundary is the thing that changes, and most of the rest survives.
 
 ## A pack is any subset of content, plus its code
 
-Manifest, plus any combination of entity types, relation types, entities, statements, assets — and the handler/generator code for whatever domain concepts it introduces. The content pieces are all optional.
+Manifest, plus any combination of entities, statements, assets — and the generator code for whatever relations it introduces. The content pieces are all optional.
 
-This composability matters more than it sounds. A `borders` pack that adds only statements over countries a `core-countries` pack already defined ships **no entity file at all** — it depends on the other pack and asserts new facts about its entities. Content layers over shared identity instead of duplicating it, which is what makes packs feel like a graph extension rather than a bundle. Wikidata Q-IDs are what make it possible — see [../knowledge-graph/identity.md](../knowledge-graph/identity.md).
+This composability matters more than it sounds. A `borders` pack that adds only statements over countries a `core-geo` pack already defined ships **no entity file at all** — it asserts new facts about another pack's entities. Content layers over shared identity instead of duplicating it, which is what makes packs feel like a graph extension rather than a bundle. Wikidata Q-IDs are what make it possible — see [../knowledge-graph/identity.md](../knowledge-graph/identity.md).
 
-## Authored tranches assemble into one graph
+## Packs are discovered, not compiled in
 
-> **[UNREVIEWED]** — rewritten from the old "active packs merge / union by Q-ID" model to single-ownership assembly (ticket #28), to match the merged loader (`assembleGraph` throws on a doubly-owned Q-ID) and the [[pack-as-authoring-tranche]] reframe. Confirm this framing — and that dropping the active-set/`GEO_PACKS` selection story loses nothing worth keeping.
+> **[UNREVIEWED]** — rewritten for the discovery shift ([ADR-0001](../../docs/adr/0001-packs-are-discovered-not-compiled-in.md)), replacing the earlier account of hand-wired tranches. Confirm the framing, and that keeping packs in-repo (rather than loadable from anywhere) is the intended stopping point.
 
-A "pack" is an **authoring and versioning unit, not a runtime-selectable one**: everything authored is loaded into a single graph, always on. There is no active-set, no `GEO_PACKS`, no dependency resolution, no install/uninstall lifecycle. Filtering *what gets quizzed* by topic is a future query over the one assembled graph — a UI nicety — not a boundary this loader enforces. This reframe is recorded in [[pack-as-authoring-tranche]].
+The server **scans `packs/*` at boot** and loads whatever it finds. A pack is a directory: a manifest, some `.jsonl`, and an optional `index.ts`. There is no per-pack workspace package, no dependency the server declares, and no list of packs anywhere in the source.
 
-Assembly is cheap because a loaded tranche is three fields — entities, statements, generators. Statements concatenate; each tranche's per-relation generators combine into one table keyed by relation; selection then draws uniformly across every quizzable statement, so tranches **interweave** — the payoff the whole design is for. A question's origin survives in its statement-ID prefix (`cc:`, `cap:`), which the cardId already carries; nothing else has to track provenance.
+This replaced an arrangement where each pack was a workspace package that the server depended on and named in a hard-coded array — five build-file edits before a single fact was read. `packs/` is now one workspace package rather than one per pack, which keeps generator code inside `tsc -b` and keeps `@geo/engine` resolvable, while costing nothing per pack.
 
-**Entities are the exception: they are not unioned.** Exactly one tranche owns each entity, so a Q-ID appearing in two tranches is an authoring error and the assembler throws rather than reconciling — the single-ownership rule in [../knowledge-graph/identity.md](../knowledge-graph/identity.md). This is what killed the old cross-pack merge: because one tranche owns identity, there is nothing to merge.
+**Packs still live in this repo and ship with the app.** Loading them from a configurable directory outside the tree was considered and deliberately not taken; it settles the open question in [../deployment/](../deployment/) in favour of bundled packs.
 
-That single owner is `core-geo` — a frozen, entities-only tranche shipping every shared geographic entity (continents, countries, capitals, core cities) and no statements. Every other tranche (`core-cities`, and later `capital-cities`, `continental-countries`) ships **no entity file at all** and asserts statements over `core-geo`'s entities. This is the composability story above, now built: content layers over shared identity instead of duplicating it, so no country is ever re-authored by a second tranche. How `core-geo` is produced — a re-runnable, deterministic fetch over a curated Q-ID list — is in [../tooling/mvp-bootstrap.md](../tooling/mvp-bootstrap.md).
+**A pack is an authoring and versioning unit, not a runtime-selectable one.** Everything discovered is loaded, always. There is no active-set, no `GEO_PACKS`, no install/uninstall lifecycle, and no dependency resolution — entity single-ownership means load order cannot change the result. Filtering *what gets quizzed* by topic is a query over the assembled graph, not a boundary the loader enforces. An earlier draft (`82fa5fc`) modelled packs as a selectable runtime set with a cross-pack entity union; that machinery was stripped.
 
-## A pack is an authoring unit, not a runtime-selectable one
+## Discovered packs assemble into one graph
 
-> **[UNREVIEWED]** — reframe landed with #26; check it against the composability and update-lifecycle sections below, which still describe packs as installable/depended-upon units.
+Assembly is cheap because a loaded pack is a small thing — entities, statements, relations, generators. Statements concatenate; each pack's relations combine into one registry; selection then draws uniformly across every quizzable card, so packs **interweave** — the payoff the whole design is for. A question's origin travels with it as a pack id and label taken from the manifest.
 
-A pack is an **authoring + versioning tranche**: how we chunk and version the content while writing it. It is *not* a unit the runtime installs, activates, or resolves dependencies for. Everything authored is loaded into **one graph, always** — the loader concatenates every tranche's statements and merges every tranche's generators into a single relation→generator table, with entities coming from the one tranche that owns them (others may ship statements only). See the loader at `packages/server/src/pack-loader.ts`.
+**Entities are the exception: they are not unioned.** Exactly one pack owns each entity, so a Q-ID appearing in two packs is an authoring error and assembly fails rather than reconciling — the single-ownership rule in [../knowledge-graph/identity.md](../knowledge-graph/identity.md). This is what killed the old cross-pack merge: because one pack owns identity, there is nothing to merge.
 
-This reverses an earlier draft (`82fa5fc`) that modelled packs as a *selectable runtime set* — `GEO_PACKS`, an active-set, a cross-pack entity union. That machinery was stripped: there is no active-set selection and no dependency resolution at load time.
+That single owner is `core-geo` — a frozen, entities-only pack shipping every shared geographic entity (continents, countries, capitals, core cities) and no statements. Every other pack ships **no entity file at all** and asserts statements over `core-geo`'s entities, so no country is ever re-authored by a second pack. How `core-geo` is produced — a re-runnable, deterministic fetch over a curated Q-ID list — is in [../tooling/mvp-bootstrap.md](../tooling/mvp-bootstrap.md).
 
-**Per-topic filtering of what gets quizzed is a future query over the assembled graph, not a loader-level pack boundary.** When we want "only capitals right now," that is a filter applied when selecting a statement to ask — not a decision about which tranches to load.
+The merged whole is the **graph**; a **pack** is always one authored unit. These were both called "pack" in the code for a while, and the engine's API took the merged sense while every sentence in this spec meant the other — which is a fair part of why the runtime role of a pack was hard to pin down. See [CONTEXT.md](../../CONTEXT.md).
 
-## Validate at build time, trust at runtime
+## Relation IDs are global, and redefinition is an error
 
-Packs are validated when built and again when installed, and **the runtime engine never defensively parses** — no optional chaining through pack data, no "what if the relation isn't registered" branches downstream.
+A pack may define new relations or assert statements using relations another pack defined. What it may not do is redefine an existing ID.
 
-This is a deliberate trade: the paranoia is concentrated at one boundary so the runtime can be written as if the data is correct. It's a correctness discipline, not a security perimeter — packs are first-party, so validation is there to catch our own mistakes early, where they're cheap, rather than deep in a quiz session. If you find yourself adding a defensive check in the engine, the check usually belongs in the validator instead.
+If two packs could each define `borders` with different meanings, a statement's meaning would depend on which pack you asked — and the registry's entire purpose is that a relation means one thing everywhere. A pack extends the graph by defining *new* relations, never by redefining someone else's.
 
-Validation covers the things that would otherwise fail deep in the runtime: relations are registered, subject and object types satisfy the relation's domain and range, literals match the declared datatype, qualifiers validate against the relation's schema, entity references resolve, assets exist, and relation-type IDs don't collide with installed packs.
+**This rule was documented long before anything enforced it, and it cost us.** Generators were merged with `Object.assign`: last write won, silently. `continental-countries` and `core-cities` both defined `located_in`, and every city question rendered as a continent question until it was tracked down. The fix at the time was to rename one relation; the fix now is that **a pack declares its relations in its manifest and the loader throws** on a redefined or an undeclared one.
 
-**None of this validator exists yet, and neither does the relation registry it checks against.** A relation is "real" today only because a generator is registered for it in the pack's code — there is no `relation_types.json` reader, no `domain`/`range`/`cardinality`/`qualifier_schema` enforcement. Both shipped packs (`core-cities`, `capitals`) therefore omit `relation_types.json` and declare their relations purely through generators; adding a declaration file now would be a document nothing reads, which reads as wired when it isn't. When the registry and validator get built, both packs get their `relation_types.json` together — the honest ordering is registry-then-declaration, not the reverse.
+Discovery is what made enforcement non-negotiable. Hand-wiring at least meant a new pack arrived in a diff someone read; a scanned directory has no such review step, so an unenforced rule would have been strictly more dangerous than the wiring it replaced.
 
-## Relation-type IDs are global, and redefinition is an error
+## Validate at load, trust thereafter
 
-A pack may define new relation types or reference ones from packs it depends on. What it may not do is redefine an existing ID.
+Packs are validated when they are loaded, and **the runtime engine never defensively parses** — no optional chaining through pack data, no "what if the relation isn't registered" branches downstream.
 
-If two packs could each define `borders` with different qualifier schemas, then a statement's meaning would depend on which pack you asked — and the registry's entire purpose is that a relation means one thing everywhere. A pack extends the graph by defining *new* relations (with their own generators), never by redefining someone else's.
+This is a deliberate trade: the paranoia is concentrated at one boundary so the runtime can be written as if the data is correct. It's a correctness discipline, not a security perimeter — packs are first-party, so validation catches our own mistakes early, where they're cheap, rather than deep in a quiz session. If you find yourself adding a defensive check in the engine, the check usually belongs in the validator instead.
+
+**This used to say "validate at build time."** That stopped being possible when packs became discovered directories: there is no build step for a pack any more, so load is the only moment anything can be checked. The same validator runs from `pnpm packs:validate`, so a pack can be checked while authoring and in CI without starting the server.
+
+**Loading fails hard.** A malformed manifest, a redefined relation, a statement whose relation is undeclared, or a reference to a missing entity stops the server with the pack named. Skipping the bad pack and warning was rejected: a warning in a scrollback is precisely how a pack quietly stops being quizzed and nobody notices.
+
+What the validator covers today is deliberately narrow — manifest shape, relation declaration and collision, entity references resolving, entity single-ownership. The richer checks the original design imagined (subject and object types satisfying a relation's domain and range, qualifier schemas, literal datatypes) need a type system for relations that does not exist yet, and adding the declaration before the checker reads it is how `contents` and `depends` became fiction. Registry first, then declaration.
+
+## Which pack a question came from
+
+A question carries its **pack id and human label**, resolved from the manifest at load. The web UI shows the label as the quiz card's eyebrow.
+
+This replaced a stopgap where the frontend parsed the `cardId` prefix (`cc:tokyo-japan:object`) against a hard-coded code→name map — fragile, and it coupled the UI to the cardId format.
+
+The answer log stores no pack id. It already records the statement, and a statement belongs to exactly one pack, so provenance stays derivable at read time — the same way the question text is derived rather than stored. See [../storage/](../storage/).
 
 ## Updates preserve history
 
-A pack update diffs by statement ID: new statements insert, changed statements update in place, and **removed statements become deprecated rather than deleted** — because answer events reference them and history must stay resolvable. Uninstall deactivates rather than destroys, for the same reason.
+A pack update diffs by statement ID: new statements insert, changed statements update in place, and **removed statements become deprecated rather than deleted** — because answer events reference them and history must stay resolvable.
 
 This is the same constraint that shapes rank in the graph — see [../knowledge-graph/rank-and-time.md](../knowledge-graph/rank-and-time.md). It shows up here as a lifecycle rule, and it is why per-statement provenance exists at all.
 
-The whole update story rests on statement IDs being stable across rebuilds, which is unresolved — see [../knowledge-graph/open-questions.md](../knowledge-graph/open-questions.md).
+**None of this is built.** The manifest keeps a `version` field that nothing reads. The whole update story also rests on statement IDs being stable across rebuilds — see [../knowledge-graph/open-questions.md](../knowledge-graph/open-questions.md).
 
 ## Assets and capability matching
 
@@ -84,17 +108,9 @@ Packs may bundle assets; the engine treats them opaquely. A generator that needs
 
 This is the general answer to "what if most packs don't have pictures," and it generalizes past images to any future asset kind: the generator checks for what it needs and declines gracefully, never special-casing. A missing capability is not an error; that question just isn't generated.
 
-## Which pack a question came from isn't in the contract yet
-
-> **[UNREVIEWED]** — captured from a UI need, not yet designed. Check whether pack provenance belongs on `QuestionResponse`, the answer-log entry, or both, and how it relates to per-statement provenance.
-
-Once packs interweave (the whole point — "lots of packs with their questions interwoven"), a user looking at a question should be able to tell **which pack it came from**. The UI wants a human label for this (shown as the quiz card's eyebrow).
-
-Today `QuestionResponse` is `{ cardId, prompt, input }` — no pack identity. The `cardId` prefix (`cc:tokyo-japan:object`) *does* encode the pack code, so the web UI currently parses that prefix to a display name as a **stopgap** (`packLabel` in `packages/web/src/Quiz.tsx`). That's fragile: it couples the UI to the cardId format and hard-codes the code→name mapping in the frontend.
-
-The proper fix is for a question to carry its **pack id + human label** (and likely pack **version**) from the pack manifest, so the engine — not the UI — resolves provenance. Open: whether the answer-log entry should also record the pack (it already keeps per-statement provenance; the pack label may be derivable rather than stored, mirroring how `question` is derived from `cardId` at read time — see [../storage/](../storage/)).
-
 ## Deeper
 
-- [format.md](format.md) — *reference.* The manifest, file layout, validation checklist, and lifecycle mechanics. More durable than most reference material here, because the format is a contract with external pack authors and ETL rather than something app code will fully express.
-- [../tooling/mvp-bootstrap.md](../tooling/mvp-bootstrap.md) — how the MVP's one `core-cities` pack is actually produced, and why that isn't the import tooling the roadmap defers.
+- [format.md](format.md) — *reference.* The manifest and file layout.
+- [../tooling/mvp-bootstrap.md](../tooling/mvp-bootstrap.md) — how `core-geo` is actually produced, and why that isn't the import tooling the roadmap defers.
+- [ADR-0001](../../docs/adr/0001-packs-are-discovered-not-compiled-in.md) — packs are discovered by scanning, not compiled in.
+- [ADR-0002](../../docs/adr/0002-the-engine-owns-question-kinds.md) — the engine owns question kinds.
