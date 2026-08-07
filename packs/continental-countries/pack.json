@@ -3,8 +3,15 @@
   "version": "0.0.1",
   "labels": { "en": "Continental Countries" },
   "descriptions": {
-    "en": "Country→continent `located_in` statements over entities owned by core-geo. Object-hidden: 'What continent is X in?'"
+    "en": "Country→continent `located_in_continent` statements over entities owned by core-geo. Object-hidden: 'What continent is X in?'"
   },
   "license": "CC0-1.0",
-  "credits": [{ "source": "Wikidata", "retrieved": "2026-07-26" }]
+  "credits": [{ "source": "Wikidata", "retrieved": "2026-07-26" }],
+  "relations": {
+    "located_in_continent": {
+      "labels": { "en": "is in continent" },
+      "kind": "text",
+      "hiddenSlots": ["object"]
+    }
+  }
 }

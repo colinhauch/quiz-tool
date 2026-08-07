@@ -1,8 +1,11 @@
 import type { Generator } from "@geo/engine";
 
 /**
- * Question generator for country→continent `located_in` statements.
+ * Question generator for country→continent `located_in_continent` statements.
  * Object-hidden: "What continent is X in?"
+ *
+ * Its own relation id, not `located_in`: that one is defined by `core-cities`
+ * as city→country, and relation ids are global (#38).
  *
  * This module is found by convention — the loader discovers the pack directory
  * and imports `index.ts` if it exists (ADR-0001), so nothing here needs to say
@@ -14,5 +17,5 @@ const locatedIn: Generator = ({ statement, graph }) => {
 };
 
 export const generators: Record<string, Generator> = {
-  located_in: locatedIn,
+  located_in_continent: locatedIn,
 };

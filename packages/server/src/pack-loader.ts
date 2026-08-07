@@ -1,5 +1,6 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
-import type { Entity, Generator, LocalizedText, Pack, Statement } from "@geo/engine";
+import type { Entity, Generator, HiddenSlot, LocalizedText, Pack, Statement } from "@geo/engine";
+import { type RelationRegistry, validatePacks } from "./pack-validator.js";
 
 /**
  * The one piece of pack IO in the system. The engine stays pure by never
@@ -33,11 +34,22 @@ const STATEMENTS = "statements.jsonl";
 const GENERATORS = "index.ts";
 
 /**
- * A pack's manifest. Only the fields something actually reads are typed here —
+ * One relation a pack defines. Declaring it here is what makes it real: the
+ * registry is built from these, and an undeclared relation is an error rather
+ * than a silently-unquizzable row.
+ */
+export interface RelationDeclaration {
+  labels: LocalizedText;
+  /** Which question kind grades it. Defaults to `text`; the closed set is #43. */
+  kind?: string;
+  /** Which slots it can be quizzed on. Defaults to `["object"]`, the MVP default. */
+  hiddenSlots?: HiddenSlot[];
+}
+
+/**
+ * A pack's manifest. Only fields something actually reads are typed here —
  * `contents`, `depends` and `engine_min_version` were removed precisely because
  * nothing read them and all three had drifted (see `specs/packs/format.md`).
- * `relations` is declared in the format spec and is read by the registry, which
- * is not built yet (#23); it is deliberately absent rather than typed-and-ignored.
  */
 export interface PackManifest {
   id: string;
@@ -46,12 +58,24 @@ export interface PackManifest {
   descriptions?: LocalizedText;
   license?: string;
   credits?: { source: string; retrieved: string }[];
+  /** Omitted entirely by a pack that defines no relations, like `core-geo`. */
+  relations?: Record<string, RelationDeclaration>;
 }
 
 /** A pack directory found on disk: where its files live, plus its manifest. */
 export interface PackSource {
+  /** The directory name, kept separate from `manifest.id` so the two can be checked against each other. */
+  dirName: string;
   dir: URL;
   manifest: PackManifest;
+}
+
+/** A pack with its content read off disk. Keeps its identity, unlike the assembled graph. */
+export interface LoadedPack extends PackSource {
+  id: string;
+  entities: Map<string, Entity>;
+  statements: Statement[];
+  generators: Record<string, Generator>;
 }
 
 /** The module a pack's optional `index.ts` exports: its question generators. */
@@ -64,17 +88,21 @@ interface GeneratorModule {
  * without a `pack.json` is not a pack and is skipped, so build output and
  * stray files can sit alongside without becoming content.
  *
- * Order is fixed only so that failures and logs read the same way twice —
- * assembly is order-independent by construction (entities have one owner, so
- * no load order can change the resulting graph).
+ * Order is fixed only so that failures and logs read the same way twice.
+ * Assembly must not depend on it: load order silently inverted #38 once
+ * already, when hand-written order became alphabetical order.
  */
 export function discoverPacks(packsDir: URL = PACKS_DIR): PackSource[] {
   return readdirSync(packsDir, { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
-    .map((entry) => new URL(`${entry.name}/`, packsDir))
-    .filter((dir) => existsSync(new URL(MANIFEST, dir)))
-    .sort((a, b) => a.href.localeCompare(b.href))
-    .map((dir) => ({ dir, manifest: JSON.parse(readFileSync(new URL(MANIFEST, dir), "utf8")) as PackManifest }));
+    .map((entry) => ({ dirName: entry.name, dir: new URL(`${entry.name}/`, packsDir) }))
+    .filter(({ dir }) => existsSync(new URL(MANIFEST, dir)))
+    .sort((a, b) => a.dirName.localeCompare(b.dirName))
+    .map(({ dirName, dir }) => ({
+      dirName,
+      dir,
+      manifest: JSON.parse(readFileSync(new URL(MANIFEST, dir), "utf8")) as PackManifest,
+    }));
 }
 
 /**
@@ -97,10 +125,10 @@ function readJsonl<T>(file: string, dir: URL): T[] {
  * optional — `core-geo` ships only entities and has no generator module at all.
  *
  * Async because generators are imported dynamically: a discovered pack is not
- * known at compile time, so there is nothing to `import` statically. The
- * runtime trusts what it reads; checking is the validator's job (#23).
+ * known at compile time, so there is nothing to `import` statically. Nothing is
+ * checked here; checking is `validatePacks`, which needs every pack at once.
  */
-export async function loadPack(source: PackSource): Promise<Pack> {
+export async function loadPack(source: PackSource): Promise<LoadedPack> {
   const entities = new Map(readJsonl<Entity>(ENTITIES, source.dir).map((e) => [e.id, e]));
   const statements = readJsonl<Statement>(STATEMENTS, source.dir);
 
@@ -109,40 +137,60 @@ export async function loadPack(source: PackSource): Promise<Pack> {
     ? (((await import(generatorModule.href)) as GeneratorModule).generators ?? {})
     : {};
 
-  return { entities, statements, generators };
+  return { ...source, id: source.manifest.id, entities, statements, generators };
 }
 
 /**
- * Assembles loaded packs into one graph: statements concatenated and generators
- * merged into one relation→generator table, with each entity owned by exactly
- * one pack. Entities are *not* unioned — a Q-ID appearing in two packs is an
- * authoring error, not a silent collapse — so statement-only packs resolve
- * against the single owner. Question selection then draws uniformly across the
- * merged statements, so packs **interweave**.
+ * Assembles validated packs into the one graph the engine reads.
  *
- * Generators are still merged last-write-wins, which is how two packs both
- * claiming `located_in` silently broke every city question (#38). The registry
- * that makes that an error is #23; discovery deliberately lands with it.
+ * Every field is derived from the registry rather than merged pack-by-pack.
+ * That is the structural fix for #38: generators used to be combined with
+ * `Object.assign`, so two packs claiming one relation resolved by load order,
+ * silently. Now a relation has exactly one owner by the time we get here, and
+ * `validatePacks` has already refused anything else — so there is no merge
+ * step left to get wrong.
+ *
+ * `hiddenSlots` reaches the graph here too (#34). It used to be dropped in
+ * assembly, which meant a pack could declare a bidirectional relation and be
+ * quizzed one way forever, with nothing erroring and every test still green.
  */
-export function assembleGraph(packs: Pack[]): Pack {
+export function assembleGraph(packs: LoadedPack[], registry: RelationRegistry): Pack {
   const entities = new Map<string, Entity>();
   const statements: Statement[] = [];
-  const generators: Record<string, Generator> = {};
   for (const pack of packs) {
-    for (const [id, entity] of pack.entities) {
-      if (entities.has(id)) throw new Error(`entity ${id} is owned by more than one pack`);
-      entities.set(id, entity);
-    }
+    for (const [id, entity] of pack.entities) entities.set(id, entity);
     statements.push(...pack.statements);
-    Object.assign(generators, pack.generators);
   }
-  return { entities, statements, generators };
+
+  const generators: Record<string, Generator> = {};
+  const hiddenSlots: Record<string, HiddenSlot[]> = {};
+  const byId = new Map(packs.map((p) => [p.id, p]));
+  for (const [relationId, relation] of registry) {
+    const generator = byId.get(relation.packId)?.generators[relationId];
+    // Unreachable: the validator refuses a declaration with no generator. The
+    // throw is here so a future caller that skips validation fails loudly
+    // rather than assembling a graph with a hole in it.
+    if (!generator) throw new Error(`relation ${relationId} (${relation.packId}) has no generator`);
+    generators[relationId] = generator;
+    hiddenSlots[relationId] = relation.hiddenSlots;
+  }
+
+  // Written as a whole object rather than mutated into shape, so adding a field
+  // to `Pack` is a type error here rather than a field that silently never gets
+  // populated — which is exactly how `hiddenSlots` went missing (#34).
+  const graph: Required<Pack> = { entities, statements, generators, hiddenSlots };
+  return graph;
 }
 
 /**
- * Discovers, loads and assembles every pack into the single graph the server
- * serves. The server's one call to build its content.
+ * Discovers, loads, validates and assembles every pack into the single graph
+ * the server serves. The server's one call to build its content.
+ *
+ * Validation failures throw and are not caught: boot fails hard rather than
+ * skipping a bad pack, because a warning in a scrollback is how a pack quietly
+ * stops being quizzed.
  */
 export async function loadAllPacks(packsDir: URL = PACKS_DIR): Promise<Pack> {
-  return assembleGraph(await Promise.all(discoverPacks(packsDir).map(loadPack)));
+  const packs = await Promise.all(discoverPacks(packsDir).map(loadPack));
+  return assembleGraph(packs, validatePacks(packs));
 }

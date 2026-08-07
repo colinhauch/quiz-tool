@@ -6,5 +6,12 @@
     "en": "A hand-written fixture: city→country `located_in` statements over entities owned by core-geo."
   },
   "license": "CC0-1.0",
-  "credits": [{ "source": "hand-authored fixture", "retrieved": "2026-07-19" }]
+  "credits": [{ "source": "hand-authored fixture", "retrieved": "2026-07-19" }],
+  "relations": {
+    "located_in": {
+      "labels": { "en": "is in country" },
+      "kind": "text",
+      "hiddenSlots": ["object"]
+    }
+  }
 }

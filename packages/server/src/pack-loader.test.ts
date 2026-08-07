@@ -2,10 +2,11 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { questionResponseSchema } from "@geo/contract";
-import type { Entity, Generator, Pack, Statement } from "@geo/engine";
+import type { Entity, Generator, HiddenSlot, Statement } from "@geo/engine";
 import { afterEach, describe, expect, it } from "vitest";
 import { createApp } from "./app.js";
-import { assembleGraph, discoverPacks, loadAllPacks, loadPack } from "./pack-loader.js";
+import { assembleGraph, discoverPacks, type LoadedPack, loadAllPacks, loadPack } from "./pack-loader.js";
+import { validatePacks } from "./pack-validator.js";
 import { createAnswerStore, openDatabase } from "./storage.js";
 
 const locatedIn: Generator = ({ statement, graph }) => ({
@@ -17,25 +18,52 @@ const capitalOf: Generator = ({ statement, graph }) => ({
   input: "text",
 });
 
-function pack(entities: Entity[], statements: Statement[], generators: Record<string, Generator>): Pack {
-  return { entities: new Map(entities.map((e) => [e.id, e])), statements, generators };
+function loadedPack(
+  id: string,
+  entities: Entity[],
+  statements: Statement[],
+  relations: Record<string, { generator: Generator; hiddenSlots?: HiddenSlot[] }>,
+): LoadedPack {
+  return {
+    id,
+    dirName: id,
+    dir: new URL(`file:///packs/${id}/`),
+    manifest: {
+      id,
+      version: "0.0.1",
+      labels: { en: id },
+      relations: Object.fromEntries(
+        Object.entries(relations).map(([r, { hiddenSlots }]) => [r, { labels: { en: r }, hiddenSlots }]),
+      ),
+    },
+    entities: new Map(entities.map((e) => [e.id, e])),
+    statements,
+    generators: Object.fromEntries(Object.entries(relations).map(([r, { generator }]) => [r, generator])),
+  };
+}
+
+/** Assemble the way the loader does: validate first, then build from the registry. */
+function assemble(packs: LoadedPack[]) {
+  return assembleGraph(packs, validatePacks(packs));
 }
 
 // One pack owns the entities (Tokyo, Japan); a second ships only a statement
 // over them, with its own relation and id prefix — the shape the real
 // single-owner assembly sees.
-const entityOwner = pack(
+const entityOwner = loadedPack(
+  "owner",
   [
     { id: "Q1490", labels: { en: "Tokyo" }, types: ["city"] },
     { id: "Q17", labels: { en: "Japan" }, types: ["country"] },
   ],
   [{ id: "cc:tokyo", subject: "Q1490", relation: "located_in", object: { kind: "entity", id: "Q17" } }],
-  { located_in: locatedIn },
+  { located_in: { generator: locatedIn } },
 );
-const statementsOnly = pack(
+const statementsOnly = loadedPack(
+  "statements-only",
   [],
   [{ id: "cap:tokyo", subject: "Q1490", relation: "capital_of", object: { kind: "entity", id: "Q17" } }],
-  { capital_of: capitalOf },
+  { capital_of: { generator: capitalOf } },
 );
 
 /**
@@ -72,29 +100,55 @@ function writePack(
 
 describe("assembleGraph", () => {
   it("takes entities from the pack that owns them", () => {
-    const merged = assembleGraph([entityOwner, statementsOnly]);
+    const merged = assemble([entityOwner, statementsOnly]);
     expect(merged.entities.size).toBe(2);
     expect(merged.entities.get("Q17")?.labels.en).toBe("Japan");
   });
 
   it("concatenates statements from every pack in order", () => {
-    const merged = assembleGraph([entityOwner, statementsOnly]);
+    const merged = assemble([entityOwner, statementsOnly]);
     expect(merged.statements.map((s) => s.id)).toEqual(["cc:tokyo", "cap:tokyo"]);
   });
 
-  it("merges per-pack generators into one relation→generator table", () => {
-    const merged = assembleGraph([entityOwner, statementsOnly]);
+  it("builds one relation→generator table from the registry", () => {
+    const merged = assemble([entityOwner, statementsOnly]);
     expect(Object.keys(merged.generators).sort()).toEqual(["capital_of", "located_in"]);
   });
 
   it("resolves a statement-only pack's statement against the entity owner", () => {
-    const merged = assembleGraph([entityOwner, statementsOnly]);
+    const merged = assemble([entityOwner, statementsOnly]);
     const capital = merged.statements.find((s) => s.id === "cap:tokyo");
     expect(merged.entities.get(capital?.subject ?? "")?.labels.en).toBe("Tokyo");
   });
 
-  it("rejects an entity owned by more than one pack instead of unioning", () => {
-    expect(() => assembleGraph([entityOwner, entityOwner])).toThrow(/owned by more than one pack/);
+  // #34: hidden slots used to be dropped here, so a pack could declare a
+  // bidirectional relation and be quizzed one way forever, silently.
+  it("carries each relation's hidden slots into the assembled graph", () => {
+    const bidi = loadedPack(
+      "capitals",
+      [],
+      [{ id: "cap:ch", subject: "Q17", relation: "capital", object: { kind: "entity", id: "Q1490" } }],
+      { capital: { generator: capitalOf, hiddenSlots: ["object", "subject"] } },
+    );
+    const merged = assemble([entityOwner, bidi]);
+    expect(merged.hiddenSlots?.capital).toEqual(["object", "subject"]);
+  });
+
+  it("gives a relation that declares no slots the object-hidden default", () => {
+    expect(assemble([entityOwner]).hiddenSlots?.located_in).toEqual(["object"]);
+  });
+
+  it("keeps slots from two packs declaring different relations", () => {
+    const merged = assemble([entityOwner, statementsOnly]);
+    expect(Object.keys(merged.hiddenSlots ?? {}).sort()).toEqual(["capital_of", "located_in"]);
+  });
+
+  // The general form of the #34 bug: assembly silently dropping a field of the
+  // graph shape. Building the result as a `Required<Pack>` object literal makes
+  // a new field a type error rather than a field that never gets populated.
+  it("populates every field of the assembled graph shape", () => {
+    const merged = assemble([entityOwner, statementsOnly]);
+    expect(Object.keys(merged).sort()).toEqual(["entities", "generators", "hiddenSlots", "statements"]);
   });
 });
 
@@ -195,6 +249,12 @@ describe("adding a pack touches nothing outside its own directory", () => {
       ],
     });
     writePack(dir, "newcomer", {
+      manifest: {
+        id: "newcomer",
+        version: "0.0.1",
+        labels: { en: "Newcomer" },
+        relations: { capital_of: { labels: { en: "is the capital of" } } },
+      },
       statements: [{ id: "new:tokyo", subject: "Q1490", relation: "capital_of", object: { kind: "entity", id: "Q17" } }],
       indexTs: `export const generators = {
         capital_of: ({ statement, graph }) => ({
@@ -223,7 +283,7 @@ describe("two-pack graph over the server seam", () => {
   const memoryStore = () => createAnswerStore(openDatabase(":memory:"));
 
   it("interweaves questions from both packs over one graph", async () => {
-    const merged = assembleGraph([entityOwner, statementsOnly]);
+    const merged = assemble([entityOwner, statementsOnly]);
 
     // rng=0 lands on the first (located_in) statement, rng≈1 on the last (capital_of).
     const first = questionResponseSchema.parse(
@@ -245,6 +305,41 @@ describe("two-pack graph over the server seam", () => {
       prompt: "What country is Tokyo the capital of?",
       input: "text",
     });
+  });
+});
+
+describe("boot fails hard on an invalid pack", () => {
+  let dir: string;
+
+  afterEach(() => {
+    if (dir) rmSync(dir, { recursive: true, force: true });
+  });
+
+  // Skipping a bad pack with a warning was considered and rejected: a warning
+  // in a scrollback is how a pack quietly stops being quizzed (ADR-0001).
+  it("refuses to load when two packs declare the same relation — #38, caught this time", async () => {
+    dir = makeTempPacksDir();
+    writePack(dir, "core", { entities: [{ id: "Q17", labels: { en: "Japan" }, types: ["country"] }] });
+    for (const id of ["cities", "continents"]) {
+      writePack(dir, id, {
+        manifest: { id, version: "0.0.1", labels: { en: id }, relations: { located_in: { labels: { en: "in" } } } },
+        indexTs: `export const generators = { located_in: () => ({ prompt: "x", input: "text" }) };\n`,
+      });
+    }
+
+    await expect(loadAllPacks(pathToFileURL(`${dir}/`))).rejects.toThrow(
+      /relation "located_in" is declared by both "cities" and "continents"/,
+    );
+  });
+
+  it("refuses to load a statement whose relation no pack declares", async () => {
+    dir = makeTempPacksDir();
+    writePack(dir, "core", { entities: [{ id: "Q17", labels: { en: "Japan" }, types: ["country"] }] });
+    writePack(dir, "orphan", {
+      statements: [{ id: "o:1", subject: "Q17", relation: "mystery", object: { kind: "entity", id: "Q17" } }],
+    });
+
+    await expect(loadAllPacks(pathToFileURL(`${dir}/`))).rejects.toThrow(/relation "mystery", which no pack declares/);
   });
 });
 
@@ -283,7 +378,8 @@ describe("loadAllPacks over the packs actually shipped", () => {
     const franceStatement = p.statements.find((s) => s.id === "cc:france");
     expect(franceStatement).toBeDefined();
     expect(franceStatement?.subject).toBe("Q142");
-    expect(franceStatement?.relation).toBe("located_in");
+    // Its own relation id, not core-cities' city→country `located_in` (#38).
+    expect(franceStatement?.relation).toBe("located_in_continent");
     expect(franceStatement?.object).toEqual({ kind: "entity", id: "Q46" });
 
     // Verify France (Q142) and Europe (Q46) are both in core-geo
@@ -291,7 +387,7 @@ describe("loadAllPacks over the packs actually shipped", () => {
     expect(p.entities.get("Q46")?.labels.en).toBe("Europe");
 
     // continental-countries interweaves with other packs: 150+ continent questions
-    const continentQuestions = p.statements.filter((s) => s.id?.startsWith("cc:") && s.relation === "located_in");
+    const continentQuestions = p.statements.filter((s) => s.relation === "located_in_continent");
     expect(continentQuestions.length).toBeGreaterThanOrEqual(150);
   });
 });

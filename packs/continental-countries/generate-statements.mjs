@@ -23,6 +23,16 @@ function readCoreGeoEntities() {
   return entities;
 }
 
+/**
+ * Wikidata has more than one item that reads "Oceania": Q538 is the geographic
+ * region, Q55643 is the continent. `P30` returns Q538 for the Pacific island
+ * nations, but core-geo owns Q55643 — so six statements pointed at an entity no
+ * pack owned, and answering any of those questions 404'd. Canonicalise here,
+ * and refuse anything else core-geo does not own (below), so a re-run cannot
+ * silently reintroduce the same class of break.
+ */
+const CONTINENT_ALIASES = { Q538: "Q55643" };
+
 /** Fetch continent for each country from Wikidata. */
 async function fetchContinents(countryIds) {
   const values = countryIds.map((id) => `wd:${id}`).join(" ");
@@ -55,7 +65,8 @@ async function fetchContinents(countryIds) {
     const continentMatch = continentUri.match(/\/(Q\d+)$/);
     if (countryMatch && continentMatch) {
       const countryId = countryMatch[1];
-      const continentId = continentMatch[1];
+      const continentId =
+        CONTINENT_ALIASES[continentMatch[1]] ?? continentMatch[1];
       if (!mapping[countryId]) {
         mapping[countryId] = continentId;
       }
@@ -95,6 +106,15 @@ async function main() {
     }
   }
 
+  // Every continent core-geo owns. A statement may only point at one of these:
+  // core-geo is the sole owner of entities, so a continent it does not own is
+  // an unresolvable reference, which the pack validator now rejects at load.
+  const ownedContinents = new Set(
+    Object.values(entities)
+      .filter((e) => e.types?.includes("continent"))
+      .map((e) => e.id)
+  );
+
   // Generate statements
   const statements = [];
   for (const countryId of countries) {
@@ -102,6 +122,12 @@ async function main() {
     if (!continentId) {
       console.error(
         `Warning: no continent mapping for ${countryId} (${entities[countryId]?.labels?.en || "unknown"})`
+      );
+      continue;
+    }
+    if (!ownedContinents.has(continentId)) {
+      console.error(
+        `Warning: ${countryId} (${entities[countryId]?.labels?.en || "unknown"}) maps to ${continentId}, which core-geo does not own — skipped`
       );
       continue;
     }
@@ -115,7 +141,7 @@ async function main() {
     const statement = {
       id: `cc:${countrySlug}`,
       subject: countryId,
-      relation: "located_in",
+      relation: "located_in_continent",
       object: { kind: "entity", id: continentId },
     };
 
