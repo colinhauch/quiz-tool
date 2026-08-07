@@ -19,8 +19,6 @@ const list: PackList = {
     {
       id: "continental-countries",
       label: "Continental Countries",
-      // Quizzed both ways, so cards outnumber statements — which is why the
-      // picker reports both, and why they must not be wired to each other.
       description: "Country→continent statements, quizzed both ways.",
       version: "0.0.1",
       statementCount: 193,
@@ -50,40 +48,30 @@ afterEach(() => {
 });
 
 describe("Packs", () => {
-  it("lists every selectable pack with a checkbox", async () => {
+  // Each pack is a toggle; an included pack reads as pressed.
+  it("shows every selectable pack as a toggle reflecting the committed selection", async () => {
     stubFetch();
     render(<Packs />);
-    expect(await screen.findByLabelText("Core Cities")).toBeChecked();
-    expect(screen.getByLabelText("Continental Countries")).toBeChecked();
+    expect(await screen.findByRole("button", { name: "Core Cities" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(screen.getByRole("button", { name: "Continental Countries" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
   });
 
-  it("shows the focused pack's details from its manifest", async () => {
-    stubFetch();
-    render(<Packs />);
-    fireEvent.click((await screen.findAllByRole("button", { name: "Details" }))[1] as HTMLElement);
-
-    expect(await screen.findByText("Country→continent statements, quizzed both ways.")).toBeInTheDocument();
-    expect(screen.getByText("386")).toBeInTheDocument();
-    expect(screen.getByText("193")).toBeInTheDocument();
-  });
-
-  // The distinction the picker is built around: reading about a pack is free.
-  it("focusing a pack does not change whether it is included", async () => {
+  // Toggling is a pending edit: nothing reaches the server until Save.
+  it("toggling a pack does not change the queue until saved", async () => {
     const puts = stubFetch();
     render(<Packs />);
-    fireEvent.click((await screen.findAllByRole("button", { name: "Details" }))[0] as HTMLElement);
+    fireEvent.click(await screen.findByRole("button", { name: "Core Cities" }));
 
-    expect(screen.getByLabelText("Core Cities")).toBeChecked();
-    expect(puts).toHaveLength(0);
-  });
-
-  // Checking is a pending edit: nothing reaches the server until Save.
-  it("checking a box does not change the queue until saved", async () => {
-    const puts = stubFetch();
-    render(<Packs />);
-    fireEvent.click(await screen.findByLabelText("Core Cities"));
-
-    expect(screen.getByLabelText("Core Cities")).not.toBeChecked();
+    expect(screen.getByRole("button", { name: "Core Cities" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
     expect(puts).toHaveLength(0);
     expect(screen.getByText(/Unsaved/)).toBeInTheDocument();
   });
@@ -91,7 +79,7 @@ describe("Packs", () => {
   it("sends the checked packs when saved", async () => {
     const puts = stubFetch();
     render(<Packs />);
-    fireEvent.click(await screen.findByLabelText("Core Cities"));
+    fireEvent.click(await screen.findByRole("button", { name: "Core Cities" }));
     fireEvent.click(screen.getByRole("button", { name: "Save selection" }));
 
     await waitFor(() => expect(puts).toEqual([{ packIds: ["continental-countries"] }]));
@@ -100,8 +88,8 @@ describe("Packs", () => {
   it("cannot save an empty selection", async () => {
     stubFetch();
     render(<Packs />);
-    fireEvent.click(await screen.findByLabelText("Core Cities"));
-    fireEvent.click(screen.getByLabelText("Continental Countries"));
+    fireEvent.click(await screen.findByRole("button", { name: "Core Cities" }));
+    fireEvent.click(screen.getByRole("button", { name: "Continental Countries" }));
 
     expect(screen.getByRole("button", { name: "Save selection" })).toBeDisabled();
     expect(screen.getByText("Choose at least one pack.")).toBeInTheDocument();
@@ -110,13 +98,14 @@ describe("Packs", () => {
   it("cannot save when nothing has changed", async () => {
     stubFetch();
     render(<Packs />);
-    await screen.findByLabelText("Core Cities");
+    await screen.findByRole("button", { name: "Core Cities" });
     expect(screen.getByRole("button", { name: "Save selection" })).toBeDisabled();
   });
 
   it("reports how many questions are queued", async () => {
     stubFetch();
     render(<Packs />);
-    expect(await screen.findByText(/392 questions in your queue/)).toBeInTheDocument();
+    expect(await screen.findByText(/questions in your queue/)).toBeInTheDocument();
+    expect(screen.getByText("392")).toBeInTheDocument();
   });
 });

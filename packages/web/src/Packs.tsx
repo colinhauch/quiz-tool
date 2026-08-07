@@ -4,17 +4,17 @@ import { useCallback, useEffect, useState } from "react";
 const PACKS_URL = "/api/packs";
 
 /**
- * The pack picker.
+ * The pack picker — a shelf of packs you add to your quiz or set aside.
  *
- * Three states are deliberately kept apart, because conflating them is what
- * makes a picker confusing (#20):
+ * Two states are kept apart, because conflating them is what makes a picker
+ * confusing (#20):
  *
- * - **focused** — whose details you are reading. Changes nothing.
- * - **checked** — your pending edit, held here in the browser.
+ * - **checked** — your pending edit, held here in the browser. Each pack is a
+ *   toggle: pressing its card flips it between "in your quiz" and "available".
  * - **included** — what the server actually draws from, changed only on Save.
  *
- * Reading about a pack is therefore free, and no question you are asked changes
- * until you commit. The Save button is the seam between checked and included.
+ * The Save bar is the seam between checked and included: nothing you toggle
+ * reaches the queue until you commit it.
  */
 type Status = "loading" | "ready" | "saving" | "error";
 
@@ -23,7 +23,6 @@ export function Packs() {
   const [packs, setPacks] = useState<PackSummary[]>([]);
   const [queued, setQueued] = useState(0);
   const [checked, setChecked] = useState<Set<string>>(new Set());
-  const [focused, setFocused] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setStatus("loading");
@@ -32,7 +31,6 @@ export function Packs() {
       setPacks(list.packs);
       setQueued(list.queued);
       setChecked(new Set(list.packs.filter((p) => p.included).map((p) => p.id)));
-      setFocused((current) => current ?? list.packs[0]?.id ?? null);
       setStatus("ready");
     } catch {
       setStatus("error");
@@ -77,43 +75,62 @@ export function Packs() {
   // rather than letting the server reject the request afterwards.
   const included = new Set(packs.filter((p) => p.included).map((p) => p.id));
   const dirty = checked.size !== included.size || [...checked].some((id) => !included.has(id));
-  const detail = packs.find((p) => p.id === focused);
 
   return (
     <div className="packs">
-      <div className="packs__list">
-        <h2 className="packs__heading">Your packs</h2>
-        <ul>
-          {packs.map((pack) => (
-            <li key={pack.id}>
-              <div className={`pack-row ${focused === pack.id ? "pack-row--focused" : ""}`}>
-                <input
-                  type="checkbox"
-                  id={`pack-${pack.id}`}
-                  checked={checked.has(pack.id)}
-                  onChange={() => toggle(pack.id)}
-                />
-                <label className="pack-row__label" htmlFor={`pack-${pack.id}`}>
-                  {pack.label}
-                </label>
-                <button
-                  type="button"
-                  className="pack-row__details"
-                  aria-expanded={focused === pack.id}
-                  onClick={() => setFocused(pack.id)}
-                >
-                  Details
-                </button>
-              </div>
-            </li>
-          ))}
-        </ul>
+      <div className="packs__head">
+        <h2 className="packs__title">Packs</h2>
+        <p className="packs__sub">Tap a pack to add it to your quiz or set it aside.</p>
+      </div>
 
-        <p className="packs__status">
-          {checked.size} of {packs.length} checked · {queued} question
-          {queued === 1 ? "" : "s"} in your queue
-        </p>
+      <div className="packs__grid">
+        {packs.map((pack) => {
+          const on = checked.has(pack.id);
+          return (
+            <button
+              key={pack.id}
+              type="button"
+              className={`pack-card ${on ? "pack-card--in" : "pack-card--out"}`}
+              aria-pressed={on}
+              aria-label={pack.label}
+              onClick={() => toggle(pack.id)}
+            >
+              <span className="pack-card__band">
+                <span className="pack-card__eyebrow">{on ? "In your quiz" : "Available"}</span>
+                <span className="pack-card__mark" aria-hidden="true">
+                  {on ? "✓" : "+"}
+                </span>
+              </span>
+              <span className="pack-card__body">
+                <span className="pack-card__label">{pack.label}</span>
+                {pack.description && <span className="pack-card__desc">{pack.description}</span>}
+                <span className="pack-card__foot">
+                  <span className="pack-card__count">{pack.cardCount}</span>
+                  <span className="pack-card__count-label">
+                    question{pack.cardCount === 1 ? "" : "s"}
+                  </span>
+                  {pack.license && <span className="pack-card__src">{pack.license}</span>}
+                </span>
+              </span>
+            </button>
+          );
+        })}
+      </div>
 
+      <div className="packs__bar">
+        <div>
+          <div className="packs__bar-count">
+            <b>{queued}</b> question{queued === 1 ? "" : "s"} in your queue
+          </div>
+          {checked.size === 0 ? (
+            <div className="packs__bar-note packs__bar-note--warn">Choose at least one pack.</div>
+          ) : (
+            dirty && (
+              <div className="packs__bar-note">Unsaved — your queue hasn’t changed yet.</div>
+            )
+          )}
+        </div>
+        <div className="packs__bar-spacer" />
         <button
           className="btn-primary"
           type="button"
@@ -122,39 +139,7 @@ export function Packs() {
         >
           {status === "saving" ? "Saving…" : "Save selection"}
         </button>
-
-        {checked.size === 0 && <p className="packs__warning">Choose at least one pack.</p>}
-        {dirty && checked.size > 0 && (
-          <p className="packs__warning">Unsaved — your queue hasn’t changed yet.</p>
-        )}
       </div>
-
-      {detail && (
-        <aside className="pack-detail">
-          <span className="quiz-card__eyebrow">{detail.included ? "In your queue" : "Not included"}</span>
-          <h3 className="pack-detail__title">{detail.label}</h3>
-          <p className="pack-detail__meta">
-            v{detail.version}
-            {detail.license ? ` · ${detail.license}` : ""}
-          </p>
-          {detail.description && <p className="pack-detail__description">{detail.description}</p>}
-          <dl className="pack-detail__facts">
-            <div>
-              <dt>Questions</dt>
-              <dd>{detail.cardCount}</dd>
-            </div>
-            <div>
-              <dt>Statements</dt>
-              <dd>{detail.statementCount}</dd>
-            </div>
-          </dl>
-          {detail.credits && detail.credits.length > 0 && (
-            <p className="pack-detail__credits">
-              {detail.credits.map((c) => `${c.source}, retrieved ${c.retrieved}`).join("; ")}
-            </p>
-          )}
-        </aside>
-      )}
     </div>
   );
 }
