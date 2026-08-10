@@ -1,0 +1,17 @@
+{
+  "id": "capital-cities",
+  "version": "0.0.1",
+  "labels": { "en": "Capital Cities" },
+  "descriptions": {
+    "en": "country→capital `capital` statements over entities owned by core-geo. Asked both ways: 'What is the capital of X?' and 'X is the capital of what country?'"
+  },
+  "license": "CC0-1.0",
+  "credits": [{ "source": "Wikidata", "retrieved": "2026-08-09" }],
+  "relations": {
+    "capital": {
+      "labels": { "en": "has capital" },
+      "kind": "text",
+      "hiddenSlots": ["object", "subject"]
+    }
+  }
+}

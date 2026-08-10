@@ -20,6 +20,7 @@ import {
 } from "@geo/engine";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
+import type { Catalog } from "./catalog.js";
 import type { AnswerStore, SelectionStore } from "./storage.js";
 
 export interface AppOptions {
@@ -33,6 +34,8 @@ export interface AppOptions {
   rng?: () => number;
   /** Clock for answer timestamps; injectable for deterministic tests. */
   now?: () => Date;
+  /** Per-pack visibility/tier policy. Omit to offer every selectable pack (the default catalog). */
+  catalog?: Catalog;
 }
 
 /**
@@ -66,14 +69,19 @@ function cardCounts(pack: Pack): Map<string, number> {
  * store, the rng/clock) are passed in rather than reached for, so the same
  * builder serves both the real startup wiring and fixtures under test.
  */
-export function createApp({ pack, store, selection, rng, now = () => new Date() }: AppOptions) {
+export function createApp({ pack, store, selection, rng, now = () => new Date(), catalog }: AppOptions) {
   const app = new Hono();
 
   // First run selects everything, so introducing the picker regresses nothing.
   // A stored selection is intersected with what is actually selectable, so a
   // pack removed from disk since the last save drops out instead of poisoning
   // the queue with an id nothing can draw.
-  const selectable = selectablePacks(pack);
+  //
+  // Two distinct reasons a pack is not selectable, kept separate: it yields no
+  // questions (entities-only, like core-geo), or the catalog hides it (product
+  // policy, like the retired core-cities). A hidden pack is still in the graph;
+  // it just never reaches the picker, the queue, or a stored selection.
+  const selectable = selectablePacks(pack).filter((id) => !catalog?.get(id)?.hidden);
   const stored = selection?.read() ?? null;
   const initial = stored ? stored.filter((id) => selectable.includes(id)) : selectable;
 

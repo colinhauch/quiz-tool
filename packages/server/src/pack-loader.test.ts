@@ -385,8 +385,9 @@ describe("boot fails hard on an invalid pack", () => {
 });
 
 describe("loadAllPacks over the packs actually shipped", () => {
-  it("discovers all three shipped packs by scanning, with no list in source", async () => {
+  it("discovers all shipped packs by scanning, with no list in source", async () => {
     expect(discoverPacks().map((p) => p.manifest.id)).toEqual([
+      "capital-cities",
       "continental-countries",
       "core-cities",
       "core-geo",
