@@ -8,7 +8,8 @@ import {
   questionResponseSchema,
 } from "@geo/contract";
 import { type Entity, enumerateCards, type Generator, type Pack, type Statement } from "@geo/engine";
-import { afterEach, describe, expect, it } from "vitest";
+import { type CryptoKey, generateKeyPair, SignJWT } from "jose";
+import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import { createApp } from "./app.js";
 import { loadAllPacks } from "./pack-loader.js";
 import {
@@ -142,7 +143,7 @@ describe("POST /answer", () => {
   it("persists the answer it recorded", async () => {
     const store = memoryStore();
     await answer(store, "japan");
-    expect(store.all()).toEqual([
+    expect(await store.all()).toEqual([
       {
         cardId: "S1:object",
         input: "japan",
@@ -160,7 +161,7 @@ describe("POST /answer", () => {
       body: JSON.stringify({ cardId: "S1:object" }), // missing input
     });
     expect(res.status).toBe(400);
-    expect(store.all()).toEqual([]);
+    expect(await store.all()).toEqual([]);
   });
 
   it("returns 404 for an unknown card and records nothing", async () => {
@@ -171,7 +172,7 @@ describe("POST /answer", () => {
       body: JSON.stringify({ cardId: "S9:object", input: "x" }),
     });
     expect(res.status).toBe(404);
-    expect(store.all()).toEqual([]);
+    expect(await store.all()).toEqual([]);
   });
 });
 
@@ -240,7 +241,7 @@ describe("GET /answers", () => {
 
   it("falls back to the raw cardId when the card no longer resolves", async () => {
     const store = memoryStore();
-    store.record({
+    await store.record({
       cardId: "S9:object",
       input: "x",
       correct: false,
@@ -285,7 +286,7 @@ describe("full loop over the real fixture pack and a temp-file database", () => 
     const result = answerResponseSchema.parse(await res.json());
     expect(result).toEqual({ correct: true, acceptedAnswer: "Japan" });
 
-    const recorded = store.all();
+    const recorded = await store.all();
     expect(recorded).toHaveLength(1);
     expect(recorded[0]?.cardId).toBe(question.cardId);
     expect(recorded[0]?.correct).toBe(true);
@@ -489,5 +490,120 @@ describe("PUT /packs", () => {
     const log = answerLogSchema.parse(await (await app.request("/answers")).json());
     expect(log).toHaveLength(2);
     expect(log[0]?.question).toBe("What country is Tokyo in?");
+  });
+});
+
+// Multi-user mode: instead of one injected store and one queue, the app verifies
+// a Supabase JWT per request, builds the caller's stores from their user-scoped
+// client, and keeps that user's queue keyed by their id. Tests inject the
+// verification key (a locally generated ES256 keypair) and per-user in-memory
+// stores keyed by the verified subject — standing in for the RLS-scoped Supabase
+// stores production would build from each caller's client.
+describe("multi-user mode", () => {
+  let privateKey: CryptoKey;
+  let publicKey: CryptoKey;
+
+  beforeAll(async () => {
+    ({ privateKey, publicKey } = await generateKeyPair("ES256"));
+  });
+
+  function token(sub: string) {
+    return new SignJWT({ sub, role: "authenticated" })
+      .setProtectedHeader({ alg: "ES256" })
+      .setIssuedAt()
+      .setExpirationTime("5m")
+      .sign(privateKey);
+  }
+
+  async function bearer(sub: string) {
+    return { Authorization: `Bearer ${await token(sub)}` };
+  }
+
+  /** Per-user in-memory stores, created on first sight of a subject. */
+  function perUserStores() {
+    const byUser = new Map<string, { store: AnswerStore; selection: SelectionStore }>();
+    return (_client: unknown, userId: string) => {
+      let stores = byUser.get(userId);
+      if (!stores) {
+        const db = openDatabase(":memory:");
+        stores = { store: createAnswerStore(db), selection: createSelectionStore(db) };
+        byUser.set(userId, stores);
+      }
+      return stores;
+    };
+  }
+
+  function multiUserApp() {
+    return createApp({
+      pack: pickerGraph(),
+      rng: () => 0,
+      auth: {
+        jwks: publicKey,
+        supabaseUrl: "https://project.supabase.co",
+        supabaseKey: "sb_publishable_test",
+      },
+      storesForUser: perUserStores(),
+    });
+  }
+
+  it("leaves /health public but guards the data routes", async () => {
+    const app = multiUserApp();
+    expect((await app.request("/health")).status).toBe(200);
+    expect((await app.request("/question")).status).toBe(401);
+    expect((await app.request("/packs")).status).toBe(401);
+  });
+
+  it("serves a signed-in learner their questions", async () => {
+    const app = multiUserApp();
+    const res = await app.request("/question", { headers: await bearer("user-a") });
+    expect(res.status).toBe(200);
+    expect(questionResponseSchema.parse(await res.json()).cardId).toBeTruthy();
+  });
+
+  it("isolates one learner's pack selection from another's", async () => {
+    const app = multiUserApp();
+
+    // User A narrows to just cities; user B never touches their selection.
+    const putRes = await app.request("/packs", {
+      method: "PUT",
+      headers: { "content-type": "application/json", ...(await bearer("user-a")) },
+      body: JSON.stringify({ packIds: ["cities"] }),
+    });
+    expect(putRes.status).toBe(200);
+
+    const aList = packListSchema.parse(
+      await (await app.request("/packs", { headers: await bearer("user-a") })).json(),
+    );
+    const bList = packListSchema.parse(
+      await (await app.request("/packs", { headers: await bearer("user-b") })).json(),
+    );
+
+    const included = (list: typeof aList) =>
+      list.packs.filter((p) => p.included).map((p) => p.id).sort();
+    expect(included(aList)).toEqual(["cities"]);
+    // B is a first run: default is every selectable pack, untouched by A's save.
+    expect(included(bList)).toEqual(["cities", "continents"]);
+  });
+
+  it("isolates one learner's answer log from another's", async () => {
+    const app = multiUserApp();
+    const card = questionResponseSchema.parse(
+      await (await app.request("/question", { headers: await bearer("user-a") })).json(),
+    ).cardId;
+
+    await app.request("/answer", {
+      method: "POST",
+      headers: { "content-type": "application/json", ...(await bearer("user-a")) },
+      body: JSON.stringify({ cardId: card, input: "Japan" }),
+    });
+
+    const aLog = answerLogSchema.parse(
+      await (await app.request("/answers", { headers: await bearer("user-a") })).json(),
+    );
+    const bLog = answerLogSchema.parse(
+      await (await app.request("/answers", { headers: await bearer("user-b") })).json(),
+    );
+    expect(aLog).toHaveLength(1);
+    expect(bLog).toEqual([]);
   });
 });

@@ -12,23 +12,23 @@ const answer: AnswerRecord = {
 };
 
 describe("createAnswerStore (in-memory)", () => {
-  it("writes an answer and reads it back", () => {
+  it("writes an answer and reads it back", async () => {
     const store = createAnswerStore(openDatabase(":memory:"));
-    store.record(answer);
-    expect(store.all()).toEqual([answer]);
+    await store.record(answer);
+    expect(await store.all()).toEqual([answer]);
   });
 
-  it("preserves correctness as a boolean and keeps insertion order", () => {
+  it("preserves correctness as a boolean and keeps insertion order", async () => {
     const store = createAnswerStore(openDatabase(":memory:"));
-    store.record(answer);
-    store.record({ ...answer, input: "China", correct: false });
-    const all = store.all();
+    await store.record(answer);
+    await store.record({ ...answer, input: "China", correct: false });
+    const all = await store.all();
     expect(all.map((a) => a.correct)).toEqual([true, false]);
     expect(all[1]?.input).toBe("China");
   });
 
-  it("starts empty", () => {
-    expect(createAnswerStore(openDatabase(":memory:")).all()).toEqual([]);
+  it("starts empty", async () => {
+    expect(await createAnswerStore(openDatabase(":memory:")).all()).toEqual([]);
   });
 });
 
@@ -39,16 +39,16 @@ describe("createAnswerStore (real file)", () => {
     if (dir) rmSync(dir, { recursive: true, force: true });
   });
 
-  it("persists across separate connections to the same file", () => {
+  it("persists across separate connections to the same file", async () => {
     dir = mkdtempSync(join(tmpdir(), "geo-store-"));
     const file = join(dir, "answers.sqlite");
 
     const writer = openDatabase(file);
-    createAnswerStore(writer).record(answer);
+    await createAnswerStore(writer).record(answer);
     writer.close();
 
     const reader = openDatabase(file);
-    expect(createAnswerStore(reader).all()).toEqual([answer]);
+    expect(await createAnswerStore(reader).all()).toEqual([answer]);
     reader.close();
   });
 });
