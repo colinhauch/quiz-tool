@@ -392,6 +392,21 @@ describe("GET /packs", () => {
     const app = createApp({ pack: pickerGraph(), store: memoryStore(), selection: memorySelection() });
     expect((await packList(app)).packs.every((p) => p.included)).toBe(true);
   });
+
+  // A pack the catalog hides is loaded into the graph like any other, but never
+  // offered as a choice — the retired core-cities is the first real one.
+  it("omits a pack the catalog hides", async () => {
+    const catalog = new Map([["cities", { hidden: true }]]);
+    const list = await packList(createApp({ pack: pickerGraph(), store: memoryStore(), catalog }));
+    expect(list.packs.map((p) => p.id)).toEqual(["continents"]);
+  });
+
+  it("never draws a card from a hidden pack", async () => {
+    const catalog = new Map([["cities", { hidden: true }]]);
+    const app = createApp({ pack: pickerGraph(), store: memoryStore(), catalog });
+    // continents contributes two cards; a hidden cities card would push this past two.
+    expect((await packList(app)).queued).toBe(2);
+  });
 });
 
 describe("PUT /packs", () => {
