@@ -142,7 +142,7 @@ describe("POST /answer", () => {
   it("persists the answer it recorded", async () => {
     const store = memoryStore();
     await answer(store, "japan");
-    expect(store.all()).toEqual([
+    expect(await store.all()).toEqual([
       {
         cardId: "S1:object",
         input: "japan",
@@ -160,7 +160,7 @@ describe("POST /answer", () => {
       body: JSON.stringify({ cardId: "S1:object" }), // missing input
     });
     expect(res.status).toBe(400);
-    expect(store.all()).toEqual([]);
+    expect(await store.all()).toEqual([]);
   });
 
   it("returns 404 for an unknown card and records nothing", async () => {
@@ -171,7 +171,7 @@ describe("POST /answer", () => {
       body: JSON.stringify({ cardId: "S9:object", input: "x" }),
     });
     expect(res.status).toBe(404);
-    expect(store.all()).toEqual([]);
+    expect(await store.all()).toEqual([]);
   });
 });
 
@@ -240,7 +240,7 @@ describe("GET /answers", () => {
 
   it("falls back to the raw cardId when the card no longer resolves", async () => {
     const store = memoryStore();
-    store.record({
+    await store.record({
       cardId: "S9:object",
       input: "x",
       correct: false,
@@ -285,7 +285,7 @@ describe("full loop over the real fixture pack and a temp-file database", () => 
     const result = answerResponseSchema.parse(await res.json());
     expect(result).toEqual({ correct: true, acceptedAnswer: "Japan" });
 
-    const recorded = store.all();
+    const recorded = await store.all();
     expect(recorded).toHaveLength(1);
     expect(recorded[0]?.cardId).toBe(question.cardId);
     expect(recorded[0]?.correct).toBe(true);

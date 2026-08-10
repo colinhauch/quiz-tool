@@ -82,14 +82,27 @@ export function createApp({ pack, store, selection, rng, now = () => new Date(),
   // policy, like the retired core-cities). A hidden pack is still in the graph;
   // it just never reaches the picker, the queue, or a stored selection.
   const selectable = selectablePacks(pack).filter((id) => !catalog?.get(id)?.hidden);
-  const stored = selection?.read() ?? null;
-  const initial = stored ? stored.filter((id) => selectable.includes(id)) : selectable;
 
-  // The one live queue. Held in memory and rebuilt at boot from the persisted
-  // selection: the *selection* is the durable thing, the order it happens to
-  // produce is not (#20). Reassigned rather than mutated, because every engine
+  // The one live queue. Held in memory and rebuilt from the persisted selection
+  // on first request: the *selection* is the durable thing, the order it happens
+  // to produce is not (#20). Reassigned rather than mutated, because every engine
   // queue operation returns a new queue.
-  let queue: Queue = buildQueue(pack, initial.length > 0 ? initial : selectable, rng);
+  //
+  // Built lazily rather than at construction because the selection read is now
+  // async (Postgres over the network — see storage.ts), and `createApp` stays
+  // synchronous so its many callers need no `await`. `ensureQueue` memoises the
+  // read, so it runs once and every later handler reuses the live queue.
+  // (This single in-memory queue is still one-user-at-a-time; per-user queue
+  // state is the follow-up once auth lands — see #55.)
+  let queue: Queue | undefined;
+  async function ensureQueue(): Promise<Queue> {
+    if (!queue) {
+      const stored = (await selection?.read()) ?? null;
+      const initial = stored ? stored.filter((id) => selectable.includes(id)) : selectable;
+      queue = buildQueue(pack, initial.length > 0 ? initial : selectable, rng);
+    }
+    return queue;
+  }
 
   app.get("/health", (c) => c.json(healthSchema.parse({ status: "ok" })));
 
@@ -97,8 +110,8 @@ export function createApp({ pack, store, selection, rng, now = () => new Date(),
   // handed out twice in a pass. The response is parsed through the shared
   // schema so the server cannot drift from the contract the browser trusts —
   // and so an accidental answer leak fails here, at the seam.
-  app.get("/question", (c) => {
-    const drawn = drawNext(pack, queue, rng);
+  app.get("/question", async (c) => {
+    const drawn = drawNext(pack, await ensureQueue(), rng);
     queue = drawn.queue;
     return c.json(
       questionResponseSchema.parse(
@@ -111,7 +124,8 @@ export function createApp({ pack, store, selection, rng, now = () => new Date(),
   // it, and whether it is currently drawn from. `included` reflects the
   // *committed* selection — the checkbox's pending state lives in the browser
   // until saved.
-  app.get("/packs", (c) => {
+  app.get("/packs", async (c) => {
+    const live = await ensureQueue();
     const counts = cardCounts(pack);
     const statements = new Map<string, number>();
     for (const statement of pack.statements) {
@@ -131,10 +145,10 @@ export function createApp({ pack, store, selection, rng, now = () => new Date(),
             credits: info.credits,
             statementCount: statements.get(id) ?? 0,
             cardCount: counts.get(id) ?? 0,
-            included: queue.included.includes(id),
+            included: live.included.includes(id),
           };
         }),
-        queued: queue.upcoming.length,
+        queued: live.upcoming.length,
       }),
     );
   });
@@ -156,8 +170,8 @@ export function createApp({ pack, store, selection, rng, now = () => new Date(),
       throw new HTTPException(400, { message: `not a selectable pack: ${unknown.join(", ")}` });
     }
 
-    queue = applySelection(pack, queue, packIds, rng);
-    selection?.write(packIds);
+    queue = applySelection(pack, await ensureQueue(), packIds, rng);
+    await selection?.write(packIds);
     return c.json({ ok: true });
   });
 
@@ -182,7 +196,7 @@ export function createApp({ pack, store, selection, rng, now = () => new Date(),
       throw new HTTPException(404, { message: `unknown card: ${cardId}`, cause: err });
     }
 
-    store.record({ cardId, input, correct: result.correct, askedAt: now().toISOString() });
+    await store.record({ cardId, input, correct: result.correct, askedAt: now().toISOString() });
     return c.json(answerResponseSchema.parse(result));
   });
 
@@ -192,10 +206,10 @@ export function createApp({ pack, store, selection, rng, now = () => new Date(),
   // cardId — the prompt is a deterministic function of the card, so it isn't
   // stored — and falls back to the raw cardId if the card no longer resolves
   // (e.g. the pack changed). Parsed through the schema so the seam stays honest.
-  app.get("/answers", (c) =>
+  app.get("/answers", async (c) =>
     c.json(
       answerLogSchema.parse(
-        [...store.all()]
+        [...(await store.all())]
           .reverse()
           .map((record) => ({ ...record, question: questionText(pack, record.cardId) })),
       ),

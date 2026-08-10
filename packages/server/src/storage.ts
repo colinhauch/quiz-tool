@@ -18,10 +18,16 @@ export interface AnswerRecord {
  * card reference, input, correctness, timestamp — matching what spec #10 asks
  * the skeleton to record. Richer `answer_events` fields (resolved statements,
  * hidden values, latency) are post-MVP breadth.
+ *
+ * The methods are async because the production store is Supabase Postgres over
+ * the network (see `supabase-storage.ts`); the local better-sqlite3 store below
+ * satisfies the same shape by wrapping its synchronous calls. Which user's rows
+ * a store touches is not this interface's concern — the Supabase store carries a
+ * user-scoped JWT and Postgres RLS decides ownership (see `#57`).
  */
 export interface AnswerStore {
-  record(answer: AnswerRecord): void;
-  all(): AnswerRecord[];
+  record(answer: AnswerRecord): Promise<void>;
+  all(): Promise<AnswerRecord[]>;
 }
 
 interface AnswerRow {
@@ -44,8 +50,8 @@ interface AnswerRow {
  * purpose: empty is refused everywhere, so it must never arise from a default.
  */
 export interface SelectionStore {
-  read(): string[] | null;
-  write(packIds: string[]): void;
+  read(): Promise<string[] | null>;
+  write(packIds: string[]): Promise<void>;
 }
 
 /**
@@ -76,16 +82,20 @@ export function createSelectionStore(db: Database.Database): SelectionStore {
     "INSERT INTO pack_selection_state (id, saved_at) VALUES (1, ?) ON CONFLICT(id) DO UPDATE SET saved_at = excluded.saved_at",
   );
 
+  const writeTxn = db.transaction((packIds: string[]) => {
+    clear.run();
+    for (const packId of packIds) insert.run(packId);
+    markSaved.run(new Date().toISOString());
+  });
+
   return {
-    read() {
+    async read() {
       if (!wasSaved.get()) return null;
       return (selectAll.all() as { packId: string }[]).map((row) => row.packId);
     },
-    write: db.transaction((packIds: string[]) => {
-      clear.run();
-      for (const packId of packIds) insert.run(packId);
-      markSaved.run(new Date().toISOString());
-    }),
+    async write(packIds: string[]) {
+      writeTxn(packIds);
+    },
   };
 }
 
@@ -113,10 +123,10 @@ export function createAnswerStore(db: Database.Database): AnswerStore {
   );
 
   return {
-    record(answer) {
+    async record(answer) {
       insert.run({ ...answer, correct: answer.correct ? 1 : 0 });
     },
-    all() {
+    async all() {
       return (selectAll.all() as AnswerRow[]).map((row) => ({
         cardId: row.cardId,
         input: row.input,
