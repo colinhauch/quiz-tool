@@ -29,12 +29,14 @@ Research #51 recommends asymmetric ES256 over shared-secret HS256 so the Worker 
 - [ ] (No app secret to store — the Worker only needs the public JWKS URL.)
 
 ## 4. Cloudflare Worker + DNS — issue #54
-Agent can create the Worker via MCP, but not authenticate `wrangler` locally or move nameservers.
+The Cloudflare pipeline is proven end to end via a **placeholder Worker** (2026-08-12).
+`quiz.colinhauch.com` is live with a valid cert; the real server is not ported yet.
 
-- [ ] Confirm the Cloudflare account has **Workers** enabled; note the **account id**.
-- [ ] `wrangler login` locally (interactive OAuth — run `! wrangler login` in the session so output lands here).
-- [ ] Confirm **`colinhauch.com` DNS is managed by Cloudflare**. If not, migrate nameservers to Cloudflare — this is the long pole (propagation can take hours).
-- [ ] Once deployed, add a **custom domain / route** binding `quiz.colinhauch.com` → the Worker.
+- [x] Cloudflare account has Workers enabled. Account: `Colin.hauch@gmail.com's Account` (`6e9c89b4f9f2c0ef025e4fc6f2159bf6`).
+- [x] `wrangler login` done (OAuth, `colin.hauch@gmail.com`).
+- [x] `colinhauch.com` is an active Cloudflare zone.
+- [x] Custom domain bound: `quiz.colinhauch.com` → `quiz-tool` Worker, via `custom_domain` route in `packages/server/wrangler.toml` (wrangler auto-created DNS + TLS on deploy). Verified: `GET /health` → 200, valid cert.
+- [ ] **Port the real server** (blocks the app actually working): `worker.ts`/`wrangler.toml` currently point at a health-only stub. The Node server in `src/` can't run on Workers — replace `@hono/node-server`'s `serve()` with a fetch entry, wire the Supabase stores instead of `better-sqlite3`, and **bundle packs at build time** (runtime `node:fs` + dynamic `import()` pack discovery breaks on Workers). Repoint `main`, keep the route.
 
 ## 5. Secrets for the Worker (set via `wrangler secret put`, not committed)
 - [ ] `SUPABASE_URL` = `https://fmxjevgxlnqujsqeqfwt.supabase.co`
