@@ -5,7 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "test": "vitest run"
+    "bundle-packs": "tsx scripts/bundle-packs.ts",
+    "pretest": "tsx scripts/bundle-packs.ts",
+    "test": "vitest run",
+    "deploy": "wrangler deploy"
   },
   "dependencies": {
     "@geo/contract": "workspace:*",

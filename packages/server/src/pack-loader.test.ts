@@ -5,7 +5,7 @@ import { questionResponseSchema } from "@geo/contract";
 import { type Entity, type Generator, generateQuestion, type HiddenSlot, type Statement } from "@geo/engine";
 import { afterEach, describe, expect, it } from "vitest";
 import { createApp } from "./app.js";
-import { assembleGraph, discoverPacks, type LoadedPack, loadAllPacks, loadPack } from "./pack-loader.js";
+import { assembleGraph, assembleLoaded, discoverPacks, type LoadedPack, loadAllPacks, loadPack } from "./pack-loader.js";
 import { validatePacks } from "./pack-validator.js";
 import { createAnswerStore, openDatabase } from "./storage.js";
 
@@ -102,6 +102,28 @@ function writePack(
   if (files.statements) writeFileSync(join(dir, "statements.jsonl"), `${files.statements.map((s) => JSON.stringify(s)).join("\n")}\n`);
   if (files.indexTs) writeFileSync(join(dir, "index.ts"), files.indexTs);
 }
+
+// The one assembly entry both load paths share: the fs loader (loadAllPacks)
+// and the build-time bundle (packs.generated.ts) each call assembleLoaded, so a
+// bundled graph is assembled identically to the on-disk one. It validates then
+// assembles — the whole non-IO tail of loading in one named seam.
+describe("assembleLoaded", () => {
+  it("validates and assembles loaded packs into one graph", () => {
+    const graph = assembleLoaded([entityOwner, statementsOnly]);
+    expect(graph.entities.get("Q17")?.labels.en).toBe("Japan");
+    expect(graph.statements.map((s) => s.id)).toEqual(["cc:tokyo", "cap:tokyo"]);
+    expect(Object.keys(graph.generators).sort()).toEqual(["capital_of", "located_in"]);
+  });
+
+  it("refuses an invalid set the way validation does, rather than assembling a hole", () => {
+    // A statement whose relation no pack declares: validation must throw here,
+    // proving assembleLoaded runs the validator and does not silently assemble.
+    const undeclared = loadedPack("undeclared", [], [
+      { id: "x:1", subject: "Q1490", relation: "no_such_relation", object: { kind: "entity", id: "Q17" } },
+    ], {});
+    expect(() => assembleLoaded([entityOwner, undeclared])).toThrow(/no pack declares/);
+  });
+});
 
 describe("assembleGraph", () => {
   it("takes entities from the pack that owns them", () => {

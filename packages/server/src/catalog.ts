@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from "node:fs";
-import { PACKS_DIR } from "./pack-loader.js";
+import { defaultPacksDir } from "./pack-loader.js";
 
 /**
  * Which packs are offered to a learner, and on what terms. This is **product
@@ -61,7 +61,7 @@ function parsePolicy(packId: string, raw: unknown): PackPolicy {
  * catalog throws rather than being skipped, for the same reason a bad pack does
  * — a warning in a scrollback is how policy quietly stops applying.
  */
-export function loadCatalog(packsDir: URL = PACKS_DIR): Catalog {
+export function loadCatalog(packsDir: URL = defaultPacksDir()): Catalog {
   const url = new URL(CATALOG, packsDir);
   if (!existsSync(url)) return new Map();
 

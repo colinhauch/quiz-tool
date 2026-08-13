@@ -33,7 +33,14 @@ import { type RelationRegistry, validatePacks } from "./pack-validator.js";
  * different depth and need this passed in — which is why every entry point
  * below takes the directory as an argument.
  */
-export const PACKS_DIR = new URL("../../../packs/", import.meta.url);
+export function defaultPacksDir(): URL {
+  // Lazy, not a top-level const: `import.meta.url` is not a valid URL base on a
+  // Cloudflare Worker, so evaluating this at module load would throw the moment
+  // worker.ts imports this file for `assembleLoaded` (it happened, #54). As a
+  // default-param value it only runs when the fs loader is actually called —
+  // which never happens on the Worker, where the bundle replaces disk.
+  return new URL("../../../packs/", import.meta.url);
+}
 
 /** The files a pack may ship, all found by convention rather than declared. */
 const MANIFEST = "pack.json";
@@ -100,7 +107,7 @@ interface GeneratorModule {
  * Assembly must not depend on it: load order silently inverted #38 once
  * already, when hand-written order became alphabetical order.
  */
-export function discoverPacks(packsDir: URL = PACKS_DIR): PackSource[] {
+export function discoverPacks(packsDir: URL = defaultPacksDir()): PackSource[] {
   return readdirSync(packsDir, { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
     .map((entry) => ({ dirName: entry.name, dir: new URL(`${entry.name}/`, packsDir) }))
@@ -208,7 +215,19 @@ export function assembleGraph(packs: LoadedPack[], registry: RelationRegistry): 
  * skipping a bad pack, because a warning in a scrollback is how a pack quietly
  * stops being quizzed.
  */
-export async function loadAllPacks(packsDir: URL = PACKS_DIR): Promise<Pack> {
+export async function loadAllPacks(packsDir: URL = defaultPacksDir()): Promise<Pack> {
   const packs = await Promise.all(discoverPacks(packsDir).map(loadPack));
+  return assembleLoaded(packs);
+}
+
+/**
+ * The whole non-IO tail of loading: validate the loaded packs, then assemble
+ * them into the single graph. Both load paths converge here — {@link loadAllPacks}
+ * after reading disk, and the build-time bundle (`packs.generated.ts`) after
+ * importing statically — so a bundled graph is assembled and checked exactly
+ * like the on-disk one, with no fs or dynamic import in sight (that is what lets
+ * this run on a Cloudflare Worker; see docs/deploy/hitl-checklist.md §4).
+ */
+export function assembleLoaded(packs: LoadedPack[]): Pack {
   return assembleGraph(packs, validatePacks(packs));
 }

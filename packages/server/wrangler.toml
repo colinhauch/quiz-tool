@@ -1,19 +1,29 @@
 # Cloudflare Worker config for the quiz-tool server.
 #
-# STAGE: placeholder. `main` points at worker.ts (a health-only stub), NOT the
-# Node server in src/ — that server does not run on Workers yet (it uses
-# @hono/node-server, better-sqlite3, and runtime pack discovery via node:fs).
-# When the real port lands, repoint `main` at the ported entry and keep this
-# route unchanged.
+# `main` is worker.ts — the real server entry: it assembles the build-time pack
+# bundle (src/packs.generated.ts) and serves the same Hono app as the Node entry
+# (src/index.ts), backed by Supabase per learner. No filesystem, no SQLite.
 
 name = "quiz-tool"
-main = "worker.ts"
+main = "src/worker.ts"
 compatibility_date = "2026-08-12"
+# @supabase/supabase-js pulls a few Node built-ins; this shims them on Workers.
+compatibility_flags = ["nodejs_compat"]
+
+# Regenerate the pack bundle from packs/ before every deploy, so a deploy can
+# never ship a stale graph. Mirrors the pretest hook.
+[build]
+command = "pnpm bundle-packs"
+
+# Non-secret config. The publishable key is low-privilege by design (RLS keys on
+# the forwarded user JWT, not this key), so both are safe in source — they are
+# already recorded in docs/deploy/hitl-checklist.md.
+[vars]
+SUPABASE_URL = "https://fmxjevgxlnqujsqeqfwt.supabase.co"
+SUPABASE_PUBLISHABLE_KEY = "sb_publishable_fAoIRUV4B8RRdytsQRPgjw_tGhmvYdo"
 
 # Binds quiz.colinhauch.com to this Worker on deploy. wrangler creates the DNS
 # record AND provisions the TLS cert automatically — no dashboard, no manual DNS.
-# Requires: colinhauch.com is an active Cloudflare zone (it is) and the hostname
-# has no pre-existing CNAME record.
 [[routes]]
 pattern = "quiz.colinhauch.com"
 custom_domain = true

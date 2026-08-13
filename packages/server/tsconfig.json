@@ -6,8 +6,11 @@
     "types": ["node"]
   },
   "include": ["src"],
-  // No reference to `packs`: the server discovers packs at boot and imports
-  // their generator modules dynamically, so there is deliberately no
-  // compile-time edge from application source to any pack (ADR-0001).
-  "references": [{ "path": "../contract" }, { "path": "../engine" }]
+  // The Node path (src/index.ts) still discovers packs at boot with no
+  // compile-time edge (ADR-0001). But the Cloudflare Worker can't do runtime
+  // discovery, so the build-time bundle (src/packs.generated.ts) imports every
+  // pack's generators statically — a deliberate compile-time edge for that
+  // target. This reference resolves those imports to the packs project's
+  // declarations (not into this project's rootDir). See ADR-0001's amendment.
+  "references": [{ "path": "../contract" }, { "path": "../engine" }, { "path": "../../packs" }]
 }

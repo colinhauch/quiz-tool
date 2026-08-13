@@ -29,14 +29,15 @@ Research #51 recommends asymmetric ES256 over shared-secret HS256 so the Worker 
 - [ ] (No app secret to store — the Worker only needs the public JWKS URL.)
 
 ## 4. Cloudflare Worker + DNS — issue #54
-The Cloudflare pipeline is proven end to end via a **placeholder Worker** (2026-08-12).
-`quiz.colinhauch.com` is live with a valid cert; the real server is not ported yet.
+**Done (2026-08-12).** The real server runs on the Worker at `quiz.colinhauch.com`
+with a valid cert. Verified live: `GET /health` → 200 `{"status":"ok"}`,
+`GET /question` → 401 (data routes auth-guarded).
 
 - [x] Cloudflare account has Workers enabled. Account: `Colin.hauch@gmail.com's Account` (`6e9c89b4f9f2c0ef025e4fc6f2159bf6`).
 - [x] `wrangler login` done (OAuth, `colin.hauch@gmail.com`).
 - [x] `colinhauch.com` is an active Cloudflare zone.
-- [x] Custom domain bound: `quiz.colinhauch.com` → `quiz-tool` Worker, via `custom_domain` route in `packages/server/wrangler.toml` (wrangler auto-created DNS + TLS on deploy). Verified: `GET /health` → 200, valid cert.
-- [ ] **Port the real server** (blocks the app actually working): `worker.ts`/`wrangler.toml` currently point at a health-only stub. The Node server in `src/` can't run on Workers — replace `@hono/node-server`'s `serve()` with a fetch entry, wire the Supabase stores instead of `better-sqlite3`, and **bundle packs at build time** (runtime `node:fs` + dynamic `import()` pack discovery breaks on Workers). Repoint `main`, keep the route.
+- [x] Custom domain bound: `quiz.colinhauch.com` → `quiz-tool` Worker, via `custom_domain` route in `packages/server/wrangler.toml` (wrangler auto-created DNS + TLS on deploy).
+- [x] **Real server ported.** `src/worker.ts` is a `fetch` entry (not `@hono/node-server`); it assembles the build-time pack bundle (`src/packs.generated.ts` from `pnpm bundle-packs`, no `fs`/dynamic import) and serves the same `createApp` with Supabase-backed per-user stores (no SQLite). Compile-time edge server→packs is a deliberate, recorded departure — see [ADR-0001 amendment](../adr/0001-packs-are-discovered-not-compiled-in.md).
 
 ## 5. Secrets for the Worker (set via `wrangler secret put`, not committed)
 - [ ] `SUPABASE_URL` = `https://fmxjevgxlnqujsqeqfwt.supabase.co`

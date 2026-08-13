@@ -17,3 +17,16 @@ Every pack used to be a workspace package that the server declared as a dependen
 **"Validate at build time, trust at runtime" becomes "validate at load."** There is no build step for packs any more, so load is the only moment anything can be checked. One validator serves both `pnpm packs:validate` and the loader; boot fails hard rather than skipping a bad pack, because a warning in a scrollback is how a pack quietly stops being quizzed.
 
 **The manifest becomes load-bearing for the first time.** Nothing read `pack.json` before, which is why its `contents`, `depends`, and `engine_min_version` fields had already drifted into three different conventions across three packs without anyone noticing. Those fields are gone; the loader finds files by convention.
+
+## Amendment (2026-08-12): the Cloudflare Worker target compiles packs in
+
+Deploying the server to a Cloudflare Worker (#54) reintroduces a build step this ADR had removed, because a Worker has no filesystem and cannot `import()` at runtime — the two things discovery relies on. A build-time bundler (`packages/server/scripts/bundle-packs.ts`) emits `src/packs.generated.ts`: every pack's generators as **static imports** and its data as inline literals. That is a compile-time edge from application source to every pack — precisely what "discovered, not compiled in" avoided — and `packages/server/tsconfig.json` now references `packs/` to resolve it.
+
+This is a target-specific reversal, not a wholesale one, and the original intent survives:
+
+- **The Node path (`src/index.ts`) is unchanged** — still scans `packs/` at boot, still no compile-time edge. Only the Worker path uses the bundle.
+- **Adding a pack still touches no hand-written application source.** It is still a directory with a manifest; you then run `pnpm bundle-packs` to regenerate the (machine-owned) bundle. The generated file is never hand-edited.
+- **The registry safety net still runs.** The bundler enumerates with the same `discoverPacks`, and the Worker assembles through the same `assembleLoaded` → `validatePacks`, so a redefined or undeclared relation still throws — at build time now, which is strictly safer than at load.
+- **Drift is caught mechanically.** `packs-bundle.test.ts` fails if the bundle diverges from disk; `pretest` and the wrangler `[build]` command regenerate it before tests and before every deploy.
+
+So "validate at load" becomes "validate at bundle" for the Worker, and the build step returns — but scoped to one deploy target and fully automated.
