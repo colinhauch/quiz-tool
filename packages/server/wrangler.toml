@@ -27,3 +27,21 @@ SUPABASE_PUBLISHABLE_KEY = "sb_publishable_fAoIRUV4B8RRdytsQRPgjw_tGhmvYdo"
 [[routes]]
 pattern = "quiz.colinhauch.com"
 custom_domain = true
+
+# Observability: invocation + workers logs persisted (view in the dashboard or
+# `wrangler tail`). Traces off. The logs block has its own enabled flag, so logs
+# stay on even though the top-level observability toggle is false.
+[observability]
+enabled = false
+head_sampling_rate = 1
+
+[observability.logs]
+enabled = true
+head_sampling_rate = 1
+persist = true
+invocation_logs = true
+
+[observability.traces]
+enabled = false
+persist = true
+head_sampling_rate = 1
