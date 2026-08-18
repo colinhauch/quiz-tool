@@ -41,6 +41,7 @@ export function AnswerLog() {
         <tr>
           <th scope="col">Question</th>
           <th scope="col">Your answer</th>
+          <th scope="col">Correct answer</th>
           <th scope="col">Result</th>
         </tr>
       </thead>
@@ -51,6 +52,7 @@ export function AnswerLog() {
           <tr key={`${a.cardId}@${a.askedAt}#${i}`}>
             <td>{a.question}</td>
             <td>{a.input || "—"}</td>
+            <td>{a.acceptedAnswer ?? "—"}</td>
             <td>
               <span className={`result-pill ${a.correct ? "result-pill--correct" : "result-pill--incorrect"}`}>
                 {a.correct ? "Correct" : "Incorrect"}

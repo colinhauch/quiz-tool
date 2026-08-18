@@ -203,6 +203,7 @@ describe("GET /answers", () => {
         question: "What country is Tokyo in?",
         input: "china",
         correct: false,
+        acceptedAnswer: "Japan",
         askedAt: "2026-07-19T12:05:00.000Z",
       },
       {
@@ -210,6 +211,7 @@ describe("GET /answers", () => {
         question: "What country is Tokyo in?",
         input: "japan",
         correct: true,
+        acceptedAnswer: "Japan",
         askedAt: "2026-07-19T12:00:00.000Z",
       },
     ]);
@@ -221,6 +223,14 @@ describe("GET /answers", () => {
     const res = await createApp({ pack: fixturePack(), store }).request("/answers");
     const [entry] = answerLogSchema.parse(await res.json());
     expect(entry?.question).toBe("What country is Tokyo in?");
+  });
+
+  it("re-derives each answer's accepted answer from its card, regardless of input", async () => {
+    const store = memoryStore();
+    await answer(store, "china", "2026-07-19T12:05:00.000Z");
+    const res = await createApp({ pack: fixturePack(), store }).request("/answers");
+    const [entry] = answerLogSchema.parse(await res.json());
+    expect(entry?.acceptedAnswer).toBe("Japan");
   });
 
   it("re-derives a subject-hidden card's question text from its card", async () => {
@@ -250,6 +260,7 @@ describe("GET /answers", () => {
     const res = await createApp({ pack: fixturePack(), store }).request("/answers");
     const [entry] = answerLogSchema.parse(await res.json());
     expect(entry?.question).toBe("S9:object");
+    expect(entry?.acceptedAnswer).toBeUndefined();
   });
 });
 
@@ -298,6 +309,7 @@ describe("full loop over the real fixture pack and a temp-file database", () => 
         question: question.prompt,
         input: "Japan",
         correct: true,
+        acceptedAnswer: "Japan",
         askedAt: recorded[0]?.askedAt,
       },
     ]);

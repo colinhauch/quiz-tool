@@ -69,9 +69,12 @@ export type AnswerResponse = z.infer<typeof answerResponseSchema>;
  * `GET /answers` — one recorded answer in the raw log. Mirrors what the store
  * persists — the card reference, the learner's verbatim input (which may be
  * empty — a blank submission is still an answer), the verdict, and when it was
- * recorded — plus the rendered `question` text, which the server re-derives
- * from `cardId` at read time rather than storing. This is the only record that
- * a sitting happened; the review view reads nothing else.
+ * recorded — plus the rendered `question` text and the canonical
+ * `acceptedAnswer`, both of which the server re-derives from `cardId` at read
+ * time rather than storing. `acceptedAnswer` is absent when the card no longer
+ * resolves (e.g. the pack changed), the same staleness `question` falls back on.
+ * This is the only record that a sitting happened; the review view reads nothing
+ * else.
  */
 export const answerLogEntrySchema = z
   .object({
@@ -79,6 +82,7 @@ export const answerLogEntrySchema = z
     question: z.string().min(1),
     input: z.string(),
     correct: z.boolean(),
+    acceptedAnswer: z.string().min(1).optional(),
     askedAt: z.string().min(1),
   })
   .strict();

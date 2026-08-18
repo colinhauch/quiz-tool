@@ -9,6 +9,7 @@ const log: AnswerLogData = [
     question: "What country is Paris in?",
     input: "China",
     correct: false,
+    acceptedAnswer: "France",
     askedAt: "2026-07-19T12:05:00.000Z",
   },
   {
@@ -16,6 +17,7 @@ const log: AnswerLogData = [
     question: "What country is Tokyo in?",
     input: "Japan",
     correct: true,
+    acceptedAnswer: "Japan",
     askedAt: "2026-07-19T12:00:00.000Z",
   },
 ];
@@ -43,6 +45,31 @@ describe("AnswerLog", () => {
     expect(rows[1]).toHaveTextContent("Incorrect");
     expect(rows[2]).toHaveTextContent("What country is Tokyo in?");
     expect(rows[2]).toHaveTextContent("Correct");
+  });
+
+  it("shows the correct answer beside a wrong submission", async () => {
+    stubFetch(log);
+    render(<AnswerLog />);
+    const rows = await screen.findAllByRole("row");
+    // Paris row: wrong input "China", correct answer "France".
+    expect(rows[1]).toHaveTextContent("France");
+  });
+
+  it("dashes the correct answer when the card no longer resolves", async () => {
+    stubFetch([
+      {
+        cardId: "cc:gone:object",
+        question: "cc:gone:object",
+        input: "x",
+        correct: false,
+        askedAt: "t",
+      },
+    ]);
+    render(<AnswerLog />);
+    const rows = await screen.findAllByRole("row");
+    // Both the input and the (absent) correct answer render as a dash.
+    const correctAnswerCell = rows[1]?.querySelectorAll("td")[2];
+    expect(correctAnswerCell).toHaveTextContent("—");
   });
 
   it("shows the question text, not the raw card id", async () => {
