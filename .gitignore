@@ -2,7 +2,9 @@
 node_modules/
 package-lock.json
 yarn.lock
-pnpm-lock.yaml
+# pnpm-lock.yaml is committed: Cloudflare Workers Builds detects the package
+# manager from the lockfile. Without it, CI falls back to `bun install`, which
+# can't resolve our pnpm `workspace:*` deps.
 
 # Build outputs
 dist/
