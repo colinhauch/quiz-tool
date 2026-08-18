@@ -278,7 +278,11 @@ export function createApp({
       answerLogSchema.parse(
         [...(await s.all())]
           .reverse()
-          .map((record) => ({ ...record, question: questionText(pack, record.cardId) })),
+          .map((record) => ({
+            ...record,
+            question: questionText(pack, record.cardId),
+            acceptedAnswer: acceptedAnswerFor(pack, record.cardId),
+          })),
       ),
     );
   });
@@ -298,5 +302,20 @@ function questionText(pack: Pack, cardId: string): string {
     return generateQuestion(pack, statement, hiddenSlot).prompt;
   } catch {
     return cardId;
+  }
+}
+
+/**
+ * The canonical correct answer for a recorded card, re-derived from its id so
+ * the log can show it beside the learner's input. The judgement is independent
+ * of what was typed, so any input recovers the accepted label; a stale id (its
+ * card gone from the pack) yields `undefined`, the same staleness `questionText`
+ * falls back on, and the log entry simply omits the answer.
+ */
+function acceptedAnswerFor(pack: Pack, cardId: string): string | undefined {
+  try {
+    return checkAnswer(pack, cardId, "").acceptedAnswer;
+  } catch {
+    return undefined;
   }
 }
