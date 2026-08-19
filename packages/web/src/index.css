@@ -78,9 +78,72 @@ body {
   margin-bottom: 1.5rem;
 }
 
+.app-header__top {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 1rem;
+}
+
 .app-nav {
   display: flex;
   gap: 2rem;
+}
+
+/* ── Auth widget (sign in / sign out) ────────────────────── */
+.auth-widget {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.85rem;
+}
+
+.auth-widget__google,
+.auth-widget__signout {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(241, 242, 246, 0.4);
+  color: var(--platinum);
+  padding: 0.4rem 0.8rem;
+  border-radius: 0.3rem;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.auth-widget__google:hover,
+.auth-widget__signout:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.auth-widget__magic {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.auth-widget__magic input {
+  padding: 0.4rem 0.6rem;
+  border-radius: 0.3rem;
+  border: 1px solid rgba(241, 242, 246, 0.4);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--platinum);
+  font-size: 0.85rem;
+  width: 11rem;
+}
+
+.auth-widget__magic input::placeholder {
+  color: rgba(241, 242, 246, 0.6);
+}
+
+.auth-widget__magic button {
+  background: none;
+  border: none;
+  color: var(--periwinkle);
+  font-weight: 600;
+  font-size: 0.8rem;
+  cursor: pointer;
+  text-decoration: underline;
+  white-space: nowrap;
 }
 
 .app-nav button {
@@ -541,5 +604,14 @@ body {
   }
   .packs__title {
     font-size: 1.6rem;
+  }
+  .app-header__top {
+    justify-content: flex-start;
+  }
+  .auth-widget {
+    flex-wrap: wrap;
+  }
+  .auth-widget__magic input {
+    width: 8.5rem;
   }
 }
