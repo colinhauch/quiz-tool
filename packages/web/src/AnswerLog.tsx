@@ -1,8 +1,6 @@
 import type { AnswerLog as AnswerLogData } from "@geo/contract";
 import { useCallback, useEffect, useState } from "react";
-
-/** The raw answer log, served most-recent-first; `/api` is proxied in dev. */
-const ANSWERS_URL = "/api/answers";
+import { getAnswers } from "./apiClient.js";
 
 type View =
   | { state: "loading" }
@@ -15,7 +13,7 @@ export function AnswerLog() {
   const load = useCallback(async () => {
     setView({ state: "loading" });
     try {
-      const answers = (await (await fetch(ANSWERS_URL)).json()) as AnswerLogData;
+      const answers = await getAnswers();
       setView({ state: "loaded", answers });
     } catch {
       setView({ state: "error" });
