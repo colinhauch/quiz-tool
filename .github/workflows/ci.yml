@@ -1,0 +1,43 @@
+name: CI
+
+# Merge gate for the promotion pipeline (spec #71). Runs the fast suite on every
+# PR into a long-lived branch. No secrets: the Supabase service key is not added
+# here, so the supabase-js store integration tests stay local-only for now.
+# The dev->test gate is where slower journey/integration tests will be added
+# later; today every target runs the same fast suite.
+
+on:
+  pull_request:
+    branches: [dev, test, prod]
+
+# The job/check name below ("checks") is required by branch protection by name.
+# Keep it stable.
+jobs:
+  checks:
+    name: checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm run typecheck
+
+      - name: Unit tests
+        run: pnpm test
+
+      - name: Validate packs
+        run: pnpm run packs:validate
