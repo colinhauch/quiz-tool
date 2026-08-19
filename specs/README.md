@@ -117,6 +117,7 @@ When you add, split, or promote a spec, update the table below.
 | [packs/](packs/) | mixed | First-party, topic-scoped modules that ship data *and* the code to handle it. Why the engine runs the learning loop and packs supply the domain. Reviewed except three sections rewritten for the discovery shift (phrasing-vs-judging, discovery, and the resolved provenance story); [format.md](packs/format.md) is wholly unreviewed. |
 | [questions/](questions/) | mixed | Turning facts into questions via pack-provided generator code. README reviewed (MVP scope marked); distractors.md, template-shape.md, open-questions.md unreviewed. |
 | [learning/](learning/) | unreviewed | What the user knows and what to ask next: the answer log, scheduling, insight and gap analysis. |
+| [auth/](auth/) | unreviewed | Accounts and authentication: the Supabase-user identity behind each learner, local JWKS token verification, and RLS-owned isolation. Server half is built (verify before relying on the forward-looking sign-in/flow claims). |
 | [storage/](storage/) | unreviewed | Persistence choices: why this database, what we liked, what would make us move. Includes the reference SQL schema. |
 | [product/](product/) | reviewed | Product and UX concepts. Why a sitting has no boundary, and what that buys. |
 | [deployment/](deployment/) | mixed | How this ships and runs. Why the MVP is a local web app, and what that commits us to. Reviewed except the packs-are-bundled section, rewritten from an open question to a decision. |
