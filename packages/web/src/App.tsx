@@ -1,5 +1,8 @@
 import { useState } from "react";
 import { AnswerLog } from "./AnswerLog.js";
+import { AUTH_CALLBACK_PATH } from "./auth.js";
+import { AuthCallback } from "./AuthCallback.js";
+import { AuthWidget } from "./AuthWidget.js";
 import { Packs } from "./Packs.js";
 import { Quiz } from "./Quiz.js";
 
@@ -14,12 +17,29 @@ type Tab = "quiz" | "answers" | "packs";
  */
 export function App() {
   const [tab, setTab] = useState<Tab>("quiz");
+  const [isAuthCallback, setIsAuthCallback] = useState(
+    () => window.location.pathname === AUTH_CALLBACK_PATH,
+  );
+
+  if (isAuthCallback) {
+    return (
+      <AuthCallback
+        onDone={() => {
+          window.history.replaceState(null, "", "/");
+          setIsAuthCallback(false);
+        }}
+      />
+    );
+  }
 
   return (
     <>
       <header className="app-header">
         <div className="app-header__topo" aria-hidden="true" />
         <div className="app-header__inner">
+          <div className="app-header__top">
+            <AuthWidget />
+          </div>
           <h1 className="app-title">Geography Quiz</h1>
           <nav className="app-nav" aria-label="Views">
             <button type="button" aria-current={tab === "quiz"} onClick={() => setTab("quiz")}>

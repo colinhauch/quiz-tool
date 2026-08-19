@@ -76,6 +76,9 @@ importers:
       '@geo/contract':
         specifier: workspace:*
         version: link:../contract
+      '@supabase/supabase-js':
+        specifier: ^2.112.2
+        version: 2.112.3
       react:
         specifier: ^19.0.0
         version: 19.2.8
