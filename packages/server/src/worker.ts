@@ -22,6 +22,12 @@ interface Env {
   SUPABASE_URL: string;
   /** Low-privilege publishable key; the forwarded user JWT is what RLS keys on. */
   SUPABASE_PUBLISHABLE_KEY: string;
+  /**
+   * Postgres schema this deploy reads/writes, set per Worker environment
+   * (dev→`dev`, test→`test`). Unset on prod so it keeps the default `public`.
+   * One project, one auth pool — only the data tables differ. See wrangler.toml.
+   */
+  DB_SCHEMA?: string;
 }
 
 // The pack graph is static per deploy, so assemble it once per isolate rather
@@ -41,6 +47,7 @@ function getApp(env: Env) {
         supabaseKey: env.SUPABASE_PUBLISHABLE_KEY,
         issuer: `${env.SUPABASE_URL}/auth/v1`,
         audience: "authenticated",
+        schema: env.DB_SCHEMA,
       },
       storesForUser: (client) => ({
         store: createSupabaseAnswerStore(client),

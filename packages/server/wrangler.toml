@@ -37,6 +37,9 @@ command = "pnpm bundle-packs && pnpm --filter @geo/web build"
 [vars]
 SUPABASE_URL = "https://fmxjevgxlnqujsqeqfwt.supabase.co"
 SUPABASE_PUBLISHABLE_KEY = "sb_publishable_fAoIRUV4B8RRdytsQRPgjw_tGhmvYdo"
+# No DB_SCHEMA here on purpose: prod reads/writes the default `public` schema.
+# dev/test override it below to hit their own schemas in the SAME project (one
+# auth pool, isolated data) — see migration 20260821000000_env_schemas_dev_test.
 
 # Binds quiz.colinhauch.com to this Worker on deploy. wrangler creates the DNS
 # record AND provisions the TLS cert automatically — no dashboard, no manual DNS.
@@ -77,9 +80,12 @@ head_sampling_rate = 1
 # the deploy fails validation. `custom_domain` routes auto-create DNS + TLS on
 # first deploy, exactly like production did.
 #
-# ⚠️  All three environments currently point at the SAME Supabase project, so
-# dev/test writes land in production's database. Before real use, give dev and
-# test their own Supabase project (or branch) and swap the vars below — see
+# All three environments share ONE Supabase project (free plan = 2 projects),
+# but data is isolated by schema: prod → `public`, dev → `dev`, test → `test`
+# (DB_SCHEMA var below; migration 20260821000000). Auth/users are shared across
+# environments — one auth.users pool per project, unavoidable in a single
+# project. NOTE: the `dev`/`test` schemas must be added to the project's exposed
+# schemas (Settings → API) or PostgREST won't serve them — see
 # docs/deploy/hitl-checklist.md §4.
 
 [env.dev]
@@ -88,6 +94,8 @@ name = "quiz-tool-dev"
 [env.dev.vars]
 SUPABASE_URL = "https://fmxjevgxlnqujsqeqfwt.supabase.co"
 SUPABASE_PUBLISHABLE_KEY = "sb_publishable_fAoIRUV4B8RRdytsQRPgjw_tGhmvYdo"
+# Same project as prod, but data lands in the `dev` schema (isolated tables).
+DB_SCHEMA = "dev"
 
 [[env.dev.routes]]
 pattern = "quiz-dev.colinhauch.com"
@@ -99,6 +107,8 @@ name = "quiz-tool-test"
 [env.test.vars]
 SUPABASE_URL = "https://fmxjevgxlnqujsqeqfwt.supabase.co"
 SUPABASE_PUBLISHABLE_KEY = "sb_publishable_fAoIRUV4B8RRdytsQRPgjw_tGhmvYdo"
+# Same project as prod, but data lands in the `test` schema (isolated tables).
+DB_SCHEMA = "test"
 
 [[env.test.routes]]
 pattern = "quiz-test.colinhauch.com"
