@@ -61,3 +61,45 @@ invocation_logs = true
 enabled = false
 persist = true
 head_sampling_rate = 1
+
+# ── Named environments ───────────────────────────────────────────────────────
+# The same Worker code deployed as isolated instances, one per stage. The
+# top-level config above IS production: `wrangler deploy` (no --env) ships the
+# root Worker `quiz-tool` to quiz.colinhauch.com (what CF Workers Builds runs on
+# the prod branch, main). The blocks below add two more instances:
+#
+#   wrangler deploy --env dev    → quiz-tool-dev  → quiz-dev.colinhauch.com
+#   wrangler deploy --env test   → quiz-tool-test → quiz-test.colinhauch.com
+#
+# `assets`, `build`, `compatibility_*`, and `[observability]` are inheritable, so
+# every environment gets the same SPA-serving, build step, and logging for free.
+# `vars` and `routes` are NON-inheritable — they must be repeated in each env, or
+# the deploy fails validation. `custom_domain` routes auto-create DNS + TLS on
+# first deploy, exactly like production did.
+#
+# ⚠️  All three environments currently point at the SAME Supabase project, so
+# dev/test writes land in production's database. Before real use, give dev and
+# test their own Supabase project (or branch) and swap the vars below — see
+# docs/deploy/hitl-checklist.md §4.
+
+[env.dev]
+name = "quiz-tool-dev"
+
+[env.dev.vars]
+SUPABASE_URL = "https://fmxjevgxlnqujsqeqfwt.supabase.co"
+SUPABASE_PUBLISHABLE_KEY = "sb_publishable_fAoIRUV4B8RRdytsQRPgjw_tGhmvYdo"
+
+[[env.dev.routes]]
+pattern = "quiz-dev.colinhauch.com"
+custom_domain = true
+
+[env.test]
+name = "quiz-tool-test"
+
+[env.test.vars]
+SUPABASE_URL = "https://fmxjevgxlnqujsqeqfwt.supabase.co"
+SUPABASE_PUBLISHABLE_KEY = "sb_publishable_fAoIRUV4B8RRdytsQRPgjw_tGhmvYdo"
+
+[[env.test.routes]]
+pattern = "quiz-test.colinhauch.com"
+custom_domain = true
