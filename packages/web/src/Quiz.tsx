@@ -1,9 +1,6 @@
 import type { AnswerResponse, QuestionResponse } from "@geo/contract";
 import { type FormEvent, useCallback, useEffect, useRef, useState } from "react";
-
-/** Where the browser reaches the Node server; `/api` is proxied in dev (see vite.config.ts). */
-const QUESTION_URL = "/api/question";
-const ANSWER_URL = "/api/answer";
+import { getQuestion, submitAnswer as submitAnswerRequest } from "./apiClient.js";
 
 type View =
   | { state: "loading" }
@@ -20,7 +17,7 @@ export function Quiz() {
     setView({ state: "loading" });
     setInput("");
     try {
-      const question = (await (await fetch(QUESTION_URL)).json()) as QuestionResponse;
+      const question = await getQuestion();
       setView({ state: "asking", question });
     } catch {
       setView({ state: "error" });
@@ -40,12 +37,7 @@ export function Quiz() {
   async function submitAnswer(event: FormEvent, question: QuestionResponse) {
     event.preventDefault();
     try {
-      const res = await fetch(ANSWER_URL, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ cardId: question.cardId, input }),
-      });
-      const result = (await res.json()) as AnswerResponse;
+      const result = await submitAnswerRequest(question.cardId, input);
       setView({ state: "answered", question, result });
     } catch {
       setView({ state: "error" });

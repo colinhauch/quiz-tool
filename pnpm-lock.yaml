@@ -11,6 +11,9 @@ importers:
       '@types/node':
         specifier: ^22.20.1
         version: 22.20.1
+      tsx:
+        specifier: ^4.19.2
+        version: 4.23.12
       typescript:
         specifier: ^5.7.3
         version: 5.9.3
@@ -76,6 +79,9 @@ importers:
       '@geo/contract':
         specifier: workspace:*
         version: link:../contract
+      '@supabase/supabase-js':
+        specifier: ^2.112.2
+        version: 2.112.3
       react:
         specifier: ^19.0.0
         version: 19.2.8
