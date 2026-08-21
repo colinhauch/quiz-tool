@@ -3,6 +3,11 @@
 # `main` is worker.ts — the real server entry: it assembles the build-time pack
 # bundle (src/packs.generated.ts) and serves the same Hono app as the Node entry
 # (src/index.ts), backed by Supabase per learner. No filesystem, no SQLite.
+#
+# The same Worker also serves the React SPA (packages/web) as static assets, so
+# the whole app lives on one origin. Routing (see [assets] below): the platform
+# serves a matching file, falls back to index.html for client routes, and only
+# runs this Worker for the API and health paths named in `run_worker_first`.
 
 name = "quiz-tool"
 main = "src/worker.ts"
@@ -10,10 +15,21 @@ compatibility_date = "2026-08-12"
 # @supabase/supabase-js pulls a few Node built-ins; this shims them on Workers.
 compatibility_flags = ["nodejs_compat"]
 
-# Regenerate the pack bundle from packs/ before every deploy, so a deploy can
-# never ship a stale graph. Mirrors the pretest hook.
+# The built React SPA. `run_worker_first` sends the UI's `/api/*` calls and the
+# `/health` check to the Worker (which strips the `/api` prefix — see worker.ts);
+# every other path is served asset-first, with `index.html` as the SPA fallback
+# for client routes like the OAuth callback. This makes the routing explicit
+# rather than relying on the navigation-request heuristic.
+[assets]
+directory = "../web/dist"
+not_found_handling = "single-page-application"
+run_worker_first = ["/api/*", "/health"]
+
+# Regenerate the pack bundle from packs/ AND build the SPA before every deploy,
+# so a deploy can never ship a stale graph or stale UI. The bundle mirrors the
+# pretest hook; the web build populates ../web/dist for [assets] above.
 [build]
-command = "pnpm bundle-packs"
+command = "pnpm bundle-packs && pnpm --filter @geo/web build"
 
 # Non-secret config. The publishable key is low-privilege by design (RLS keys on
 # the forwarded user JWT, not this key), so both are safe in source — they are
