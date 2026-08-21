@@ -1,9 +1,18 @@
 import type { AnswerLog, AnswerResponse, PackList, QuestionResponse } from "@geo/contract";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { getAnswers, getPacks, getQuestion, savePacks, submitAnswer } from "./apiClient.js";
+import {
+  getAnswers,
+  getPacks,
+  getQuestion,
+  savePacks,
+  setAccessTokenSource,
+  submitAnswer,
+} from "./apiClient.js";
 
 afterEach(() => {
   vi.restoreAllMocks();
+  // Reset the token source so a test that signs in never leaks into the next.
+  setAccessTokenSource(() => null);
 });
 
 describe("apiClient", () => {
@@ -78,5 +87,46 @@ describe("apiClient", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     await expect(savePacks([])).rejects.toThrow();
+  });
+});
+
+describe("apiClient auth", () => {
+  it("attaches Authorization: Bearer <token> when signed in (GET)", async () => {
+    setAccessTokenSource(() => "the-access-token");
+    const fetchMock = vi.fn(() => Promise.resolve({ json: async () => ({}) }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await getQuestion();
+
+    expect(fetchMock).toHaveBeenCalledWith("/api/question", {
+      headers: { Authorization: "Bearer the-access-token" },
+    });
+  });
+
+  it("merges the bearer token with a request's own headers (POST)", async () => {
+    setAccessTokenSource(() => "the-access-token");
+    const fetchMock = vi.fn(() => Promise.resolve({ json: async () => ({ correct: true }) }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await submitAnswer("cc:tokyo-japan:object", "Japan");
+
+    expect(fetchMock).toHaveBeenCalledWith("/api/answer", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        Authorization: "Bearer the-access-token",
+      },
+      body: JSON.stringify({ cardId: "cc:tokyo-japan:object", input: "Japan" }),
+    });
+  });
+
+  it("sends no Authorization header when signed out", async () => {
+    setAccessTokenSource(() => null);
+    const fetchMock = vi.fn(() => Promise.resolve({ json: async () => ({}) }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await getQuestion();
+
+    expect(fetchMock).toHaveBeenCalledWith("/api/question", undefined);
   });
 });
