@@ -25,4 +25,12 @@ describe("worker entry", () => {
     const res = await worker.fetch(new Request("https://quiz.example/question"), env);
     expect(res.status).toBe(401);
   });
+
+  it("strips the /api prefix so the UI's production paths hit the same routes", async () => {
+    // The SPA calls /api/*; in dev the Vite proxy strips it, in prod this Worker
+    // does (wrangler.toml routes /api/* here). /api/question must reach the same
+    // guarded /question route — a 401 (not a 404) proves the rewrite landed.
+    const res = await worker.fetch(new Request("https://quiz.example/api/question"), env);
+    expect(res.status).toBe(401);
+  });
 });

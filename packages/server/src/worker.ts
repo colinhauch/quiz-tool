@@ -52,8 +52,24 @@ function getApp(env: Env) {
   return app;
 }
 
+/**
+ * Strip a leading `/api` so the UI's production paths (`/api/question`, …) match
+ * the root-mounted Hono routes — the same rewrite the Vite dev proxy does. Any
+ * other path (e.g. `/health`) passes through unchanged. Only `/api/*` and
+ * `/health` reach this Worker at all (wrangler.toml `run_worker_first`); every
+ * other path is served as a static asset or the SPA fallback.
+ */
+function toAppRequest(request: Request): Request {
+  const url = new URL(request.url);
+  if (url.pathname === "/api" || url.pathname.startsWith("/api/")) {
+    url.pathname = url.pathname.slice("/api".length) || "/";
+    return new Request(url, request);
+  }
+  return request;
+}
+
 export default {
   fetch(request: Request, env: Env): Response | Promise<Response> {
-    return getApp(env).fetch(request);
+    return getApp(env).fetch(toAppRequest(request));
   },
 };

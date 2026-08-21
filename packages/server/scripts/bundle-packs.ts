@@ -12,7 +12,7 @@
  * The output is committed and MUST be regenerated when packs change; the
  * equivalence test (`packs-bundle.test.ts`) fails if it drifts.
  */
-import { existsSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { discoverPacks, loadPack } from "../src/pack-loader.js";
 
@@ -67,5 +67,13 @@ async function renderBundle(): Promise<string> {
 }
 
 const source = await renderBundle();
-writeFileSync(OUT, source);
-console.log(`wrote ${fileURLToPath(OUT)} (${source.length} bytes)`);
+// Skip the write when nothing changed: this file lives under src/, which the
+// `wrangler dev` watcher observes, so rewriting it byte-identical on every build
+// would trigger an endless rebuild loop (the deploy [build] step reruns us).
+const unchanged = existsSync(OUT) && readFileSync(OUT, "utf8") === source;
+if (unchanged) {
+  console.log(`unchanged ${fileURLToPath(OUT)} (${source.length} bytes)`);
+} else {
+  writeFileSync(OUT, source);
+  console.log(`wrote ${fileURLToPath(OUT)} (${source.length} bytes)`);
+}
