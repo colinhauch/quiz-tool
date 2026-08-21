@@ -4,16 +4,37 @@ import type {
   PackList,
   QuestionResponse,
 } from "@geo/contract";
+import { getAuthBoundary } from "./auth.js";
+
+/**
+ * Where {@link apiFetch} reads the current access token. Defaults to the app
+ * auth boundary; the setter exists so unit tests can drive the signed-in and
+ * signed-out paths without standing up a real Supabase session (see
+ * apiClient.test.ts). Returns `null` when no learner is signed in.
+ */
+let accessTokenSource: () => string | null = () => getAuthBoundary().getState().accessToken;
+
+/** Overrides the access-token source. Production uses the auth boundary; tests inject a fake. */
+export function setAccessTokenSource(source: () => string | null): void {
+  accessTokenSource = source;
+}
 
 /**
  * The single choke point every frontend→server call passes through. All
  * request options (headers, method, body) are assembled here, and nowhere
- * else — this is the seam #67 extends to attach `Authorization: Bearer
- * <token>` once auth lands. No component should call `fetch()` directly;
- * go through the functions below instead.
+ * else. When a learner is signed in it attaches `Authorization: Bearer
+ * <token>` (the seam #67 turns on) so the Worker's auth middleware can verify
+ * the request; signed out, the request goes exactly as before and the server
+ * answers 401. No component should call `fetch()` directly; go through the
+ * functions below instead.
  */
 function apiFetch(path: string, init?: RequestInit): Promise<Response> {
-  return fetch(path, init);
+  const token = accessTokenSource();
+  if (!token) return fetch(path, init);
+  return fetch(path, {
+    ...init,
+    headers: { ...init?.headers, Authorization: `Bearer ${token}` },
+  });
 }
 
 function jsonInit(method: "POST" | "PUT", body: unknown): RequestInit {
