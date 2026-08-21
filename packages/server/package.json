@@ -8,7 +8,8 @@
     "bundle-packs": "tsx scripts/bundle-packs.ts",
     "pretest": "tsx scripts/bundle-packs.ts",
     "test": "vitest run",
-    "deploy": "wrangler deploy"
+    "deploy": "wrangler deploy",
+    "deploy:ci": "case \"$WORKERS_CI_BRANCH\" in dev) wrangler deploy --env dev ;; test) wrangler deploy --env test ;; *) echo \"No env deploy for branch '$WORKERS_CI_BRANCH'; uploading preview version\" && wrangler versions upload ;; esac"
   },
   "dependencies": {
     "@geo/contract": "workspace:*",
