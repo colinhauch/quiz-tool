@@ -34,10 +34,41 @@ export const questionResponseSchema = z
     input: z.literal("text"),
     packId: z.string().min(1),
     packLabel: z.string().min(1),
+    // The kind(s) of entity the answer names, so the client can scope answer
+    // suggestions to the right type. The answer's type, never the answer.
+    answerTypes: z.array(z.string().min(1)),
   })
   .strict();
 
 export type QuestionResponse = z.infer<typeof questionResponseSchema>;
+
+/**
+ * One entity as the answer-suggestion source sees it: its id, its canonical
+ * English label, and every display alias flattened into one list. `label` is
+ * what a suggestion row shows and fills; `aliases` broadens what the client can
+ * match a keystroke against, mirroring the names the grader accepts.
+ */
+export const entitySummarySchema = z
+  .object({
+    id: z.string().min(1),
+    label: z.string().min(1),
+    // Non-empty: an empty alias would normalize to "" and match every keystroke
+    // as a universal substring.
+    aliases: z.array(z.string().min(1)),
+  })
+  .strict();
+
+export type EntitySummary = z.infer<typeof entitySummarySchema>;
+
+/**
+ * `GET /entities?type=` — every entity in the graph of the requested type, for
+ * the client to cache and offer as answer suggestions. Global, not per-pack: a
+ * city is a city regardless of which pack quizzed it. An unknown type yields an
+ * empty list.
+ */
+export const entityListSchema = z.array(entitySummarySchema);
+
+export type EntityList = z.infer<typeof entityListSchema>;
 
 /**
  * `POST /answer` request — the card being answered and the learner's raw typed

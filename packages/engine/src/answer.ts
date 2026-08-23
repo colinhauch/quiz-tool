@@ -1,4 +1,4 @@
-import { findCard } from "./card.js";
+import { findCard, targetEntityId } from "./card.js";
 import { createGraph } from "./graph.js";
 import type { Entity, Pack } from "./types.js";
 
@@ -55,19 +55,6 @@ export interface AnswerResult {
  */
 export function checkAnswer(pack: Pack, cardId: string, input: string): AnswerResult {
   const { statement, hiddenSlot } = findCard(pack, cardId);
-
-  let targetId: string;
-  if (hiddenSlot === "subject") {
-    targetId = statement.subject;
-  } else if (hiddenSlot === "object") {
-    if (statement.object.kind !== "entity") {
-      throw new Error(`card ${cardId} hides a literal object, unsupported in MVP`);
-    }
-    targetId = statement.object.id;
-  } else {
-    throw new Error(`card ${cardId} hides ${hiddenSlot}, unsupported in MVP`);
-  }
-
-  const target = createGraph(pack.entities).getEntity(targetId);
+  const target = createGraph(pack.entities).getEntity(targetEntityId(statement, hiddenSlot));
   return { correct: matchesEntity(input, target), acceptedAnswer: target.labels.en };
 }

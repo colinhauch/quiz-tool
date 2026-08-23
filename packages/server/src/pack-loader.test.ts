@@ -323,6 +323,7 @@ describe("adding a pack touches nothing outside its own directory", () => {
       input: "text",
       packId: "newcomer",
       packLabel: "Newcomer",
+      answerTypes: ["country"],
     });
   });
 });

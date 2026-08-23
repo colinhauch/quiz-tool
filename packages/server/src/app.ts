@@ -2,6 +2,7 @@ import {
   answerLogSchema,
   answerRequestSchema,
   answerResponseSchema,
+  entityListSchema,
   healthSchema,
   packListSchema,
   packSelectionRequestSchema,
@@ -182,6 +183,24 @@ export function createApp({
         generateQuestion(pack, drawn.card.statement, drawn.card.hiddenSlot),
       ),
     );
+  });
+
+  // Every entity of a given type in the graph, for the client to cache and
+  // offer as answer suggestions. Read-only and global — the graph is the same
+  // for every learner, so no selection or store is consulted. `type` is
+  // required: without it there is no sensible default (the whole graph), so an
+  // omitted type is a client error rather than a firehose.
+  app.get("/entities", (c) => {
+    const type = c.req.query("type");
+    if (!type) throw new HTTPException(400, { message: "missing required query param: type" });
+    const entities = [...pack.entities.values()]
+      .filter((e) => e.types.includes(type))
+      .map((e) => ({
+        id: e.id,
+        label: e.labels.en,
+        aliases: e.aliases ? Object.values(e.aliases).flat() : [],
+      }));
+    return c.json(entityListSchema.parse(entities));
   });
 
   // The picker's catalogue: every selectable pack, what its manifest says about

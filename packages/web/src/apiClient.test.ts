@@ -2,6 +2,7 @@ import type { AnswerLog, AnswerResponse, PackList, QuestionResponse } from "@geo
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   getAnswers,
+  getEntities,
   getPacks,
   getQuestion,
   savePacks,
@@ -25,6 +26,7 @@ describe("apiClient", () => {
       input: "text",
       packId: "core-cities",
       packLabel: "Cities & Countries",
+      answerTypes: ["country"],
     };
     const fetchMock = vi.fn(() => Promise.resolve({ json: async () => question }));
     vi.stubGlobal("fetch", fetchMock);
@@ -70,6 +72,15 @@ describe("apiClient", () => {
 
     await expect(getPacks()).resolves.toEqual(list);
     expect(fetchMock).toHaveBeenCalledWith("/api/packs", undefined);
+  });
+
+  it("getEntities fetches GET /api/entities with the type and returns the list", async () => {
+    const list = [{ id: "Q17", label: "Japan", aliases: [] }];
+    const fetchMock = vi.fn(() => Promise.resolve({ json: async () => list }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(getEntities("country")).resolves.toEqual(list);
+    expect(fetchMock).toHaveBeenCalledWith("/api/entities?type=country", undefined);
   });
 
   it("savePacks PUTs the pack ids as JSON and resolves on success", async () => {

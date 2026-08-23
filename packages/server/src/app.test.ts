@@ -4,6 +4,7 @@ import { join } from "node:path";
 import {
   answerLogSchema,
   answerResponseSchema,
+  entityListSchema,
   packListSchema,
   questionResponseSchema,
 } from "@geo/contract";
@@ -100,6 +101,7 @@ describe("server app", () => {
       input: "text",
       packId: TEST_PACK.id,
       packLabel: TEST_PACK.labels.en,
+      answerTypes: ["country"],
     });
   });
 
@@ -108,6 +110,53 @@ describe("server app", () => {
       "/question",
     );
     expect(JSON.stringify(await res.json())).not.toContain("Japan");
+  });
+});
+
+describe("GET /entities", () => {
+  function app() {
+    return createApp({ pack: fixturePack(), store: memoryStore(), rng: () => 0 });
+  }
+
+  it("returns every entity of the requested type as { id, label, aliases }", async () => {
+    const res = await app().request("/entities?type=city");
+    expect(res.status).toBe(200);
+    expect(entityListSchema.parse(await res.json())).toEqual([
+      { id: "Q1490", label: "Tokyo", aliases: [] },
+    ]);
+  });
+
+  it("scopes to the requested type", async () => {
+    const res = await app().request("/entities?type=country");
+    expect(entityListSchema.parse(await res.json())).toEqual([
+      { id: "Q17", label: "Japan", aliases: [] },
+    ]);
+  });
+
+  it("returns an empty list for an unknown type", async () => {
+    const res = await app().request("/entities?type=continent");
+    expect(res.status).toBe(200);
+    expect(entityListSchema.parse(await res.json())).toEqual([]);
+  });
+
+  it("flattens an entity's aliases into the list", async () => {
+    const pack = fixturePack();
+    pack.entities.set("Q1490", {
+      id: "Q1490",
+      labels: { en: "Tokyo" },
+      aliases: { en: ["Tōkyō", "Edo"] },
+      types: ["city"],
+    });
+    const res = await createApp({ pack, store: memoryStore(), rng: () => 0 }).request(
+      "/entities?type=city",
+    );
+    expect(entityListSchema.parse(await res.json())).toEqual([
+      { id: "Q1490", label: "Tokyo", aliases: ["Tōkyō", "Edo"] },
+    ]);
+  });
+
+  it("rejects a request with no type", async () => {
+    expect((await app().request("/entities")).status).toBe(400);
   });
 });
 
