@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AnswerLog } from "./AnswerLog.js";
-import { AUTH_CALLBACK_PATH } from "./auth.js";
+import { type AuthBoundary, AUTH_CALLBACK_PATH, getAuthBoundary } from "./auth.js";
 import { AuthCallback } from "./AuthCallback.js";
 import { AuthWidget } from "./AuthWidget.js";
 import { Packs } from "./Packs.js";
 import { Quiz } from "./Quiz.js";
+import { SignInGate } from "./SignInGate.js";
 
 type Tab = "quiz" | "answers" | "packs";
 
@@ -14,12 +15,21 @@ type Tab = "quiz" | "answers" | "packs";
  * component, so switching to "My answers" refetches the log and picks up
  * anything just answered, and returning to the quiz draws from whatever pack
  * selection was just saved — enough navigation for the walking skeleton.
+ *
+ * Access is gated on the auth boundary: a signed-out learner (whether they never
+ * signed in, or a live session expired) sees {@link SignInGate} instead of the
+ * views, so no question is ever asked without an authenticated request behind it.
+ * The boundary is a prop (defaulting to the app singleton) so tests drive the
+ * gate without a real Supabase session.
  */
-export function App() {
+export function App({ boundary = getAuthBoundary() }: { boundary?: AuthBoundary }) {
   const [tab, setTab] = useState<Tab>("quiz");
+  const [auth, setAuth] = useState(() => boundary.getState());
   const [isAuthCallback, setIsAuthCallback] = useState(
     () => window.location.pathname === AUTH_CALLBACK_PATH,
   );
+
+  useEffect(() => boundary.subscribe(setAuth), [boundary]);
 
   if (isAuthCallback) {
     return (
@@ -32,13 +42,17 @@ export function App() {
     );
   }
 
+  if (auth.status === "signed-out") {
+    return <SignInGate reason={auth.reason} boundary={boundary} />;
+  }
+
   return (
     <>
       <header className="app-header">
         <div className="app-header__topo" aria-hidden="true" />
         <div className="app-header__inner">
           <div className="app-header__top">
-            <AuthWidget />
+            <AuthWidget boundary={boundary} />
           </div>
           <h1 className="app-title">Geography Quiz</h1>
           <nav className="app-nav" aria-label="Views">

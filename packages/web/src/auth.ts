@@ -6,19 +6,24 @@ export const AUTH_CALLBACK_PATH = "/auth/callback";
 
 export type AuthStatus = "signed-out" | "signed-in";
 
+/**
+ * Why a signed-out learner is signed out. `"expired"` means a live session was
+ * rejected mid-use — an authenticated request came back 401 (see
+ * {@link AuthBoundary.handleExpiry}) — so the UI can explain the interruption
+ * rather than just showing a plain sign-in prompt. `null` is an ordinary
+ * signed-out state, including a background token-refresh failure that surfaces
+ * as a Supabase `SIGNED_OUT` (indistinguishable there from a manual sign-out).
+ */
+export type SignedOutReason = "expired" | null;
+
 /** The boundary's observable state: whether a learner is signed in, and their current access token. */
 export interface AuthState {
   status: AuthStatus;
   accessToken: string | null;
+  reason: SignedOutReason;
 }
 
-const SIGNED_OUT: AuthState = { status: "signed-out", accessToken: null };
-
-function stateFromSession(session: Session | null): AuthState {
-  return session?.access_token
-    ? { status: "signed-in", accessToken: session.access_token }
-    : SIGNED_OUT;
-}
+const SIGNED_OUT: AuthState = { status: "signed-out", accessToken: null, reason: null };
 
 /**
  * The slice of `supabase-js`'s auth client this boundary actually calls. Kept
@@ -49,6 +54,13 @@ export interface AuthBoundary {
   signInWithGoogle(): Promise<void>;
   signInWithMagicLink(email: string): Promise<void>;
   signOut(): Promise<void>;
+  /**
+   * Reports that a supposedly-live session was rejected (a 401 the client
+   * didn't foresee). Flips the boundary to signed-out with reason `"expired"`
+   * and clears the stale Supabase session so its dead token stops being
+   * attached. The API client funnels 401s here (see apiClient.ts).
+   */
+  handleExpiry(): void;
 }
 
 /**
@@ -60,6 +72,11 @@ export interface AuthBoundary {
  */
 export function createAuthBoundary(client: { auth: SupabaseAuthClient }): AuthBoundary {
   let state: AuthState = SIGNED_OUT;
+  // Whether the current signed-out state is due to an expired/rejected session.
+  // Tracked separately from `state` because Supabase's own SIGNED_OUT event
+  // (fired when we clear the dead session) must not erase the "expired" reason.
+  // A fresh session clears it; a manual sign-out clears it explicitly.
+  let expired = false;
   const listeners = new Set<(state: AuthState) => void>();
 
   const setState = (next: AuthState) => {
@@ -67,7 +84,16 @@ export function createAuthBoundary(client: { auth: SupabaseAuthClient }): AuthBo
     for (const listener of listeners) listener(state);
   };
 
-  client.auth.onAuthStateChange((_event, session) => setState(stateFromSession(session)));
+  const publish = (session: Session | null) => {
+    if (session?.access_token) {
+      expired = false;
+      setState({ status: "signed-in", accessToken: session.access_token, reason: null });
+    } else {
+      setState({ status: "signed-out", accessToken: null, reason: expired ? "expired" : null });
+    }
+  };
+
+  client.auth.onAuthStateChange((_event, session) => publish(session));
 
   const redirectTo = () => `${window.location.origin}${AUTH_CALLBACK_PATH}`;
 
@@ -93,8 +119,20 @@ export function createAuthBoundary(client: { auth: SupabaseAuthClient }): AuthBo
       if (error) throw error;
     },
     async signOut() {
+      expired = false;
       const { error } = await client.auth.signOut();
       if (error) throw error;
+    },
+    handleExpiry() {
+      // Idempotent: concurrent authenticated requests can all 401 at once when a
+      // session dies. Fire the flip and the session clear exactly once.
+      if (expired) return;
+      expired = true;
+      // Reflect the interruption immediately, before Supabase's own event lands.
+      setState({ status: "signed-out", accessToken: null, reason: "expired" });
+      // Clear the stale session so its dead token stops being attached; the
+      // resulting SIGNED_OUT event re-publishes, preserving `expired`.
+      void client.auth.signOut();
     },
   };
 }

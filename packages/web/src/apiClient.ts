@@ -20,6 +20,19 @@ export function setAccessTokenSource(source: () => string | null): void {
 }
 
 /**
+ * Called when an authenticated request comes back 401 — a session the client
+ * believed was live has been rejected. Defaults to telling the auth boundary
+ * the session expired, which flips the app to its sign-in gate. The setter lets
+ * tests observe the funnel without a real boundary (see apiClient.test.ts).
+ */
+let onUnauthorized: () => void = () => getAuthBoundary().handleExpiry();
+
+/** Overrides the 401 handler. Production routes through the auth boundary; tests inject a spy. */
+export function setUnauthorizedHandler(handler: () => void): void {
+  onUnauthorized = handler;
+}
+
+/**
  * The single choke point every frontend→server call passes through. All
  * request options (headers, method, body) are assembled here, and nowhere
  * else. When a learner is signed in it attaches `Authorization: Bearer
@@ -28,13 +41,15 @@ export function setAccessTokenSource(source: () => string | null): void {
  * answers 401. No component should call `fetch()` directly; go through the
  * functions below instead.
  */
-function apiFetch(path: string, init?: RequestInit): Promise<Response> {
+async function apiFetch(path: string, init?: RequestInit): Promise<Response> {
   const token = accessTokenSource();
-  if (!token) return fetch(path, init);
-  return fetch(path, {
-    ...init,
-    headers: { ...init?.headers, Authorization: `Bearer ${token}` },
-  });
+  const res = token
+    ? await fetch(path, { ...init, headers: { ...init?.headers, Authorization: `Bearer ${token}` } })
+    : await fetch(path, init);
+  // A 401 on a request we authenticated means the session died under us; funnel
+  // it to the boundary. A 401 while signed out is just the ordinary gate case.
+  if (token && res.status === 401) onUnauthorized();
+  return res;
 }
 
 function jsonInit(method: "POST" | "PUT", body: unknown): RequestInit {
