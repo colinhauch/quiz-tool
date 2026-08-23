@@ -141,8 +141,7 @@ describe("Quiz", () => {
 
     const box = (await screen.findByLabelText(/your answer/i)) as HTMLInputElement;
     fireEvent.change(box, { target: { value: "jap" } });
-    await screen.findByRole("option", { name: "Japan" });
-    fireEvent.mouseDown(screen.getByRole("button", { name: "Japan" }));
+    fireEvent.mouseDown(await screen.findByRole("option", { name: "Japan" }));
 
     expect(box.value).toBe("Japan");
     // Filling is not answering: no verdict yet, and no POST /answer fired.
@@ -150,6 +149,44 @@ describe("Quiz", () => {
     expect(fetchMock).not.toHaveBeenCalledWith("/api/answer", expect.anything());
     // The list closes once a suggestion is taken.
     expect(screen.queryByRole("option", { name: "Japan" })).not.toBeInTheDocument();
+  });
+
+  it("walks the list with Tab and commits a highlight with Enter, moving focus to Submit", async () => {
+    const fetchMock = stubFetch([tokyo], { correct: true, acceptedAnswer: "Japan" });
+    render(<Quiz />);
+
+    const box = (await screen.findByLabelText(/your answer/i)) as HTMLInputElement;
+    fireEvent.change(box, { target: { value: "jap" } });
+    await screen.findByRole("option", { name: "Japan" });
+
+    // Tab highlights the first suggestion (focus stays in the box).
+    fireEvent.keyDown(box, { key: "Tab" });
+    expect(screen.getByRole("option", { name: "Japan" })).toHaveAttribute("aria-selected", "true");
+
+    // Enter commits it: fills the canonical label, moves focus to Submit, no submit yet.
+    fireEvent.keyDown(box, { key: "Enter" });
+    expect(box.value).toBe("Japan");
+    const submit = screen.getByRole("button", { name: /submit/i });
+    expect(submit).toHaveFocus();
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    expect(fetchMock).not.toHaveBeenCalledWith("/api/answer", expect.anything());
+  });
+
+  it("submits with Enter when no suggestion is highlighted", async () => {
+    const fetchMock = stubFetch([tokyo], { correct: true, acceptedAnswer: "Japan" });
+    render(<Quiz />);
+
+    const box = await screen.findByLabelText(/your answer/i);
+    fireEvent.change(box, { target: { value: "Japan" } });
+    await screen.findByRole("option", { name: "Japan" });
+    // Enter with nothing highlighted falls through to a normal form submit.
+    fireEvent.submit(box.closest("form")!);
+
+    expect(await screen.findByRole("status")).toHaveTextContent("Correct! The answer is Japan.");
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/answer",
+      expect.objectContaining({ body: JSON.stringify({ cardId: tokyo.cardId, input: "Japan" }) }),
+    );
   });
 
   it("still submits a free-text answer that is not in the suggestion list", async () => {

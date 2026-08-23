@@ -385,26 +385,20 @@ body {
 
 .answer-suggestion {
   margin: 0;
-}
-
-.answer-suggestion__button {
-  display: block;
-  width: 100%;
   /* Comfortable touch target on mobile. */
   min-height: 44px;
+  display: flex;
+  align-items: center;
   padding: 0.55rem 0.75rem;
-  border: none;
   border-radius: 0.25rem;
-  background: transparent;
   color: var(--indigo);
   font-family: var(--sans);
   font-size: 1rem;
-  text-align: left;
   cursor: pointer;
 }
 
-.answer-suggestion__button:hover,
-.answer-suggestion--active .answer-suggestion__button {
+.answer-suggestion:hover,
+.answer-suggestion--active {
   background: var(--platinum);
 }
 

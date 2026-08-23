@@ -34,6 +34,7 @@ export function AnswerBox({
   const [dismissed, setDismissed] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
+  const submitRef = useRef<HTMLButtonElement>(null);
 
   // Load (and cache) the entities to suggest whenever the answer types change.
   // The current list is cleared first so a stale question's names can't flash
@@ -64,28 +65,50 @@ export function AnswerBox({
     setActiveIndex(-1);
   }, [value]);
 
+  // Taking a suggestion fills the box and moves focus to Submit, so the whole
+  // flow stays on the keyboard: type → walk the list → Enter to commit the name
+  // → Enter again to submit the answer.
   function choose(entity: EntitySummary) {
     onChange(entity.label);
     setDismissed(true);
     setActiveIndex(-1);
-    inputRef.current?.focus();
+    submitRef.current?.focus();
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
     if (suggestions.length === 0) return;
-    if (event.key === "ArrowDown") {
-      event.preventDefault();
-      setActiveIndex((i) => (i + 1) % suggestions.length);
-    } else if (event.key === "ArrowUp") {
-      event.preventDefault();
-      setActiveIndex((i) => (i <= 0 ? suggestions.length - 1 : i - 1));
-    } else if (event.key === "Enter" && activeIndex >= 0) {
-      // A highlighted suggestion commits to the box, not to the answer.
-      event.preventDefault();
-      choose(suggestions[activeIndex]!);
-    } else if (event.key === "Escape") {
-      setDismissed(true);
-      setActiveIndex(-1);
+    const last = suggestions.length - 1;
+    switch (event.key) {
+      case "ArrowDown":
+        event.preventDefault();
+        setActiveIndex((i) => (i >= last ? 0 : i + 1));
+        break;
+      case "ArrowUp":
+        event.preventDefault();
+        setActiveIndex((i) => (i <= 0 ? last : i - 1));
+        break;
+      case "Tab":
+        // Tab walks the list instead of leaving the field. At the ends it stops
+        // intercepting, so a further Tab falls through to Submit (forward) or
+        // back out of the box (backward) — the natural way off the list.
+        if (event.shiftKey ? activeIndex > 0 : activeIndex < last) {
+          event.preventDefault();
+          setActiveIndex((i) => i + (event.shiftKey ? -1 : 1));
+        }
+        break;
+      case "Enter":
+        // A highlighted suggestion commits to the box, not to the answer; with
+        // nothing highlighted, Enter falls through and the form submits.
+        if (activeIndex >= 0) {
+          event.preventDefault();
+          choose(suggestions[activeIndex]!);
+        }
+        break;
+      case "Escape":
+        event.preventDefault();
+        setDismissed(true);
+        setActiveIndex(-1);
+        break;
     }
   }
 
@@ -133,37 +156,38 @@ export function AnswerBox({
             setDismissed(false);
           }}
           onKeyDown={handleKeyDown}
+          // Closing on blur hides the list once focus leaves for Submit; mouse
+          // selection uses mousedown (below), which fires before blur, so a
+          // click still lands.
+          onBlur={() => setDismissed(true)}
           autoComplete="off"
           autoFocus
         />
         {showList && (
           <ul className="answer-suggestions" id={LISTBOX_ID} role="listbox">
             {suggestions.map((entity, i) => (
+              // The row is not a focusable control: focus stays in the input and
+              // aria-activedescendant tracks the highlight, so keyboard and
+              // pointer drive the same single selection path. mousedown (not
+              // click) fires before the input's blur, so a tap still selects.
               <li
                 key={entity.id}
                 id={`${LISTBOX_ID}-${i}`}
                 role="option"
                 aria-selected={i === activeIndex}
                 className={`answer-suggestion${i === activeIndex ? " answer-suggestion--active" : ""}`}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  choose(entity);
+                }}
               >
-                <button
-                  type="button"
-                  className="answer-suggestion__button"
-                  // mousedown, not click: it fires before the input's blur, so a
-                  // tap still selects even as focus leaves the field.
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    choose(entity);
-                  }}
-                >
-                  {entity.label}
-                </button>
+                {entity.label}
               </li>
             ))}
           </ul>
         )}
       </div>
-      <button className="btn-primary" type="submit">
+      <button ref={submitRef} className="btn-primary" type="submit">
         Submit
       </button>
     </form>
