@@ -24,6 +24,7 @@ describe("questionResponseSchema", () => {
     input: "text",
     packId: "core-cities",
     packLabel: "Cities & Countries",
+    answerTypes: ["country"],
   };
 
   it("validates a well-formed rendered question", () => {
@@ -51,6 +52,14 @@ describe("questionResponseSchema", () => {
 
   it("rejects a leaked answer field", () => {
     expect(questionResponseSchema.safeParse({ ...question, answer: "Japan" }).success).toBe(false);
+  });
+
+  it("requires answerTypes and rejects empty type strings", () => {
+    const { answerTypes: _t, ...withoutTypes } = question;
+    expect(questionResponseSchema.safeParse(withoutTypes).success).toBe(false);
+    expect(questionResponseSchema.safeParse({ ...question, answerTypes: [""] }).success).toBe(false);
+    // An empty list is valid — an entity could in principle carry no types.
+    expect(questionResponseSchema.safeParse({ ...question, answerTypes: [] }).success).toBe(true);
   });
 });
 

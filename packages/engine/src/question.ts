@@ -1,4 +1,4 @@
-import { makeCardId } from "./card.js";
+import { makeCardId, targetEntityId } from "./card.js";
 import { createGraph } from "./graph.js";
 import type { HiddenSlot, Pack, RenderedQuestion, Statement } from "./types.js";
 
@@ -22,12 +22,14 @@ export function generateQuestion(
   const source = pack.packs.get(statement.pack);
   if (!source) throw new Error(`statement ${statement.id} came from unknown pack: ${statement.pack}`);
 
-  const content = generator({ statement, hiddenSlot, graph: createGraph(pack.entities) });
+  const graph = createGraph(pack.entities);
+  const content = generator({ statement, hiddenSlot, graph });
   return {
     cardId: makeCardId(statement.id, hiddenSlot),
     prompt: content.prompt,
     input: content.input,
     packId: source.id,
     packLabel: source.labels.en,
+    answerTypes: graph.getEntity(targetEntityId(statement, hiddenSlot)).types,
   };
 }

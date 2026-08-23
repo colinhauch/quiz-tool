@@ -1,6 +1,7 @@
 import type {
   AnswerLog as AnswerLogData,
   AnswerResponse,
+  EntityList,
   PackList,
   QuestionResponse,
 } from "@geo/contract";
@@ -64,6 +65,12 @@ function jsonInit(method: "POST" | "PUT", body: unknown): RequestInit {
 export async function getQuestion(): Promise<QuestionResponse> {
   const res = await apiFetch("/api/question");
   return (await res.json()) as QuestionResponse;
+}
+
+/** Fetches every entity of a type, for answer suggestions. */
+export async function getEntities(type: string): Promise<EntityList> {
+  const res = await apiFetch(`/api/entities?type=${encodeURIComponent(type)}`);
+  return (await res.json()) as EntityList;
 }
 
 /** Submits a learner's typed answer for a card and returns the verdict. */

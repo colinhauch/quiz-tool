@@ -142,4 +142,14 @@ export interface RenderedQuestion {
   packId: string;
   /** That pack's display name, for the client to show. English only for now. */
   packLabel: string;
+  /**
+   * The `types` of the entity the answer names — the kind of thing the learner
+   * must supply (e.g. `["city"]` for "what is the capital of France?"). Read
+   * from the hidden slot's target entity, so a bidirectional card carries the
+   * subject's types when subject-hidden and the object's when object-hidden.
+   * The client scopes answer suggestions to these types. It reveals the answer's
+   * *kind*, never the answer itself. A list because it mirrors `Entity.types`,
+   * though in the current graph every entity has exactly one type.
+   */
+  answerTypes: string[];
 }

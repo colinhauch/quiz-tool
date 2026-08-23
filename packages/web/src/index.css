@@ -292,6 +292,28 @@ body {
   color: var(--indigo);
 }
 
+/* Autocomplete on/off, pushed to the right edge of the header strip. Sits above
+   the topo crop like the eyebrow. */
+.quiz-card__toggle {
+  position: relative;
+  z-index: 1;
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--sans);
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--indigo);
+  cursor: pointer;
+}
+
+.quiz-card__toggle input {
+  cursor: pointer;
+}
+
 .quiz-card__body {
   padding: 2rem 1.5rem;
 }
@@ -331,6 +353,59 @@ body {
 .quiz-input::placeholder {
   color: var(--indigo);
   opacity: 0.4;
+}
+
+/* ── Answer autocomplete ─────────────────────────────────────
+   The suggestion list sits inline, in normal flow directly under the input, so
+   it pushes the Submit button down instead of floating over content — a floated
+   dropdown gets hidden behind the on-screen keyboard on mobile. */
+.answer-combobox {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.answer-combobox .quiz-input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.answer-suggestions {
+  list-style: none;
+  margin: 0;
+  padding: 0.25rem;
+  border: 1px solid var(--periwinkle);
+  border-radius: 0.375rem;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(39, 24, 126, 0.08);
+  /* A long list scrolls within itself rather than pushing the button off-screen. */
+  max-height: 15rem;
+  overflow-y: auto;
+}
+
+.answer-suggestion {
+  margin: 0;
+}
+
+.answer-suggestion__button {
+  display: block;
+  width: 100%;
+  /* Comfortable touch target on mobile. */
+  min-height: 44px;
+  padding: 0.55rem 0.75rem;
+  border: none;
+  border-radius: 0.25rem;
+  background: transparent;
+  color: var(--indigo);
+  font-family: var(--sans);
+  font-size: 1rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.answer-suggestion__button:hover,
+.answer-suggestion--active .answer-suggestion__button {
+  background: var(--platinum);
 }
 
 /* ── Primary button (the one orange thing) ───────────────── */
