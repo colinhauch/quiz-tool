@@ -4,7 +4,6 @@ import {
   clearSuggestionCache,
   filterSuggestions,
   loadSuggestionEntities,
-  MAX_SUGGESTIONS,
 } from "./suggestions.js";
 
 const entity = (id: string, label: string, aliases: string[] = []): EntitySummary => ({
@@ -46,6 +45,21 @@ describe("filterSuggestions", () => {
     expect(filterSuggestions("ber", cities).map((e) => e.label)).toEqual(["Bern", "Canberra"]);
   });
 
+  it("sorts equal-rank matches alphabetically by label, not by input order", () => {
+    // Input order is Cairo, Canberra, Caracas; all start with "ca".
+    expect(filterSuggestions("ca", cities).map((e) => e.label)).toEqual([
+      "Cairo",
+      "Canberra",
+      "Caracas",
+    ]);
+    const shuffled = [entity("Q3", "Caracas"), entity("Q1", "Cairo"), entity("Q2", "Canberra")];
+    expect(filterSuggestions("ca", shuffled).map((e) => e.label)).toEqual([
+      "Cairo",
+      "Canberra",
+      "Caracas",
+    ]);
+  });
+
   it("matches an alias, not just the canonical label", () => {
     expect(filterSuggestions("sampa", cities).map((e) => e.label)).toEqual(["São Paulo"]);
   });
@@ -55,10 +69,36 @@ describe("filterSuggestions", () => {
     expect(filterSuggestions("cai", cities, { minChars: 3 }).map((e) => e.label)).toEqual(["Cairo"]);
   });
 
-  it("caps the number of suggestions returned", () => {
-    const many = Array.from({ length: 20 }, (_, i) => entity(`M${i}`, `Match ${i}`));
-    expect(filterSuggestions("match", many)).toHaveLength(MAX_SUGGESTIONS);
-    expect(filterSuggestions("match", many, { limit: 2 })).toHaveLength(2);
+  it("does not hide a valid answer that sorts past the first several matches", () => {
+    // Regression: Abuja was the 12th "A" city in file order and a hard cap of 8
+    // dropped it when the learner typed a single "a". No default cap now, and
+    // alphabetical order keeps a short-prefix list findable.
+    const aCities = [
+      "Amsterdam",
+      "Abu Dhabi",
+      "Astana",
+      "Athens",
+      "Asunción",
+      "Algiers",
+      "Addis Ababa",
+      "Ankara",
+      "Asmara",
+      "Accra",
+      "Abuja",
+      "Amman",
+      "Antananarivo",
+    ].map((label, i) => entity(`A${i}`, label));
+
+    const result = filterSuggestions("a", aCities).map((e) => e.label);
+    expect(result).toContain("Abuja");
+    expect(result).toHaveLength(aCities.length); // every match offered, none dropped
+    expect(result).toEqual([...result].sort((a, b) => a.localeCompare(b))); // alphabetical
+  });
+
+  it("still honors an explicit limit when the caller asks for one", () => {
+    const many = Array.from({ length: 20 }, (_, i) => entity(`M${i}`, `Match ${String(i).padStart(2, "0")}`));
+    expect(filterSuggestions("match", many)).toHaveLength(20);
+    expect(filterSuggestions("match", many, { limit: 5 })).toHaveLength(5);
   });
 });
 

@@ -10,25 +10,30 @@ import { getEntities } from "./apiClient.js";
  */
 export const MIN_CHARS_BEFORE_SUGGEST = 1;
 
-/** The most suggestion rows offered at once, so a large type can't flood the UI. */
-export const MAX_SUGGESTIONS = 8;
-
 export interface SuggestOptions {
   minChars?: number;
+  /**
+   * An optional hard cap on rows returned. Left unset by default: capping hides
+   * valid answers that sort past the cap on a short query (typing "a" once cut
+   * Abuja, the 12th "A" city, off an 8-row list), which breaks the promise that
+   * every valid answer is offered. The scrollable list handles length instead.
+   */
   limit?: number;
 }
 
 /**
- * The entities whose names match what the learner has typed, ranked for
+ * The entities whose names match what the learner has typed, ordered for
  * display. Both the input and each entity's names (its canonical label plus
  * every alias) are folded through the engine's `normalizeAnswer` before
  * comparison, so the list can never surface a spelling the grader would then
  * reject over case or accents — matching and grading share one normalizer.
  *
  * A name *containing* the typed text is a match (so "sili" finds "Brasília");
- * a name *starting with* it ranks above a mid-string match. Nothing appears
- * until `minChars` characters are typed. Order among equal-rank matches follows
- * the input entity order.
+ * a name *starting with* it ranks above a mid-string match. Within each rank
+ * group entities are sorted alphabetically by label, so the order is
+ * deterministic and navigable rather than following the packs' file order.
+ * Nothing appears until `minChars` characters are typed, and every match is
+ * returned unless the caller passes an explicit `limit`.
  */
 export function filterSuggestions(
   input: string,
@@ -36,7 +41,6 @@ export function filterSuggestions(
   options: SuggestOptions = {},
 ): EntitySummary[] {
   const minChars = options.minChars ?? MIN_CHARS_BEFORE_SUGGEST;
-  const limit = options.limit ?? MAX_SUGGESTIONS;
   const needle = normalizeAnswer(input);
   if (needle.length < minChars) return [];
 
@@ -47,7 +51,11 @@ export function filterSuggestions(
     if (names.some((name) => name.startsWith(needle))) prefix.push(entity);
     else if (names.some((name) => name.includes(needle))) substring.push(entity);
   }
-  return [...prefix, ...substring].slice(0, limit);
+  const byLabel = (a: EntitySummary, b: EntitySummary) => a.label.localeCompare(b.label);
+  prefix.sort(byLabel);
+  substring.sort(byLabel);
+  const ranked = [...prefix, ...substring];
+  return options.limit === undefined ? ranked : ranked.slice(0, options.limit);
 }
 
 /**
