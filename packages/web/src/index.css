@@ -173,6 +173,21 @@ body {
   padding: 0 1.5rem;
 }
 
+/* ── Sign-in gate ────────────────────────────────────────── */
+.sign-in-gate {
+  background: #fff;
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 8px rgba(39, 24, 126, 0.08);
+  padding: 2rem 1.5rem;
+  text-align: center;
+}
+
+.sign-in-gate__message {
+  margin: 0 0 1.5rem;
+  font-size: 1.1rem;
+  color: #27187e;
+}
+
 /* ── Quiz card ───────────────────────────────────────────── */
 .quiz-card {
   background: #fff;

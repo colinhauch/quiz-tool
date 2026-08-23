@@ -6,6 +6,7 @@ import {
   getQuestion,
   savePacks,
   setAccessTokenSource,
+  setUnauthorizedHandler,
   submitAnswer,
 } from "./apiClient.js";
 
@@ -13,6 +14,7 @@ afterEach(() => {
   vi.restoreAllMocks();
   // Reset the token source so a test that signs in never leaks into the next.
   setAccessTokenSource(() => null);
+  setUnauthorizedHandler(() => {});
 });
 
 describe("apiClient", () => {
@@ -128,5 +130,47 @@ describe("apiClient auth", () => {
     await getQuestion();
 
     expect(fetchMock).toHaveBeenCalledWith("/api/question", undefined);
+  });
+
+  it("funnels a 401 while signed in to the unauthorized handler", async () => {
+    setAccessTokenSource(() => "the-access-token");
+    const onUnauthorized = vi.fn();
+    setUnauthorizedHandler(onUnauthorized);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => Promise.resolve({ status: 401, json: async () => ({}) })),
+    );
+
+    await getQuestion();
+
+    expect(onUnauthorized).toHaveBeenCalledOnce();
+  });
+
+  it("does not treat a 401 while signed out as expiry", async () => {
+    setAccessTokenSource(() => null);
+    const onUnauthorized = vi.fn();
+    setUnauthorizedHandler(onUnauthorized);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => Promise.resolve({ status: 401, json: async () => ({}) })),
+    );
+
+    await getQuestion();
+
+    expect(onUnauthorized).not.toHaveBeenCalled();
+  });
+
+  it("does not fire the unauthorized handler on a successful response", async () => {
+    setAccessTokenSource(() => "the-access-token");
+    const onUnauthorized = vi.fn();
+    setUnauthorizedHandler(onUnauthorized);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => Promise.resolve({ status: 200, json: async () => ({}) })),
+    );
+
+    await getQuestion();
+
+    expect(onUnauthorized).not.toHaveBeenCalled();
   });
 });

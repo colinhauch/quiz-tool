@@ -31,7 +31,11 @@ function makeFakeClient() {
 describe("createAuthBoundary", () => {
   it("starts signed out", () => {
     const boundary = createAuthBoundary(makeFakeClient());
-    expect(boundary.getState()).toEqual({ status: "signed-out", accessToken: null });
+    expect(boundary.getState()).toEqual({
+      status: "signed-out",
+      accessToken: null,
+      reason: null,
+    });
   });
 
   it("flips to signed-in and exposes the access token once a session appears", () => {
@@ -40,7 +44,11 @@ describe("createAuthBoundary", () => {
 
     client.emit("SIGNED_IN", fakeSession("tok-abc"));
 
-    expect(boundary.getState()).toEqual({ status: "signed-in", accessToken: "tok-abc" });
+    expect(boundary.getState()).toEqual({
+      status: "signed-in",
+      accessToken: "tok-abc",
+      reason: null,
+    });
   });
 
   it("notifies subscribers immediately, then on every change", () => {
@@ -75,7 +83,63 @@ describe("createAuthBoundary", () => {
     client.emit("SIGNED_OUT", null);
 
     expect(client.auth.signOut).toHaveBeenCalledOnce();
-    expect(boundary.getState()).toEqual({ status: "signed-out", accessToken: null });
+    expect(boundary.getState()).toEqual({
+      status: "signed-out",
+      accessToken: null,
+      reason: null,
+    });
+  });
+
+  it("handleExpiry flips to signed-out with an 'expired' reason and clears the stale session", () => {
+    const client = makeFakeClient();
+    const boundary = createAuthBoundary(client);
+    client.emit("SIGNED_IN", fakeSession("tok-abc"));
+
+    boundary.handleExpiry();
+
+    expect(boundary.getState()).toEqual({
+      status: "signed-out",
+      accessToken: null,
+      reason: "expired",
+    });
+    // The dead session is cleared so the expired token stops being attached.
+    expect(client.auth.signOut).toHaveBeenCalledOnce();
+  });
+
+  it("keeps the 'expired' reason when Supabase then emits its own SIGNED_OUT", () => {
+    const client = makeFakeClient();
+    const boundary = createAuthBoundary(client);
+    client.emit("SIGNED_IN", fakeSession("tok-abc"));
+
+    boundary.handleExpiry();
+    client.emit("SIGNED_OUT", null); // Supabase's follow-up event from the clear
+
+    expect(boundary.getState().reason).toBe("expired");
+  });
+
+  it("clears a prior 'expired' reason once the learner signs back in", () => {
+    const client = makeFakeClient();
+    const boundary = createAuthBoundary(client);
+    boundary.handleExpiry();
+
+    client.emit("SIGNED_IN", fakeSession("tok-new"));
+
+    expect(boundary.getState()).toEqual({
+      status: "signed-in",
+      accessToken: "tok-new",
+      reason: null,
+    });
+  });
+
+  it("a manual sign-out is not reported as expired", async () => {
+    const client = makeFakeClient();
+    const boundary = createAuthBoundary(client);
+    client.emit("SIGNED_IN", fakeSession("tok-abc"));
+
+    await boundary.signOut();
+    client.emit("SIGNED_OUT", null);
+
+    expect(boundary.getState().reason).toBeNull();
   });
 
   it("signs in with Google via the callback redirect", async () => {
