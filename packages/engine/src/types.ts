@@ -13,11 +13,20 @@ export interface LocalizedText {
  * A graph node: a city, a country, etc. `aliases` are display synonyms used
  * for text-input answer matching (see `specs/knowledge-graph/identity.md`);
  * a historical name with dates is a statement, not an alias.
+ *
+ * `autocomplete` is the short form the answer box *shows and fills* when this
+ * entity is a suggestion, for entities whose canonical `labels.en` is too
+ * verbose to type ("Seychellois rupee" → "rupee", "United States dollar" →
+ * "dollar"). The label stays the canonical answer — it is what feedback reveals
+ * and what grading targets — so the `autocomplete` string MUST also be an
+ * accepted name (an alias), or picking it would fill a value the grader rejects.
+ * Absent for entities whose label is already the natural short answer.
  */
 export interface Entity {
   id: string;
   labels: LocalizedText;
   aliases?: Record<string, string[]>;
+  autocomplete?: string;
   types: string[];
   /**
    * Where this entity sits on a map. Intrinsic entity identity — a field,

@@ -49,11 +49,18 @@ export interface AnswerResult {
 
 /**
  * Judges a typed answer against the card's hidden entity. The hidden slot names
- * which entity is the target: an object-hidden card grades against the object
- * (the country in "what country is Tokyo in?"), a subject-hidden card against
- * the subject (the country in "Bern is the capital of what country?"). Correct
- * means the input matches one of that entity's names; the canonical label comes
- * back either way, so a wrong answer can still be shown what was expected.
+ * which entity is the target: a subject-hidden card grades against the subject
+ * (the country in "Bern is the capital of what country?"), an object-hidden card
+ * against the object (the country in "what country is Tokyo in?"). Correct means
+ * the input matches one of the target's names; the canonical label comes back
+ * either way, so a wrong answer can still be shown what was expected.
+ *
+ * Object-hidden grading is *any-of*: a fact can have several true answers — a
+ * country with several official languages, each modeled as its own statement —
+ * so the answer is correct if it matches the object of *any* statement sharing
+ * this card's `(subject, relation)`, not only the statement the card drew from.
+ * For a 1:1 relation (capital, continent) that set is a singleton, so behaviour
+ * is unchanged. Subject-hidden stays single-target.
  */
 export function checkAnswer(pack: Pack, cardId: string, input: string): AnswerResult {
   const { statement, hiddenSlot } = findCard(pack, cardId);

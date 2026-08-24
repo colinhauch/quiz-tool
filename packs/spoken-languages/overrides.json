@@ -1,0 +1,14 @@
+{
+  "_comment": "Editorial curation over the Wikidata P37 baseline. This pack teaches what people SPEAK in a place, not a language's legal status, so we use official languages as a guideline and correct the cases where P37 is a poor answer to 'what do they speak there?'. `remove` drops a (country, language) pair; `add` asserts one P37 omits. Both keyed by country Q-ID, valued by language Q-IDs. Adding a language here also makes this pack OWN its entity (fetch-entities resolves it). Keep this list small — P37 is right for ~all countries; only the flagrant misfits belong here.",
+  "add": {
+    "Q30": ["Q1860"],
+    "Q77": ["Q1321"]
+  },
+  "remove": {
+    "Q30": ["Q28427", "Q33262", "Q33569", "Q34011"]
+  },
+  "_notes": {
+    "Q30": "United States: P37 lists only territorially-official languages (Carolinian, Chamorro, Hawaiian, Samoan) and Spanish, omitting English — the federal US designates none. Add English; keep Spanish (widely spoken); drop the four territorial-only entries that make 'a language spoken in the US' read as Carolinian.",
+    "Q77": "Uruguay: no P37 value at all (Spanish is de facto, not de jure). Add Spanish."
+  }
+}

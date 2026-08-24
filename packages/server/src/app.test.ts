@@ -155,6 +155,23 @@ describe("GET /entities", () => {
     ]);
   });
 
+  it("surfaces an entity's short autocomplete form when it has one", async () => {
+    const pack = fixturePack();
+    pack.entities.set("Q4917", {
+      id: "Q4917",
+      labels: { en: "United States dollar" },
+      aliases: { en: ["dollar", "dollars", "USD"] },
+      autocomplete: "dollar",
+      types: ["currency"],
+    });
+    const res = await createApp({ pack, store: memoryStore(), rng: () => 0 }).request(
+      "/entities?type=currency",
+    );
+    expect(entityListSchema.parse(await res.json())).toEqual([
+      { id: "Q4917", label: "United States dollar", aliases: ["dollar", "dollars", "USD"], autocomplete: "dollar" },
+    ]);
+  });
+
   it("rejects a request with no type", async () => {
     expect((await app().request("/entities")).status).toBe(400);
   });

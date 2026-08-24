@@ -26,10 +26,21 @@ export interface SuggestOptions {
  * reject over case or accents — matching and grading share one normalizer.
  *
  * A name *containing* the typed text is a match (so "sili" finds "Brasília");
- * a name *starting with* it ranks above a mid-string match. Nothing appears
- * until `minChars` characters are typed. Order among equal-rank matches follows
+ * a name *starting with* it ranks above a mid-string match. Matching is over
+ * every name — the label, its aliases, and the short `autocomplete` form — so a
+ * learner typing either the country adjective ("Seych…") or the bare noun
+ * ("rupee") both surface the entity. Nothing appears until `minChars` are typed.
+ *
+ * The list is de-duplicated by *display string* (`displayLabel`): many
+ * currencies share the short form "rupee", and showing eight identical rows
+ * helps no one — the first wins, and since any of them fills the same accepted
+ * string, collapsing them costs nothing. Order among equal-rank matches follows
  * the input entity order.
  */
+export function displayLabel(entity: EntitySummary): string {
+  return entity.autocomplete ?? entity.label;
+}
+
 export function filterSuggestions(
   input: string,
   entities: EntitySummary[],
@@ -43,11 +54,21 @@ export function filterSuggestions(
   const prefix: EntitySummary[] = [];
   const substring: EntitySummary[] = [];
   for (const entity of entities) {
-    const names = [entity.label, ...entity.aliases].map(normalizeAnswer);
+    const names = [entity.label, ...entity.aliases, displayLabel(entity)].map(normalizeAnswer);
     if (names.some((name) => name.startsWith(needle))) prefix.push(entity);
     else if (names.some((name) => name.includes(needle))) substring.push(entity);
   }
-  return [...prefix, ...substring].slice(0, limit);
+
+  const seen = new Set<string>();
+  const result: EntitySummary[] = [];
+  for (const entity of [...prefix, ...substring]) {
+    const key = normalizeAnswer(displayLabel(entity));
+    if (seen.has(key)) continue;
+    seen.add(key);
+    result.push(entity);
+    if (result.length >= limit) break;
+  }
+  return result;
 }
 
 /**

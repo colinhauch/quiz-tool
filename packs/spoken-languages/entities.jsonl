@@ -1,0 +1,174 @@
+{"id":"Q150","labels":{"en":"French"},"types":["language"],"aliases":{"en":["French language"]}}
+{"id":"Q188","labels":{"en":"German"},"types":["language"],"aliases":{"en":["German language"]}}
+{"id":"Q256","labels":{"en":"Turkish"},"types":["language"],"aliases":{"en":["Anatolian Turkish","Istanbul Turkish","Turkish language","Turkish of Turkey","Türkçe"]}}
+{"id":"Q294","labels":{"en":"Icelandic"},"types":["language"],"aliases":{"en":["Icelandic language","Iſlandic tongue","Íslenska"]}}
+{"id":"Q652","labels":{"en":"Italian"},"types":["language"],"aliases":{"en":["Italian language","Italiana"]}}
+{"id":"Q809","labels":{"en":"Polish"},"types":["language"],"aliases":{"en":["Polish language"]}}
+{"id":"Q1321","labels":{"en":"Spanish"},"types":["language"],"aliases":{"en":["Castilian","Castilian language","Spanish language"]}}
+{"id":"Q1412","labels":{"en":"Finnish"},"types":["language"],"aliases":{"en":["Finnish language","Nuclear Finnish","Nuclear Finnish languages","Suomi"]}}
+{"id":"Q1568","labels":{"en":"Hindi"},"types":["language"],"aliases":{"en":["Hindi language","Modern Standard Hindi"]}}
+{"id":"Q1617","labels":{"en":"Urdu"},"types":["language"],"aliases":{"en":["Hindustani","Oordoo","Urdu language"]}}
+{"id":"Q1860","labels":{"en":"English"},"types":["language"],"aliases":{"en":["English (language)","English language"]}}
+{"id":"Q4627","labels":{"en":"Aymara"},"types":["language"],"aliases":{"en":["Aimara language","Aymara language","Aymara languages","Aymará language","Caranga language","ay"]}}
+{"id":"Q5146","labels":{"en":"Portuguese"},"types":["language"],"aliases":{"en":["Portuguese language"]}}
+{"id":"Q5218","labels":{"en":"Quechua"},"types":["language"],"aliases":{"en":["Quechuan languages","Quichua","qu","runa simi"]}}
+{"id":"Q5287","labels":{"en":"Japanese"},"types":["language"],"aliases":{"en":["Japanese language","Japanesic"]}}
+{"id":"Q5885","labels":{"en":"Tamil"},"types":["language"],"aliases":{"en":["Tamil language"]}}
+{"id":"Q6654","labels":{"en":"Croatian"},"types":["language"],"aliases":{"en":["Croatian language","Hrvatski"]}}
+{"id":"Q7026","labels":{"en":"Catalan"},"types":["language"],"aliases":{"en":["Algherese","Alguerès","Alguerés","Catalan language","Catalan-Valencian-Balearic","Català","East Iberian","Valencian","Valencià"]}}
+{"id":"Q7411","labels":{"en":"Dutch"},"types":["language"],"aliases":{"en":["Dutch language","Netherlandic","Netherlandic language","Netherlandish","Netherlandish language"]}}
+{"id":"Q7737","labels":{"en":"Russian"},"types":["language"],"aliases":{"en":["Russian language","Russkiy","Russkiy yazyk"]}}
+{"id":"Q7838","labels":{"en":"Swahili"},"types":["language"],"aliases":{"en":["Kiswahili","Swahili (macrolanguage)","Swahili language"]}}
+{"id":"Q7913","labels":{"en":"Romanian"},"types":["language"],"aliases":{"en":["Daco-Romanian","Daco-Romanian language","Moldovan","Moldovan language","Romanian language","Românește","Română","Roumanian","Roumanian language","Rumanian","Rumanian language"]}}
+{"id":"Q7918","labels":{"en":"Bulgarian"},"types":["language"],"aliases":{"en":["Bulgarian language","Bŭlgarski"]}}
+{"id":"Q7930","labels":{"en":"Malagasy"},"types":["language"],"aliases":{"en":["Malagasy language"]}}
+{"id":"Q7979","labels":{"en":"British English"},"types":["language"],"aliases":{"en":["BE","BrE","Commonwealth English","English (United Kingdom)","Oxford English","UK English","United Kingdom English"]}}
+{"id":"Q8108","labels":{"en":"Georgian"},"types":["language"],"aliases":{"en":["Georgian language","Georgic","Gruzinski","Kartuli","Kartuli ena","Kharthuli + Imeruli"]}}
+{"id":"Q8748","labels":{"en":"Albanian"},"types":["language"],"aliases":{"en":["Albanian language","Shqip"]}}
+{"id":"Q8785","labels":{"en":"Armenian"},"types":["language"],"aliases":{"en":["Armenian language","Hayeren"]}}
+{"id":"Q8798","labels":{"en":"Ukrainian"},"types":["language"],"aliases":{"en":["Ukrainian language","Ukrainska"]}}
+{"id":"Q8821","labels":{"en":"Montenegrin"},"types":["language"],"aliases":{"en":["Crnogorski","Montenegrin language"]}}
+{"id":"Q9027","labels":{"en":"Swedish"},"types":["language"],"aliases":{"en":["Svenska","Swedish language","swed1254"]}}
+{"id":"Q9035","labels":{"en":"Danish"},"types":["language"],"aliases":{"en":["Danish language","South Scandinavian"]}}
+{"id":"Q9043","labels":{"en":"Norwegian"},"types":["language"],"aliases":{"en":["Norwegian language"]}}
+{"id":"Q9051","labels":{"en":"Luxembourgish"},"types":["language"],"aliases":{"en":["Luxembourg language","Luxembourgish language","Luxemburgish","Luxemburgish language","Lëtzebuergesch"]}}
+{"id":"Q9056","labels":{"en":"Czech"},"types":["language"],"aliases":{"en":["Bohemian","Bohemian language","Czech language","Český","Čeština"]}}
+{"id":"Q9058","labels":{"en":"Slovak"},"types":["language"],"aliases":{"en":["Slovak language","Slovakian","Slovakian language"]}}
+{"id":"Q9063","labels":{"en":"Slovene"},"types":["language"],"aliases":{"en":["Slovene language","Slovenian","Slovenian language","Slovenski","Slovenščina"]}}
+{"id":"Q9067","labels":{"en":"Hungarian"},"types":["language"],"aliases":{"en":["Hungarian language","Magyar","Magyar language","Modern Hungarian","Modern Hungarian language"]}}
+{"id":"Q9072","labels":{"en":"Estonian"},"types":["language"],"aliases":{"en":["Estonian language","North Estonian","North Estonian language","Northern Estonian","Northern Estonian language"]}}
+{"id":"Q9078","labels":{"en":"Latvian"},"types":["language"],"aliases":{"en":["Latvian language","Latviešu","Lettish","Lettish language"]}}
+{"id":"Q9083","labels":{"en":"Lithuanian"},"types":["language"],"aliases":{"en":["Lietuvių","Lithuanian language"]}}
+{"id":"Q9091","labels":{"en":"Belarusian"},"types":["language"],"aliases":{"en":["Belarus language","Belarusan","Belarusan language","Belarusian language","Belarussian","Belarussian language","Belorusian","Belorusian language","Belorussian","Belorussian language","Bielarusian","Bielarusian language","Bielaruskaja","Bielorusian","Bielorusian language","Bielorussian","Bielorussian language","Byelorussian","Byelorussian language","White Russian","White Russian language"]}}
+{"id":"Q9129","labels":{"en":"Greek"},"types":["language"],"aliases":{"en":["Greek language"]}}
+{"id":"Q9142","labels":{"en":"Irish"},"types":["language"],"aliases":{"en":["Gaeilge","Gaelic","Irish Gaelic","Irish language"]}}
+{"id":"Q9166","labels":{"en":"Maltese"},"types":["language"],"aliases":{"en":["Il-lingwa Maltija","Maltese language","lingwa Maltija"]}}
+{"id":"Q9168","labels":{"en":"Persian"},"types":["language"],"aliases":{"en":["Farsi language","Farsic-Caucasian Tat","Farsic–Caucasian Tat","Iranian","Iranian language","Persian language"]}}
+{"id":"Q9176","labels":{"en":"Korean"},"types":["language"],"aliases":{"en":["Korean language"]}}
+{"id":"Q9199","labels":{"en":"Vietnamese"},"types":["language"],"aliases":{"en":["Vietnamese language","tiếng Việt","vie"]}}
+{"id":"Q9205","labels":{"en":"Khmer"},"types":["language"],"aliases":{"en":["Cambodian language","Central Khmer","Khmer language"]}}
+{"id":"Q9211","labels":{"en":"Lao"},"types":["language"],"aliases":{"en":["Lao language","Laotian","Laotian language"]}}
+{"id":"Q9217","labels":{"en":"Thai"},"types":["language"],"aliases":{"en":["Central Thai","Siamese","Siamese language","Thai language"]}}
+{"id":"Q9228","labels":{"en":"Burmese"},"types":["language"],"aliases":{"en":["Burmese language","Myanmar language"]}}
+{"id":"Q9237","labels":{"en":"Malay"},"types":["language"],"aliases":{"en":["Malay language","Malay macrolanguage","Malay-Indonesian","Malay–Indonesian"]}}
+{"id":"Q9240","labels":{"en":"Indonesian"},"types":["language"],"aliases":{"en":["Bahasa","Indonesian language","bahasa Indonesia"]}}
+{"id":"Q9246","labels":{"en":"Mongolian"},"types":["language"],"aliases":{"en":["Khalka","Mongol","Mongolian language"]}}
+{"id":"Q9252","labels":{"en":"Kazakh"},"types":["language"],"aliases":{"en":["Kazakh language","Qazaq","Qazaq language","Qazaqşa"]}}
+{"id":"Q9255","labels":{"en":"Kyrgyz"},"types":["language"],"aliases":{"en":["Kirghiz","Kirghiz language","Kirgiz","Kirgiz language","Kyrgyz language"]}}
+{"id":"Q9260","labels":{"en":"Tajik"},"types":["language"],"aliases":{"en":["Tadjik","Tadjik language","Tadzhik","Tadzhik language","Tajik Persian","Tajik language","Tajiki","Tajiki Persian","Tajiki language"]}}
+{"id":"Q9264","labels":{"en":"Uzbek"},"types":["language"],"aliases":{"en":["Uzbek language"]}}
+{"id":"Q9267","labels":{"en":"Turkmen"},"types":["language"],"aliases":{"en":["Turkmen language"]}}
+{"id":"Q9288","labels":{"en":"Hebrew"},"types":["language"],"aliases":{"en":["Hebrew language","Ivrit","Iwrit"]}}
+{"id":"Q9292","labels":{"en":"Azerbaijani"},"types":["language"],"aliases":{"en":["Azerbaijani Turkic","Azerbaijani Turkic language","Azerbaijani Turkish","Azerbaijani language","Azeri","Azeri Turkish"]}}
+{"id":"Q9296","labels":{"en":"Macedonian"},"types":["language"],"aliases":{"en":["Macedonian language","Makedonski","Slavic Macedonian","Slavomacedonian"]}}
+{"id":"Q9299","labels":{"en":"Serbian"},"types":["language"],"aliases":{"en":["Serbian language","Srpski"]}}
+{"id":"Q9303","labels":{"en":"Bosnian"},"types":["language"],"aliases":{"en":["Bosanski","Bosniak","Bosniak language","Bosnian language"]}}
+{"id":"Q9610","labels":{"en":"Bangla"},"types":["language"],"aliases":{"en":["Bangla language","Bengali","Bengali language"]}}
+{"id":"Q10179","labels":{"en":"Zulu"},"types":["language"],"aliases":{"en":["Zulu language","isiZulu"]}}
+{"id":"Q13199","labels":{"en":"Romansh"},"types":["language"],"aliases":{"en":["Romanche","Romanche language","Romansch","Romansch language","Romansh language","Romontsch","Rumantsch","Rumantsch language","Rumantsh","Rumantsh language","Rumauntsch","Rumàntsch"]}}
+{"id":"Q13218","labels":{"en":"Xhosa"},"types":["language"],"aliases":{"en":["Xhosa language","Xosa","isiXhosa","xh","xho"]}}
+{"id":"Q13267","labels":{"en":"Sinhala"},"types":["language"],"aliases":{"en":["Helabasa","Singhalese language","Sinhala language","Sinhalese","Sinhalese language"]}}
+{"id":"Q13275","labels":{"en":"Somali"},"types":["language"],"aliases":{"en":["Af Soomaali, Somali","Somali language","so"]}}
+{"id":"Q13300","labels":{"en":"Nahuatl"},"types":["language"],"aliases":{"en":["Aztec","Aztec language","Mexican","Mexican language","Mexicano","Mexicano language","Nahuatl language","Nahuatl languages","Nāhuatl","Nāhuatl language"]}}
+{"id":"Q13307","labels":{"en":"Nauruan"},"types":["language"],"aliases":{"en":["Naouru language","Nauru","Nauruan language","na"]}}
+{"id":"Q13311","labels":{"en":"Ndau"},"types":["language"],"aliases":{"en":["Chidanda language","Chindau language","Ndau language","Ndzawu language","Njao language","Sofala language","Southeast Shona language","chiNdau language"]}}
+{"id":"Q13354","labels":{"en":"Yucatec Maya"},"types":["language"],"aliases":{"en":["Maaya","Maya language","Yucatec","Yucatec Maya language","Yucatec Mayan","Yucateco","Yukatek Maya"]}}
+{"id":"Q13955","labels":{"en":"Arabic"},"types":["language"],"aliases":{"en":["Arabian","Arabian language","Arabic language"]}}
+{"id":"Q14196","labels":{"en":"Afrikaans"},"types":["language"],"aliases":{"en":["African language","Afrikaans language"]}}
+{"id":"Q18784","labels":{"en":"North Korean standard language"},"types":["language"],"aliases":{"en":["Munhwaŏ","North Korean dialect","ko-KP","ko-kp","ko_KP"]}}
+{"id":"Q25164","labels":{"en":"Nynorsk"},"types":["language"],"aliases":{"en":["Neo Norwegian","New Norwegian","Norwegian Nynorsk","Norwegian Nynorsk language"]}}
+{"id":"Q25167","labels":{"en":"Bokmål"},"types":["language"],"aliases":{"en":["Norwegian Bokmål","bokmaal","bokmal"]}}
+{"id":"Q25258","labels":{"en":"Faroese"},"types":["language"],"aliases":{"en":["Faeroese","Faeroese language","Faroese language","Færoese language","Føroyskt","Føroyskt mál","Modern Faroese"]}}
+{"id":"Q25355","labels":{"en":"Greenlandic"},"types":["language"],"aliases":{"en":["Greenlandic Eskimo","Greenlandic Eskimo language","Greenlandic Inuit language","Greenlandic Inuktitut","Greenlandic Inuktitut language","Greenlandic language","Kalaallisut","Kalaallisut language"]}}
+{"id":"Q28244","labels":{"en":"Amharic"},"types":["language"],"aliases":{"en":["am"]}}
+{"id":"Q30898","labels":{"en":"Gilbertese"},"types":["language"],"aliases":{"en":["Gilbertese language","I-Kiribati","Kiribatese","Kiribati","Taetae ni Kiribati","gil"]}}
+{"id":"Q32656","labels":{"en":"Maldivian"},"types":["language"],"aliases":{"en":["Dhivehi","Dhivehi language","Divehi","Maldivian language"]}}
+{"id":"Q32704","labels":{"en":"Venda"},"types":["language"],"aliases":{"en":["Venda language","ve"]}}
+{"id":"Q32706","labels":{"en":"Dioula"},"types":["language"],"aliases":{"en":["Dioula language","Dioula, Dyula","Dyula","Dyula language","Jula language","dyu"]}}
+{"id":"Q32934","labels":{"en":"Bissa"},"types":["language"],"aliases":{"en":["Bisa","Bissa language","Bissagiella"]}}
+{"id":"Q33049","labels":{"en":"Balochi"},"types":["language"],"aliases":{"en":["Balochi language","Baluchi","Baluchi language"]}}
+{"id":"Q33077","labels":{"en":"Comorian"},"types":["language"],"aliases":{"en":["Comorian language"]}}
+{"id":"Q33081","labels":{"en":"Dzongkha"},"types":["language"],"aliases":{"en":["Dzongkha language","Ngalopkha language"]}}
+{"id":"Q33243","labels":{"en":"Bambara"},"types":["language"],"aliases":{"en":["Bamana","Bamanankan","Bambara language","Masaba script","bm"]}}
+{"id":"Q33273","labels":{"en":"Chewa"},"types":["language"],"aliases":{"en":["Chewa language","Chichewa","Chinyanja","Nyanja","ny"]}}
+{"id":"Q33295","labels":{"en":"Fijian"},"types":["language"],"aliases":{"en":["Fijian language","Na Vosa Vakaviti"]}}
+{"id":"Q33298","labels":{"en":"Filipino"},"types":["language"],"aliases":{"en":["Filipino language","Pilipino language","Standard Tagalog","fil"]}}
+{"id":"Q33454","labels":{"en":"Fula"},"types":["language"],"aliases":{"en":["Bagirmi dialect","Ful language","Fula language","Fulah","Fulah language","Fulani","Fulani language","Fulbe language adlam","Fulde language","Fulfulde dialect","Fulfulde language","Fulfuldedialect","Western Niger dialect"]}}
+{"id":"Q33491","labels":{"en":"Haitian Creole"},"types":["language"],"aliases":{"en":["Haitian Creole language","Haitian language"]}}
+{"id":"Q33573","labels":{"en":"Kinyarwanda"},"types":["language"],"aliases":{"en":["Ikinyarwanda","Ikinyarwanda language","Ki-Nyarwanda","Kinyarwanda language","Nyarwanda","Nyarwanda language","Ruanda language","Rwanda","Rwanda language","Rwandan","Rwandan language"]}}
+{"id":"Q33583","labels":{"en":"Kirundi"},"types":["language"],"aliases":{"en":["Ikirundi","Ki-Rundi","Rundi"]}}
+{"id":"Q33614","labels":{"en":"Khoisan"},"types":["language"],"aliases":{"en":["Khoisan languages"]}}
+{"id":"Q33617","labels":{"en":"Hiri Motu"},"types":["language"],"aliases":{"en":["Hiri","Pidgin Motu","Police Motu","ho"]}}
+{"id":"Q33672","labels":{"en":"Kalanga"},"types":["language"],"aliases":{"en":["Ikalanga","Kalanga language","TjiKalanga"]}}
+{"id":"Q33776","labels":{"en":"Palauan"},"types":["language"]}
+{"id":"Q33795","labels":{"en":"Senufo"},"types":["language"],"aliases":{"en":["Senoufo languages","Senufic languages","Senufo languages"]}}
+{"id":"Q33823","labels":{"en":"Nepali"},"types":["language"],"aliases":{"en":["Gorkhali","Nepal","Nepalese","Nepali language"]}}
+{"id":"Q33890","labels":{"en":"Northern Sotho"},"types":["language"],"aliases":{"en":["Northern Sotho language","Sepulana","Transvaal-Sotho","nso","pedi","sepedi"]}}
+{"id":"Q33954","labels":{"en":"Sango"},"types":["language"],"aliases":{"en":["Sangho","Sango language","sag","sg"]}}
+{"id":"Q34004","labels":{"en":"Shona"},"types":["language"],"aliases":{"en":["Chino","Karanga","Shona language","chiKaranga","chiManyika","chiRozwi","chiShona","chiSwina","chiUngwe","chiZwina","sn"]}}
+{"id":"Q34011","labels":{"en":"Samoan"},"types":["language"],"aliases":{"en":["Samoan language","sm"]}}
+{"id":"Q34014","labels":{"en":"Swazi"},"types":["language"],"aliases":{"en":["Swati","Swazi language","siSwati"]}}
+{"id":"Q34015","labels":{"en":"Seychellois Creole"},"types":["language"],"aliases":{"en":["Kreol","Seselwa","Seselwa Creole French","Seychelles Creole"]}}
+{"id":"Q34055","labels":{"en":"Tuvaluan"},"types":["language"],"aliases":{"en":["Tuvalu","Tuvaluan language","tvl"]}}
+{"id":"Q34094","labels":{"en":"Tongan"},"types":["language"],"aliases":{"en":["Tonga (Tonga Islands)","Tonga dialect","Tongan language","to"]}}
+{"id":"Q34101","labels":{"en":"Tonga"},"types":["language"],"aliases":{"en":["Chitonga","Tonga language","Zambezi"]}}
+{"id":"Q34124","labels":{"en":"Tigrinya"},"types":["language"],"aliases":{"en":["Tigrigna","Tigrinja","Tigrinya alphabet","Tigrinya language"]}}
+{"id":"Q34125","labels":{"en":"Tetum"},"types":["language"],"aliases":{"en":["Belo","Belu","Fehan","Teto","Tettum","Tetum language","Tetun","Tetun Belu","Tetung","tet"]}}
+{"id":"Q34137","labels":{"en":"Tswana"},"types":["language"],"aliases":{"en":["Bechuana","Sechuana","Setswana","Tswana language","tn"]}}
+{"id":"Q34138","labels":{"en":"Tumbuka"},"types":["language"],"aliases":{"en":["Chitumbuka","Tumbuka language","tum"]}}
+{"id":"Q34159","labels":{"en":"Tok Pisin"},"types":["language"],"aliases":{"en":["New Guinea Pidgin"]}}
+{"id":"Q34257","labels":{"en":"Wolof"},"types":["language"],"aliases":{"en":["Wolof language","wo"]}}
+{"id":"Q34327","labels":{"en":"Tsonga"},"types":["language"],"aliases":{"en":["Changana","Shangana","Shangani","Tsonga language","Xitsonga","xiChangana","xiShangana"]}}
+{"id":"Q34340","labels":{"en":"Sesotho"},"types":["language"],"aliases":{"en":["Sotho","Sotho language","Southern Sotho"]}}
+{"id":"Q35006","labels":{"en":"Balanta"},"types":["language"],"aliases":{"en":["Balanta language"]}}
+{"id":"Q35021","labels":{"en":"Bozo"},"types":["language"],"aliases":{"en":["Bozo language"]}}
+{"id":"Q35095","labels":{"en":"Badyara"},"types":["language"],"aliases":{"en":["Badyara language"]}}
+{"id":"Q35452","labels":{"en":"Bislama"},"types":["language"],"aliases":{"en":["Bichelamar","Bislama language","bi"]}}
+{"id":"Q35613","labels":{"en":"Northern Ndebele"},"types":["language"],"aliases":{"en":["Matabele","Ndebele","North Ndebele","Sindebele","Zimbabwean Ndebele","isiNdebele","isiNdebele saseNyakatho","nd","nde"]}}
+{"id":"Q35744","labels":{"en":"Krio"},"types":["language"],"aliases":{"en":["Krio language","Sierra Leonean Creole","kri"]}}
+{"id":"Q35876","labels":{"en":"Guarani"},"types":["language"],"aliases":{"en":["Guarani dialects","Guarani language"]}}
+{"id":"Q35939","labels":{"en":"Jamaican Patois"},"types":["language"],"aliases":{"en":["Jamaican","Jamaican Creole","Jamaican Creole English","Jamaican Patwa","Jumiekan Patwa","Patois","Patwah"]}}
+{"id":"Q35963","labels":{"en":"Cape Verdean Creole"},"types":["language"],"aliases":{"en":["Cape Verde Portuguese","Cape Verdean Portuguese","Kabuverdianu","Kriolu","kea"]}}
+{"id":"Q36096","labels":{"en":"Mooré"},"types":["language"],"aliases":{"en":["Moore","Moore language","More","Moré","Moshi","Mossi","Mossi language","Mòoré","mos"]}}
+{"id":"Q36186","labels":{"en":"Maninka"},"types":["language"],"aliases":{"en":["Eastern Maninka","Malinke","Manenkan","Maninka language"]}}
+{"id":"Q36187","labels":{"en":"Minyanka"},"types":["language"],"aliases":{"en":["Mamara Senoufo","Minyanka language"]}}
+{"id":"Q36239","labels":{"en":"New Zealand Sign Language"},"types":["language"],"aliases":{"en":["NZSL","New Zealandian Sign Language"]}}
+{"id":"Q36280","labels":{"en":"Marshallese"},"types":["language"],"aliases":{"en":["Marshallese language","mh"]}}
+{"id":"Q36368","labels":{"en":"Kurdish"},"types":["language"],"aliases":{"en":["Kurdi","Kurdish dialects","Kurdish language","Kurdish languages"]}}
+{"id":"Q36451","labels":{"en":"Māori"},"types":["language"],"aliases":{"en":["Maori","Maori language","Māori language","mi","reo Māori","te reo","te reo Māori"]}}
+{"id":"Q36510","labels":{"en":"Modern Greek"},"types":["language"],"aliases":{"en":["Modern Greek language","el"]}}
+{"id":"Q36660","labels":{"en":"Soninke"},"types":["language"],"aliases":{"en":["Azer","Maraka","Serakhulle"]}}
+{"id":"Q36668","labels":{"en":"Austrian Sign Language"},"types":["language"],"aliases":{"en":["ASL","ÖGS"]}}
+{"id":"Q36670","labels":{"en":"Pashayi"},"types":["language"],"aliases":{"en":["Pashai"]}}
+{"id":"Q36785","labels":{"en":"Southern Ndebele"},"types":["language"],"aliases":{"en":["South Ndebele","Southern Ndebele language","Transvaal Ndebele","nr"]}}
+{"id":"Q36905","labels":{"en":"Kassonke"},"types":["language"],"aliases":{"en":["Kassonke language"]}}
+{"id":"Q46728","labels":{"en":"Fiji Hindi"},"types":["language"],"aliases":{"en":["hif"]}}
+{"id":"Q56231","labels":{"en":"Hassaniya Arabic"},"types":["language"],"aliases":{"en":["Hassani","Hassaniya","Hassaniyya","Hassaniyya Arabic","Klam El Bithan","Maure"]}}
+{"id":"Q56463","labels":{"en":"Sámi"},"types":["language"],"aliases":{"en":["Lappic","Lappish","Saami","Saami languages","Sami","Sami languages","Samic","Sámi languages"]}}
+{"id":"Q56475","labels":{"en":"Hausa"},"types":["language"],"aliases":{"en":["Hausa language"]}}
+{"id":"Q58680","labels":{"en":"Pashto"},"types":["language"],"aliases":{"en":["Afghan","Afghan language","Afghani language","Pashto language","Pashtun","Pashtun language","Pushto","Pushto language","Pushtoo"]}}
+{"id":"Q161804","labels":{"en":"Nuristani"},"types":["language"],"aliases":{"en":["Kafiri languages","Kafiristanic","Nuristani languages","Nuristanic"]}}
+{"id":"Q178440","labels":{"en":"Dari"},"types":["language"],"aliases":{"en":["Afghan Farsi","Afghan Persian","Dari language","Eastern Farsi","Eastern Persian","fa-AF","fa-af","fa_AF"]}}
+{"id":"Q505198","labels":{"en":"Songhay"},"types":["language"],"aliases":{"en":["Songhai","Songhai languages","Songhay languages"]}}
+{"id":"Q617291","labels":{"en":"Shuar"},"types":["language"],"aliases":{"en":["Shuar language"]}}
+{"id":"Q727694","labels":{"en":"Standard Chinese"},"types":["language"],"aliases":{"en":["Chinese","Guanhua","Guoyu","Huayu","Kuo-yü","Kwanhoa","MSM","Mandarin","Mandarin Chinese","Modern Standard Chinese language","Modern Standard Mandarin","Putonghua","Standard Beijing Mandarin","Standard Mandarin","Standard Mandarin Chinese","Standard Northern Mandarin"]}}
+{"id":"Q1234776","labels":{"en":"Dogon"},"types":["language"],"aliases":{"en":["Dogon languages","Kaado","Kado"]}}
+{"id":"Q1339026","labels":{"en":"languages of Guinea"},"types":["language"],"aliases":{"en":["languages of French Guinea","languages of Guinea-Conakry","languages of the Republic of Guinea"]}}
+{"id":"Q1740805","labels":{"en":"Northern Quichua"},"types":["language"],"aliases":{"en":["Colombia-Ecuador Quechua IIB","Kichwa","Quichua","quechua"]}}
+{"id":"Q1772864","labels":{"en":"Pamir"},"types":["language"],"aliases":{"en":["Pamir languages"]}}
+{"id":"Q2524014","labels":{"en":"Bajan Creole"},"types":["language"],"aliases":{"en":["Bajan"]}}
+{"id":"Q2530387","labels":{"en":"Taglish"},"types":["language"]}
+{"id":"Q3073428","labels":{"en":"Korean Sign Language"},"types":["language"],"aliases":{"en":["KSL"]}}
+{"id":"Q3322064","labels":{"en":"Venezuelan Sign Language"},"types":["language"],"aliases":{"en":["LSV","VSL"]}}
+{"id":"Q3322093","labels":{"en":"South African Sign Language"},"types":["language"],"aliases":{"en":["SASL"]}}
+{"id":"Q3553981","labels":{"en":"Nambya"},"types":["language"],"aliases":{"en":["Nambya language"]}}
+{"id":"Q4252500","labels":{"en":"Grenadian Creole English"},"types":["language"]}
+{"id":"Q4670066","labels":{"en":"Tamasheq"},"types":["language"],"aliases":{"en":["Tafaghist","Tamachen","Tamashek","Tamashek language","Tamashekin","Tamasheq language","Tomachek","taq","tsk"]}}
+{"id":"Q7598268","labels":{"en":"Standard Moroccan Tamazight"},"types":["language"]}
+{"id":"Q8072097","labels":{"en":"Zimbabwe Sign Language"},"types":["language"],"aliases":{"en":["Zimbabwean Sign Language","Zimbabwean sign languages","Zimsign"]}}
+{"id":"Q8826802","labels":{"en":"Barwe"},"types":["language"],"aliases":{"en":["Barwe language","Chibarwe"]}}
+{"id":"Q12628055","labels":{"en":"Bobo"},"types":["language"],"aliases":{"en":["Bobo languages"]}}
+{"id":"Q24841726","labels":{"en":"Putonghua"},"types":["language"],"aliases":{"en":["Chinese (China)","Mandarin"]}}
+{"id":"Q25044405","labels":{"en":"Papua New Guinean Sign Language"},"types":["language"],"aliases":{"en":["Melanesian Sign Language","PNGSL","Papua New Guinea Sign Language"]}}
+{"id":"Q55698568","labels":{"en":"Azerbaijani Sign Language"},"types":["language"],"aliases":{"en":["AzSL","AİD"]}}
+{"id":"Q61053330","labels":{"en":"Standard Algerian Berber"},"types":["language"]}
