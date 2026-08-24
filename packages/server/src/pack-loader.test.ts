@@ -413,6 +413,7 @@ describe("loadAllPacks over the packs actually shipped", () => {
       "continental-countries",
       "core-cities",
       "core-geo",
+      "official-languages",
     ]);
   });
 
