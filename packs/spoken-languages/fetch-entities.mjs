@@ -1,22 +1,25 @@
-// Re-runnable fetch script for the `official-languages` pack's OWNED entities.
+// Re-runnable fetch script for the `spoken-languages` pack's OWNED entities.
 //
-// This pack owns one entity per distinct official language of a core-geo
-// country. Step 1: query Wikidata P37 (official language) over core-geo's
-// countries to discover the distinct set of language Q-IDs. Step 2: resolve
-// each language's English label + English aliases (same shape core-geo uses).
+// This pack owns one entity per distinct language it asserts a country speaks.
+// Step 1: query Wikidata P37 (official language) over core-geo's countries for a
+// BASELINE, then apply overrides.json (editorial curation) to get the final
+// (country, language) pairs — the same computation generate-statements.mjs
+// does, so the owned entities match the statements exactly. Step 2: resolve
+// each distinct language's English label + English aliases.
+//
 // Writes `entities.jsonl`, sorted by id, so a re-run is byte-stable: same
-// core-geo countries in, same file out.
+// core-geo + P37 + overrides in, same file out.
 //
 // Usage: node fetch-entities.mjs (from this directory; needs network)
 //
-// Modeled on ../core-geo/fetch-entities.mjs and ../capital-cities/
-// generate-statements.mjs. Regenerating is a deliberate, reviewed act: a fresh
-// pull can move labels or add a language, which changes owned Q-IDs.
+// Regenerating is a deliberate, reviewed act: a fresh pull can move labels or
+// add a language, which changes owned Q-IDs.
 
 import { readFileSync, writeFileSync } from "node:fs";
+import { finalPairs } from "./overrides.mjs";
 
 const WDQS = "https://query.wikidata.org/sparql";
-const UA = "geo-quiz-tool/0.1 official-languages (colin.hauch@gmail.com)";
+const UA = "geo-quiz-tool/0.1 spoken-languages (colin.hauch@gmail.com)";
 
 // Prefer the English label; fall back to Wikidata's language-agnostic `mul`
 // label for names spelled identically across languages.
@@ -53,20 +56,21 @@ async function post(query) {
   return (await res.json()).results.bindings;
 }
 
-/** Distinct official-language Q-IDs (P37) for a batch of countries. */
-async function fetchLanguageIds(countryIds) {
+/** Official-language pairs (P37) for a batch, as [countryQid, langQid][]. */
+async function fetchOfficialLanguagePairs(countryIds) {
   const values = countryIds.map((id) => `wd:${id}`).join(" ");
   const bindings = await post(`
-    SELECT ?lang WHERE {
+    SELECT ?country ?lang WHERE {
       VALUES ?country { ${values} }
       ?country wdt:P37 ?lang .
     }`);
-  const ids = new Set();
+  const pairs = [];
   for (const b of bindings) {
-    const id = qidFromUri(b.lang.value);
-    if (id) ids.add(id);
+    const country = qidFromUri(b.country.value);
+    const lang = qidFromUri(b.lang.value);
+    if (country && lang) pairs.push([country, lang]);
   }
-  return ids;
+  return pairs;
 }
 
 /** English label (en/mul) + English aliases for a batch of language Q-IDs. */
@@ -85,20 +89,24 @@ async function main() {
   const countries = Object.values(entities)
     .filter((e) => e.types?.includes("country"))
     .map((e) => e.id);
+  const countrySet = new Set(countries);
 
   console.error(`Found ${countries.length} countries in core-geo`);
   console.error("Discovering official languages (P37) from Wikidata...");
 
-  const langIds = new Set();
+  const baseline = [];
   const batch = 50;
   for (let i = 0; i < countries.length; i += batch) {
     const slice = countries.slice(i, i + batch);
-    for (const id of await fetchLanguageIds(slice)) langIds.add(id);
-    console.error(`  scanned ${Math.min(i + batch, countries.length)}/${countries.length} countries, ${langIds.size} languages so far`);
+    baseline.push(...(await fetchOfficialLanguagePairs(slice)));
+    console.error(`  scanned ${Math.min(i + batch, countries.length)}/${countries.length} countries, ${baseline.length} pairs so far`);
   }
 
+  // Own exactly the languages the curated statements will reference.
+  const pairs = finalPairs(baseline, countrySet);
+  const langIds = new Set(pairs.map(([, lang]) => lang));
   const ids = [...langIds].sort((a, b) => Number(a.slice(1)) - Number(b.slice(1)));
-  console.error(`Resolving labels for ${ids.length} languages...`);
+  console.error(`Resolving labels for ${ids.length} languages (after overrides)...`);
 
   const labels = new Map(); // qid -> { en?, mul? }
   const aliases = new Map(); // qid -> Set<string>

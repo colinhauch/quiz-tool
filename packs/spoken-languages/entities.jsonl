@@ -81,7 +81,6 @@
 {"id":"Q25258","labels":{"en":"Faroese"},"types":["language"],"aliases":{"en":["Faeroese","Faeroese language","Faroese language","Færoese language","Føroyskt","Føroyskt mál","Modern Faroese"]}}
 {"id":"Q25355","labels":{"en":"Greenlandic"},"types":["language"],"aliases":{"en":["Greenlandic Eskimo","Greenlandic Eskimo language","Greenlandic Inuit language","Greenlandic Inuktitut","Greenlandic Inuktitut language","Greenlandic language","Kalaallisut","Kalaallisut language"]}}
 {"id":"Q28244","labels":{"en":"Amharic"},"types":["language"],"aliases":{"en":["am"]}}
-{"id":"Q28427","labels":{"en":"Carolinian"},"types":["language"],"aliases":{"en":["Carolinian language","Saipan","Saipan Carolinian","Saipan Carolinian language","Saipan lauguage","Southern Carolinian","cal"]}}
 {"id":"Q30898","labels":{"en":"Gilbertese"},"types":["language"],"aliases":{"en":["Gilbertese language","I-Kiribati","Kiribatese","Kiribati","Taetae ni Kiribati","gil"]}}
 {"id":"Q32656","labels":{"en":"Maldivian"},"types":["language"],"aliases":{"en":["Dhivehi","Dhivehi language","Divehi","Maldivian language"]}}
 {"id":"Q32704","labels":{"en":"Venda"},"types":["language"],"aliases":{"en":["Venda language","ve"]}}
@@ -91,13 +90,11 @@
 {"id":"Q33077","labels":{"en":"Comorian"},"types":["language"],"aliases":{"en":["Comorian language"]}}
 {"id":"Q33081","labels":{"en":"Dzongkha"},"types":["language"],"aliases":{"en":["Dzongkha language","Ngalopkha language"]}}
 {"id":"Q33243","labels":{"en":"Bambara"},"types":["language"],"aliases":{"en":["Bamana","Bamanankan","Bambara language","Masaba script","bm"]}}
-{"id":"Q33262","labels":{"en":"Chamorro"},"types":["language"],"aliases":{"en":["Chamorro language","ch"]}}
 {"id":"Q33273","labels":{"en":"Chewa"},"types":["language"],"aliases":{"en":["Chewa language","Chichewa","Chinyanja","Nyanja","ny"]}}
 {"id":"Q33295","labels":{"en":"Fijian"},"types":["language"],"aliases":{"en":["Fijian language","Na Vosa Vakaviti"]}}
 {"id":"Q33298","labels":{"en":"Filipino"},"types":["language"],"aliases":{"en":["Filipino language","Pilipino language","Standard Tagalog","fil"]}}
 {"id":"Q33454","labels":{"en":"Fula"},"types":["language"],"aliases":{"en":["Bagirmi dialect","Ful language","Fula language","Fulah","Fulah language","Fulani","Fulani language","Fulbe language adlam","Fulde language","Fulfulde dialect","Fulfulde language","Fulfuldedialect","Western Niger dialect"]}}
 {"id":"Q33491","labels":{"en":"Haitian Creole"},"types":["language"],"aliases":{"en":["Haitian Creole language","Haitian language"]}}
-{"id":"Q33569","labels":{"en":"Hawaiian"},"types":["language"],"aliases":{"en":["Hawaiian language","Hawaiʻian language","ʻŌlelo Hawaiʻi"]}}
 {"id":"Q33573","labels":{"en":"Kinyarwanda"},"types":["language"],"aliases":{"en":["Ikinyarwanda","Ikinyarwanda language","Ki-Nyarwanda","Kinyarwanda language","Nyarwanda","Nyarwanda language","Ruanda language","Rwanda","Rwanda language","Rwandan","Rwandan language"]}}
 {"id":"Q33583","labels":{"en":"Kirundi"},"types":["language"],"aliases":{"en":["Ikirundi","Ki-Rundi","Rundi"]}}
 {"id":"Q33614","labels":{"en":"Khoisan"},"types":["language"],"aliases":{"en":["Khoisan languages"]}}

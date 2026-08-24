@@ -1,0 +1,17 @@
+{
+  "id": "spoken-languages",
+  "version": "0.0.1",
+  "labels": { "en": "Spoken Languages" },
+  "descriptions": {
+    "en": "country→language `spoken_language` statements over core-geo's countries; language entities owned here. Teaches what people speak where. Wikidata P37 (official language) as a baseline, curated by overrides.json (editorial: add colloquial languages, drop territorial-only noise). Multi-valued (Switzerland → four). Object-hidden only: 'What is a language spoken in X?'"
+  },
+  "license": "CC0-1.0",
+  "credits": [{ "source": "Wikidata", "retrieved": "2026-08-24" }],
+  "relations": {
+    "spoken_language": {
+      "labels": { "en": "has spoken language" },
+      "kind": "text",
+      "hiddenSlots": ["object"]
+    }
+  }
+}

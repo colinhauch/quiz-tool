@@ -1,24 +1,27 @@
-// Generate statements.jsonl for the official-languages pack.
-// Queries Wikidata P37 (official language) for core-geo's countries and emits
-// one country→language `official_language` statement per (country, language)
-// pair whose language entity THIS pack owns (see entities.jsonl).
+// Generate statements.jsonl for the spoken-languages pack.
+// Queries Wikidata P37 (official language) for core-geo's countries as a
+// BASELINE, then applies overrides.json (editorial curation) and emits one
+// country→language `spoken_language` statement per surviving (country, language)
+// pair. The pack teaches what people speak in a place, so P37 is a guideline,
+// not the last word — see overrides.json for the reasoning behind each edit.
 //
-// Multi-valued by design: a country with several official languages emits N
-// separate statements (Switzerland → German/French/Italian/Romansh). A pair
-// whose language entity this pack does not own is SKIPPED with a warning rather
-// than emitted as a broken row (the validator rejects an object no pack owns).
+// Multi-valued by design: a country with several languages emits N separate
+// statements (Switzerland → German/French/Italian/Romansh). A pair whose
+// language entity this pack does not own is SKIPPED with a warning rather than
+// emitted as a broken row (the validator rejects an object no pack owns);
+// fetch-entities.mjs owns exactly the languages the final pairs reference.
 //
 // Usage: node generate-statements.mjs (from this directory; needs network)
 //
-// Modeled on ../capital-cities/generate-statements.mjs and ../continental-
-// countries/generate-statements.mjs. Deterministic: stable sort by id, so the
-// same core-geo + entities.jsonl produce byte-identical output. Statement ids
-// include the language slug so a country's several statements never collide.
+// Deterministic: stable sort by id, so the same core-geo + P37 + overrides
+// produce byte-identical output. Statement ids include the language slug so a
+// country's several statements never collide.
 
 import { readFileSync, writeFileSync } from "node:fs";
+import { finalPairs } from "./overrides.mjs";
 
 const WDQS = "https://query.wikidata.org/sparql";
-const UA = "geo-quiz-tool/0.1 official-languages (colin.hauch@gmail.com)";
+const UA = "geo-quiz-tool/0.1 spoken-languages (colin.hauch@gmail.com)";
 
 /** Read a *.jsonl entities file into a { qid → entity } map. */
 function readEntities(url) {
@@ -82,36 +85,41 @@ async function main() {
   console.error(`Own ${Object.keys(owned).length} language entities`);
   console.error("Fetching official languages (P37) from Wikidata...");
 
-  const pairs = [];
+  const baseline = [];
   const batchSize = 50;
   for (let i = 0; i < countries.length; i += batchSize) {
     const batch = countries.slice(i, i + batchSize);
     try {
       const batchPairs = await fetchOfficialLanguages(batch);
-      pairs.push(...batchPairs);
-      console.error(`Fetched ${pairs.length} pairs (through ${Math.min(i + batchSize, countries.length)}/${countries.length} countries)`);
+      baseline.push(...batchPairs);
+      console.error(`Fetched ${baseline.length} pairs (through ${Math.min(i + batchSize, countries.length)}/${countries.length} countries)`);
     } catch (err) {
       console.error(`Error fetching batch: ${err.message}`);
     }
   }
 
+  // Editorial curation: drop `remove` pairs, add `add` pairs. Only pairs whose
+  // country is in core-geo survive (a P37 value for a non-core-geo country is
+  // dropped here anyway).
+  const pairs = finalPairs(baseline, new Set(countries));
+  console.error(`After overrides: ${pairs.length} pairs`);
+
   const statements = [];
   const seen = new Set();
   for (const [countryId, langId] of pairs) {
     const country = core[countryId];
-    if (!country) continue; // a P37 value for a non-core-geo country; ignore
-    const langName = country?.labels?.en ?? "unknown";
+    if (!country) continue; // a value for a non-core-geo country; ignore
     if (!owned[langId]) {
-      console.error(`Warning: ${countryId} (${langName}) language ${langId} is not an owned entity — skipped`);
+      console.error(`Warning: ${countryId} (${country.labels.en}) language ${langId} is not an owned entity — skipped`);
       continue;
     }
     const id = `lang:${slug(country.labels.en)}:${slug(owned[langId].labels.en)}`;
-    if (seen.has(id)) continue; // guard against duplicate P37 rows
+    if (seen.has(id)) continue; // guard against duplicate rows
     seen.add(id);
     statements.push({
       id,
       subject: countryId,
-      relation: "official_language",
+      relation: "spoken_language",
       object: { kind: "entity", id: langId },
     });
   }

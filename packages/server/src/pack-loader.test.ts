@@ -423,7 +423,7 @@ describe("loadAllPacks over the packs actually shipped", () => {
       "core-cities",
       "core-geo",
       "currencies",
-      "official-languages",
+      "spoken-languages",
     ]);
   });
 
@@ -491,5 +491,36 @@ describe("loadAllPacks over the packs actually shipped", () => {
     // France also has the CFP franc (Q214393) via its overseas territories.
     expect(p.statements.find((s) => s.id === "cur:france:cfp-franc")).toBeDefined();
     expect(checkAnswer(p, franceCard, "CFP franc").correct).toBe(true);
+  });
+
+  it("includes the spoken-languages pack, object-hidden, editorially curated", async () => {
+    const p = await loadAllPacks();
+
+    // The pack owns its language entities (core-geo owns none).
+    expect(p.entities.get("Q150")?.labels.en).toBe("French");
+    expect(p.entities.get("Q150")?.types).toContain("language");
+
+    // France → French. Object-hidden render must not leak the answer.
+    const france = p.statements.find((s) => s.id === "lang:france:french");
+    expect(france).toBeDefined();
+    expect(france?.relation).toBe("spoken_language");
+    const q = generateQuestion(p, france!, "object");
+    expect(q.prompt).toBe("What is a language spoken in France?");
+    expect(q.prompt.toLowerCase()).not.toContain("french");
+    expect(checkAnswer(p, makeCardId(france!.id, "object"), "French").correct).toBe(true);
+
+    // Editorial override: the US teaches English (P37 omits it federally) and
+    // no longer surfaces the territorial-only languages that made "a language
+    // spoken in the US" grade as Carolinian.
+    const usEnglish = p.statements.find((s) => s.id === "lang:united-states:english");
+    expect(usEnglish).toBeDefined();
+    const usCard = makeCardId(usEnglish!.id, "object");
+    expect(checkAnswer(p, usCard, "English").correct).toBe(true); // added
+    expect(checkAnswer(p, usCard, "Spanish").correct).toBe(true); // kept (any-of)
+    expect(checkAnswer(p, usCard, "Carolinian").correct).toBe(false); // removed
+    expect(p.statements.find((s) => s.subject === "Q30" && s.id.includes("carolinian"))).toBeUndefined();
+
+    // Uruguay had no P37 value at all; the override adds Spanish.
+    expect(p.statements.find((s) => s.id === "lang:uruguay:spanish")).toBeDefined();
   });
 });
