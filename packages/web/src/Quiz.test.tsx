@@ -142,7 +142,7 @@ describe("Quiz", () => {
     const box = (await screen.findByLabelText(/your answer/i)) as HTMLInputElement;
     fireEvent.change(box, { target: { value: "jap" } });
     await screen.findByRole("option", { name: "Japan" });
-    fireEvent.mouseDown(screen.getByRole("button", { name: "Japan" }));
+    fireEvent.click(screen.getByRole("button", { name: "Japan" }));
 
     expect(box.value).toBe("Japan");
     // Filling is not answering: no verdict yet, and no POST /answer fired.
@@ -150,6 +150,22 @@ describe("Quiz", () => {
     expect(fetchMock).not.toHaveBeenCalledWith("/api/answer", expect.anything());
     // The list closes once a suggestion is taken.
     expect(screen.queryByRole("option", { name: "Japan" })).not.toBeInTheDocument();
+  });
+
+  it("selects a keyboard-focused suggestion on Enter, then focus lands on Submit", async () => {
+    stubFetch([tokyo], { correct: true, acceptedAnswer: "Japan" });
+    render(<Quiz />);
+
+    const box = (await screen.findByLabelText(/your answer/i)) as HTMLInputElement;
+    fireEvent.change(box, { target: { value: "jap" } });
+    // Tab-navigating to the option focuses its button; Enter on a focused button
+    // fires a click (never mousedown), which must select it.
+    const option = await screen.findByRole("button", { name: "Japan" });
+    fireEvent.click(option); // Enter on a focused <button> dispatches click
+
+    expect(box.value).toBe("Japan");
+    // A keyboard learner's next Enter should submit, so focus moves to Submit.
+    expect(screen.getByRole("button", { name: /submit/i })).toHaveFocus();
   });
 
   it("still submits a free-text answer that is not in the suggestion list", async () => {
