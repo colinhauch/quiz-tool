@@ -151,6 +151,65 @@ function makeCapitalPack(): Pack {
   };
 }
 
+// A multi-valued object-hidden relation: Switzerland has several official
+// languages, each modeled as its own statement (see spec #97 / ticket #98).
+// Grading a card built from any one of them must accept *any* true language.
+const german: Entity = { id: "Q188", labels: { en: "German" }, types: ["language"] };
+const french: Entity = {
+  id: "Q150",
+  labels: { en: "French" },
+  aliases: { en: ["Français"] },
+  types: ["language"],
+};
+const italian: Entity = { id: "Q652", labels: { en: "Italian" }, types: ["language"] };
+const spanish: Entity = { id: "Q1321", labels: { en: "Spanish" }, types: ["language"] };
+
+const languageStatements: Statement[] = [
+  { id: "lang:switzerland-german", subject: "Q39", relation: "official_language", object: { kind: "entity", id: "Q188" }, pack: "test-pack" },
+  { id: "lang:switzerland-french", subject: "Q39", relation: "official_language", object: { kind: "entity", id: "Q150" }, pack: "test-pack" },
+  { id: "lang:switzerland-italian", subject: "Q39", relation: "official_language", object: { kind: "entity", id: "Q652" }, pack: "test-pack" },
+];
+
+function makeLanguagePack(): Pack {
+  return {
+    entities: new Map([switzerland, german, french, italian, spanish].map((e) => [e.id, e])),
+    statements: languageStatements,
+    generators: {},
+    packs,
+  };
+}
+
+describe("checkAnswer, object-hidden multi-valued (any-of)", () => {
+  it("accepts the card's own object", () => {
+    expect(checkAnswer(makeLanguagePack(), "lang:switzerland-german:object", "German")).toEqual({
+      correct: true,
+      acceptedAnswer: "German",
+    });
+  });
+
+  it("accepts a sibling object — a different true answer for the same (subject, relation)", () => {
+    // Card was built from the German statement; the learner answers French.
+    expect(checkAnswer(makeLanguagePack(), "lang:switzerland-german:object", "French")).toEqual({
+      correct: true,
+      acceptedAnswer: "French",
+    });
+  });
+
+  it("accepts a sibling object given by alias", () => {
+    expect(checkAnswer(makeLanguagePack(), "lang:switzerland-italian:object", "Français")).toEqual({
+      correct: true,
+      acceptedAnswer: "French",
+    });
+  });
+
+  it("rejects a language that is not official, revealing the card's own object", () => {
+    expect(checkAnswer(makeLanguagePack(), "lang:switzerland-french:object", "Spanish")).toEqual({
+      correct: false,
+      acceptedAnswer: "French",
+    });
+  });
+});
+
 describe("checkAnswer, subject-hidden", () => {
   it("grades against the statement's subject entity", () => {
     expect(checkAnswer(makeCapitalPack(), "cap:switzerland-bern:subject", "Switzerland")).toEqual({

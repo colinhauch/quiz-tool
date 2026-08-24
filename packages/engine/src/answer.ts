@@ -47,14 +47,48 @@ export interface AnswerResult {
 
 /**
  * Judges a typed answer against the card's hidden entity. The hidden slot names
- * which entity is the target: an object-hidden card grades against the object
- * (the country in "what country is Tokyo in?"), a subject-hidden card against
- * the subject (the country in "Bern is the capital of what country?"). Correct
- * means the input matches one of that entity's names; the canonical label comes
- * back either way, so a wrong answer can still be shown what was expected.
+ * which entity is the target: a subject-hidden card grades against the subject
+ * (the country in "Bern is the capital of what country?"), an object-hidden card
+ * against the object (the country in "what country is Tokyo in?"). Correct means
+ * the input matches one of the target's names; the canonical label comes back
+ * either way, so a wrong answer can still be shown what was expected.
+ *
+ * Object-hidden grading is *any-of*: a fact can have several true answers — a
+ * country with several official languages, each modeled as its own statement —
+ * so the answer is correct if it matches the object of *any* statement sharing
+ * this card's `(subject, relation)`, not only the statement the card drew from.
+ * For a 1:1 relation (capital, continent) that set is a singleton, so behaviour
+ * is unchanged. Subject-hidden stays single-target.
  */
 export function checkAnswer(pack: Pack, cardId: string, input: string): AnswerResult {
   const { statement, hiddenSlot } = findCard(pack, cardId);
-  const target = createGraph(pack.entities).getEntity(targetEntityId(statement, hiddenSlot));
-  return { correct: matchesEntity(input, target), acceptedAnswer: target.labels.en };
+  const graph = createGraph(pack.entities);
+
+  // Subject-hidden stays single-target; targetEntityId also enforces the
+  // literal-object and unsupported-slot guards shared with object grading.
+  if (hiddenSlot !== "object") {
+    const target = graph.getEntity(targetEntityId(statement, hiddenSlot));
+    return { correct: matchesEntity(input, target), acceptedAnswer: target.labels.en };
+  }
+
+  if (statement.object.kind !== "entity") {
+    throw new Error(`card ${cardId} hides a literal object, unsupported in MVP`);
+  }
+
+  // Every true answer for this (subject, relation): match any of them. Literal
+  // objects can't be graded in the MVP, so they're skipped as candidates.
+  const siblings = pack.statements.filter(
+    (s) => s.subject === statement.subject && s.relation === statement.relation,
+  );
+  for (const sibling of siblings) {
+    if (sibling.object.kind !== "entity") continue;
+    const candidate = graph.getEntity(sibling.object.id);
+    if (matchesEntity(input, candidate)) {
+      return { correct: true, acceptedAnswer: candidate.labels.en };
+    }
+  }
+
+  // Wrong: reveal the card's own object as the expected answer.
+  const own = graph.getEntity(statement.object.id);
+  return { correct: false, acceptedAnswer: own.labels.en };
 }
