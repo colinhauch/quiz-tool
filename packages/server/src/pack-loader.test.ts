@@ -2,7 +2,15 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { questionResponseSchema } from "@geo/contract";
-import { type Entity, type Generator, generateQuestion, type HiddenSlot, type Statement } from "@geo/engine";
+import {
+  checkAnswer,
+  type Entity,
+  type Generator,
+  generateQuestion,
+  type HiddenSlot,
+  makeCardId,
+  type Statement,
+} from "@geo/engine";
 import { afterEach, describe, expect, it } from "vitest";
 import { createApp } from "./app.js";
 import { assembleGraph, assembleLoaded, discoverPacks, type LoadedPack, loadAllPacks, loadPack } from "./pack-loader.js";
@@ -414,6 +422,8 @@ describe("loadAllPacks over the packs actually shipped", () => {
       "continental-countries",
       "core-cities",
       "core-geo",
+      "currencies",
+      "spoken-languages",
     ]);
   });
 
@@ -454,5 +464,63 @@ describe("loadAllPacks over the packs actually shipped", () => {
     // continental-countries interweaves with other packs: 150+ continent questions
     const continentQuestions = p.statements.filter((s) => s.relation === "located_in_continent");
     expect(continentQuestions.length).toBeGreaterThanOrEqual(150);
+  });
+
+  it("includes the currencies pack, quizzed object-hidden with any-of grading", async () => {
+    const p = await loadAllPacks();
+
+    // The currencies pack owns its currency entities (core-geo owns none).
+    expect(p.entities.get("Q4916")?.labels.en).toBe("euro");
+    expect(p.entities.get("Q4916")?.types).toContain("currency");
+
+    // France → euro. Object-hidden render must not leak the answer.
+    const france = p.statements.find((s) => s.id === "cur:france:euro");
+    expect(france).toBeDefined();
+    expect(france?.relation).toBe("official_currency");
+    expect(france?.object).toEqual({ kind: "entity", id: "Q4916" });
+    const q = generateQuestion(p, france!, "object");
+    expect(q.prompt).toBe("What currency does France use?");
+    expect(q.prompt.toLowerCase()).not.toContain("euro");
+
+    // Grades the currency name correct (case/alias-insensitive).
+    const franceCard = makeCardId(france!.id, "object");
+    expect(checkAnswer(p, franceCard, "Euro").correct).toBe(true);
+    expect(checkAnswer(p, franceCard, "EUR").correct).toBe(true);
+
+    // A country with two legal tenders accepts either — any-of over the pair.
+    // France also has the CFP franc (Q214393) via its overseas territories.
+    expect(p.statements.find((s) => s.id === "cur:france:cfp-franc")).toBeDefined();
+    expect(checkAnswer(p, franceCard, "CFP franc").correct).toBe(true);
+  });
+
+  it("includes the spoken-languages pack, object-hidden, editorially curated", async () => {
+    const p = await loadAllPacks();
+
+    // The pack owns its language entities (core-geo owns none).
+    expect(p.entities.get("Q150")?.labels.en).toBe("French");
+    expect(p.entities.get("Q150")?.types).toContain("language");
+
+    // France → French. Object-hidden render must not leak the answer.
+    const france = p.statements.find((s) => s.id === "lang:france:french");
+    expect(france).toBeDefined();
+    expect(france?.relation).toBe("spoken_language");
+    const q = generateQuestion(p, france!, "object");
+    expect(q.prompt).toBe("What is a language spoken in France?");
+    expect(q.prompt.toLowerCase()).not.toContain("french");
+    expect(checkAnswer(p, makeCardId(france!.id, "object"), "French").correct).toBe(true);
+
+    // Editorial override: the US teaches English (P37 omits it federally) and
+    // no longer surfaces the territorial-only languages that made "a language
+    // spoken in the US" grade as Carolinian.
+    const usEnglish = p.statements.find((s) => s.id === "lang:united-states:english");
+    expect(usEnglish).toBeDefined();
+    const usCard = makeCardId(usEnglish!.id, "object");
+    expect(checkAnswer(p, usCard, "English").correct).toBe(true); // added
+    expect(checkAnswer(p, usCard, "Spanish").correct).toBe(true); // kept (any-of)
+    expect(checkAnswer(p, usCard, "Carolinian").correct).toBe(false); // removed
+    expect(p.statements.find((s) => s.subject === "Q30" && s.id.includes("carolinian"))).toBeUndefined();
+
+    // Uruguay had no P37 value at all; the override adds Spanish.
+    expect(p.statements.find((s) => s.id === "lang:uruguay:spanish")).toBeDefined();
   });
 });
