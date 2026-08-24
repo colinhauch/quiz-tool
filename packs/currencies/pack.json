@@ -1,0 +1,17 @@
+{
+  "id": "currencies",
+  "version": "0.0.1",
+  "labels": { "en": "Currencies" },
+  "descriptions": {
+    "en": "Country→currency `official_currency` statements over core-geo's countries, with currency entities owned by this pack. Object-hidden: 'What currency does X use?' Any true currency (incl. its ISO code) grades correct."
+  },
+  "license": "CC0-1.0",
+  "credits": [{ "source": "Wikidata", "retrieved": "2026-08-23" }],
+  "relations": {
+    "official_currency": {
+      "labels": { "en": "uses currency" },
+      "kind": "text",
+      "hiddenSlots": ["object"]
+    }
+  }
+}
