@@ -491,6 +491,19 @@ describe("loadAllPacks over the packs actually shipped", () => {
     // France also has the CFP franc (Q214393) via its overseas territories.
     expect(p.statements.find((s) => s.id === "cur:france:cfp-franc")).toBeDefined();
     expect(checkAnswer(p, franceCard, "CFP franc").correct).toBe(true);
+
+    // Verbose currency names carry a short `autocomplete` form the answer box
+    // shows/fills; the short form and its plural are accepted answers, and the
+    // full name stays the canonical label revealed in feedback.
+    const usd = p.entities.get("Q4917");
+    expect(usd?.labels.en).toBe("United States dollar");
+    expect(usd?.autocomplete).toBe("dollar");
+    const usStatement = p.statements.find((s) => s.subject === "Q30" && s.object.kind === "entity" && s.object.id === "Q4917");
+    expect(usStatement).toBeDefined();
+    const usCard = makeCardId(usStatement!.id, "object");
+    expect(checkAnswer(p, usCard, "dollar").correct).toBe(true);
+    expect(checkAnswer(p, usCard, "dollars").correct).toBe(true);
+    expect(checkAnswer(p, usCard, "dollar").acceptedAnswer).toBe("United States dollar");
   });
 
   it("includes the spoken-languages pack, object-hidden, editorially curated", async () => {

@@ -81,6 +81,26 @@ async function fetchCurrencyDetails(currencyIds) {
 
 const LABEL_LANGS = ["en", "mul"];
 
+// Currencies whose common noun is NOT the last word of the Wikidata label.
+// Keyed by Q-id (stable across label edits). Keep small and reviewed — the
+// last-word default is right for the overwhelming majority (dollar, rupee,
+// franc, peso, dinar, shilling, …).
+const SHORT_FORM_OVERRIDES = {
+  Q25224: "pound", // pound sterling → pound (last word would be "sterling")
+};
+
+/**
+ * The short common noun for a currency's autocomplete: an override if listed,
+ * else the last whitespace-delimited word of the English label. Returns null
+ * for a single-word label (already the short answer).
+ */
+function shortForm(id, label) {
+  if (SHORT_FORM_OVERRIDES[id]) return SHORT_FORM_OVERRIDES[id];
+  const words = label.trim().split(/\s+/);
+  if (words.length < 2) return null;
+  return words[words.length - 1].toLowerCase();
+}
+
 async function main() {
   const entities = readCoreGeoEntities();
   const countries = Object.values(entities)
@@ -126,7 +146,23 @@ async function main() {
     const label = LABEL_LANGS.map((lang) => byLang[lang]).find(Boolean);
     if (!label) throw new Error(`no en/mul label for currency ${id}`);
     const entity = { id, labels: { en: label }, types: ["currency"] };
-    const alias = [...(aliases.get(id) ?? [])].filter((a) => a !== label).sort();
+
+    // The autocomplete short form: the common noun a learner would actually
+    // type ("United States dollar" → "dollar", "Seychellois rupee" → "rupee").
+    // The last word of a multi-word label, save a few overrides where that is
+    // wrong. Single-word labels ("euro", "yen") are already the short answer, so
+    // they get no `autocomplete` and the box falls back to the label. The short
+    // form and its plural are added to the accepted aliases, because the box
+    // FILLS the short form and the grader must accept what it filled.
+    const names = new Set(aliases.get(id) ?? []);
+    const short = shortForm(id, label);
+    if (short && short.toLowerCase() !== label.toLowerCase()) {
+      entity.autocomplete = short;
+      names.add(short);
+      names.add(`${short}s`); // simple plural: "dollars", "rupees", "francs"
+    }
+
+    const alias = [...names].filter((a) => a !== label).sort();
     if (alias.length > 0) entity.aliases = { en: alias };
     return JSON.stringify(entity);
   });

@@ -44,9 +44,12 @@ export type QuestionResponse = z.infer<typeof questionResponseSchema>;
 
 /**
  * One entity as the answer-suggestion source sees it: its id, its canonical
- * English label, and every display alias flattened into one list. `label` is
- * what a suggestion row shows and fills; `aliases` broadens what the client can
- * match a keystroke against, mirroring the names the grader accepts.
+ * English label, every display alias flattened into one list, and an optional
+ * short `autocomplete` form. `aliases` broadens what the client can match a
+ * keystroke against, mirroring the names the grader accepts. `autocomplete`,
+ * when present, is what a suggestion row shows and fills instead of `label` —
+ * the short form for a verbose label ("United States dollar" → "dollar"); it is
+ * always also one of `aliases`, so filling it still grades correct.
  */
 export const entitySummarySchema = z
   .object({
@@ -55,6 +58,7 @@ export const entitySummarySchema = z
     // Non-empty: an empty alias would normalize to "" and match every keystroke
     // as a universal substring.
     aliases: z.array(z.string().min(1)),
+    autocomplete: z.string().min(1).optional(),
   })
   .strict();
 

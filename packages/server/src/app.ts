@@ -199,6 +199,7 @@ export function createApp({
         id: e.id,
         label: e.labels.en,
         aliases: e.aliases ? Object.values(e.aliases).flat() : [],
+        ...(e.autocomplete ? { autocomplete: e.autocomplete } : {}),
       }));
     return c.json(entityListSchema.parse(entities));
   });

@@ -13,8 +13,9 @@
  */
 import { createApp } from "./app.js";
 import { supabaseJwks } from "./auth.js";
+import { parseCatalog } from "./catalog.js";
 import { assembleLoaded } from "./pack-loader.js";
-import { loadedPacks } from "./packs.generated.js";
+import { loadedCatalog, loadedPacks } from "./packs.generated.js";
 import { createSupabaseAnswerStore, createSupabaseSelectionStore } from "./supabase-storage.js";
 
 interface Env {
@@ -41,6 +42,7 @@ function getApp(env: Env) {
     const pack = assembleLoaded(loadedPacks);
     app = createApp({
       pack,
+      catalog: parseCatalog(loadedCatalog),
       auth: {
         jwks: supabaseJwks(env.SUPABASE_URL),
         supabaseUrl: env.SUPABASE_URL,

@@ -13,6 +13,13 @@ const entity = (id: string, label: string, aliases: string[] = []): EntitySummar
   aliases,
 });
 
+const withDisplay = (id: string, label: string, autocomplete: string, aliases: string[] = []): EntitySummary => ({
+  id,
+  label,
+  aliases,
+  autocomplete,
+});
+
 const cities = [
   entity("Q1", "Cairo"),
   entity("Q2", "Canberra"),
@@ -59,6 +66,30 @@ describe("filterSuggestions", () => {
     const many = Array.from({ length: 20 }, (_, i) => entity(`M${i}`, `Match ${i}`));
     expect(filterSuggestions("match", many)).toHaveLength(MAX_SUGGESTIONS);
     expect(filterSuggestions("match", many, { limit: 2 })).toHaveLength(2);
+  });
+
+  // A verbose currency label carries a short `autocomplete` form; both the label
+  // (the country adjective) and the short noun must find it.
+  const currencies = [
+    withDisplay("Q4595", "Seychellois rupee", "rupee", ["rupee", "rupees", "SCR"]),
+    withDisplay("Q80524", "Indian rupee", "rupee", ["rupee", "rupees", "INR"]),
+    withDisplay("Q4917", "United States dollar", "dollar", ["dollar", "dollars", "USD"]),
+  ];
+
+  it("matches an entity by its short autocomplete form", () => {
+    expect(filterSuggestions("dollar", currencies).map((e) => e.id)).toEqual(["Q4917"]);
+  });
+
+  it("still matches on the verbose label the short form replaces", () => {
+    // Typing the country adjective, not the noun, still surfaces it.
+    expect(filterSuggestions("seych", currencies).map((e) => e.id)).toEqual(["Q4595"]);
+  });
+
+  it("de-duplicates suggestions that share a display string", () => {
+    // Two rupees both display "rupee": one row, not two. First match wins.
+    const result = filterSuggestions("rupee", currencies);
+    expect(result.map((e) => e.autocomplete)).toEqual(["rupee"]);
+    expect(result).toHaveLength(1);
   });
 });
 
