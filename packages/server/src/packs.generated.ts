@@ -64,3 +64,8 @@ export const loadedPacks: LoadedPack[] = [
     generators: g_spoken_languages,
   }
 ] as LoadedPack[];
+
+// The pack visibility/tier catalog (packs/catalog.json), bundled so the
+// Worker applies the same product policy the fs server does — without it a
+// hidden pack (e.g. core-cities) would show in every deployed environment.
+export const loadedCatalog: unknown = {"core-cities":{"hidden":true}};
