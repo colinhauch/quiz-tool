@@ -1,6 +1,6 @@
 import { findCard, targetEntityId } from "./card.js";
 import { createGraph } from "./graph.js";
-import type { Entity, Pack } from "./types.js";
+import type { Entity, Pack, VisualAid } from "./types.js";
 
 /**
  * Folds a typed answer to its comparison form so surface differences a learner
@@ -43,6 +43,8 @@ export interface AnswerResult {
   correct: boolean;
   /** The canonical label of the correct answer, for feedback. */
   acceptedAnswer: string;
+  /** A map of the target entity, when it carries a coordinate. Omitted otherwise. */
+  revealVisual?: VisualAid;
 }
 
 /**
@@ -56,5 +58,15 @@ export interface AnswerResult {
 export function checkAnswer(pack: Pack, cardId: string, input: string): AnswerResult {
   const { statement, hiddenSlot } = findCard(pack, cardId);
   const target = createGraph(pack.entities).getEntity(targetEntityId(statement, hiddenSlot));
-  return { correct: matchesEntity(input, target), acceptedAnswer: target.labels.en };
+  const result: AnswerResult = { correct: matchesEntity(input, target), acceptedAnswer: target.labels.en };
+  if (target.coordinate) {
+    result.revealVisual = {
+      renderer: "map",
+      entityId: target.id,
+      lat: target.coordinate.lat,
+      lon: target.coordinate.lon,
+      label: target.labels.en,
+    };
+  }
+  return result;
 }

@@ -126,6 +126,53 @@ describe("checkAnswer", () => {
   });
 });
 
+describe("checkAnswer, revealVisual", () => {
+  const tokyoWithCoordinate: Entity = {
+    id: "Q1490",
+    labels: { en: "Tokyo" },
+    types: ["city"],
+    coordinate: { lat: 35.6897, lon: 139.6922 },
+  };
+
+  const visualStatements: Statement[] = [
+    {
+      id: "cc:tokyo-japan",
+      subject: "Q1490",
+      relation: "located_in",
+      object: { kind: "entity", id: "Q17" },
+      pack: "test-pack",
+    },
+  ];
+
+  function makeVisualPack(subject: Entity): Pack {
+    return {
+      entities: new Map([subject, japan].map((e) => [e.id, e])),
+      statements: visualStatements,
+      generators: {},
+      hiddenSlots: { located_in: ["subject"] },
+      packs,
+    };
+  }
+
+  it("includes a map descriptor when the target entity has a coordinate", () => {
+    const result = checkAnswer(makeVisualPack(tokyoWithCoordinate), "cc:tokyo-japan:subject", "Tokyo");
+    expect(result.revealVisual).toEqual({
+      renderer: "map",
+      entityId: "Q1490",
+      lat: 35.6897,
+      lon: 139.6922,
+      label: "Tokyo",
+    });
+    expect(result.revealVisual?.label).toBe(result.acceptedAnswer);
+  });
+
+  it("omits revealVisual when the target entity has no coordinate", () => {
+    const tokyoWithoutCoordinate: Entity = { id: "Q1490", labels: { en: "Tokyo" }, types: ["city"] };
+    const result = checkAnswer(makeVisualPack(tokyoWithoutCoordinate), "cc:tokyo-japan:subject", "Tokyo");
+    expect(result).not.toHaveProperty("revealVisual");
+  });
+});
+
 // A `capital` statement quizzable both ways; the pack declares both slots so
 // the subject-hidden card resolves.
 const switzerland: Entity = { id: "Q39", labels: { en: "Switzerland" }, types: ["country"] };

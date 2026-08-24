@@ -344,7 +344,12 @@ describe("full loop over the real fixture pack and a temp-file database", () => 
       body: JSON.stringify({ cardId: question.cardId, input: "Japan" }),
     });
     const result = answerResponseSchema.parse(await res.json());
-    expect(result).toEqual({ correct: true, acceptedAnswer: "Japan" });
+    expect(result).toEqual({
+      correct: true,
+      acceptedAnswer: "Japan",
+      // Japan (Q17) carries a real P625-backed coordinate (#110's Wikidata import).
+      revealVisual: { renderer: "map", entityId: "Q17", lat: 35, lon: 136, label: "Japan" },
+    });
 
     const recorded = await store.all();
     expect(recorded).toHaveLength(1);

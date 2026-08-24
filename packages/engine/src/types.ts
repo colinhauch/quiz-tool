@@ -19,6 +19,12 @@ export interface Entity {
   labels: LocalizedText;
   aliases?: Record<string, string[]>;
   types: string[];
+  /**
+   * Where this entity sits on a map. Intrinsic entity identity — a field,
+   * like `labels`, not a statement — used to drive map visual aids at reveal
+   * time. Optional: an entity without one simply gets no map.
+   */
+  coordinate?: { lat: number; lon: number };
 }
 
 /** Engine-level literal datatypes. Packs may not add to this set. */
@@ -153,3 +159,21 @@ export interface RenderedQuestion {
    */
   answerTypes: string[];
 }
+
+/**
+ * The generic visual-aid slot: `{ renderer, entityId, ...rendererData }`.
+ * Server-computed and fully-hydrated — the client switches on `renderer` and
+ * knows nothing about entities or coordinates. v1 has one renderer, `map`;
+ * the union exists so a future renderer (flag, photo) is an addition, not a
+ * reshape.
+ */
+export interface MapVisualAid {
+  renderer: "map";
+  entityId: string;
+  lat: number;
+  lon: number;
+  /** The entity's English canonical label. */
+  label: string;
+}
+
+export type VisualAid = MapVisualAid;

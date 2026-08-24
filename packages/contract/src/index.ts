@@ -27,6 +27,26 @@ export type Health = z.infer<typeof healthSchema>;
  * the `cardId` prefix, which coupled it to the id format and got the answer
  * wrong once two packs shared a prefix (#40).
  */
+/**
+ * The generic visual-aid slot: `{ renderer, entityId, ...rendererData }`,
+ * mirroring `VisualAid` in `@geo/engine`. Generic by design — a discriminated
+ * union on `renderer` — so a future renderer (flag, photo) is a new member of
+ * the union, not a reshape of the seam. v1 has one member, `map`.
+ */
+export const mapVisualAidSchema = z
+  .object({
+    renderer: z.literal("map"),
+    entityId: z.string().min(1),
+    lat: z.number(),
+    lon: z.number(),
+    label: z.string().min(1),
+  })
+  .strict();
+
+export const visualAidSchema = z.discriminatedUnion("renderer", [mapVisualAidSchema]);
+
+export type VisualAid = z.infer<typeof visualAidSchema>;
+
 export const questionResponseSchema = z
   .object({
     cardId: z.string().min(1),
@@ -37,6 +57,9 @@ export const questionResponseSchema = z
     // The kind(s) of entity the answer names, so the client can scope answer
     // suggestions to the right type. The answer's type, never the answer.
     answerTypes: z.array(z.string().min(1)),
+    // No v1 card produces one, but the seam supports a visual aid alongside
+    // the prompt itself (as opposed to `revealVisual`, shown after grading).
+    promptVisual: visualAidSchema.optional(),
   })
   .strict();
 
@@ -91,6 +114,8 @@ export const answerResponseSchema = z
   .object({
     correct: z.boolean(),
     acceptedAnswer: z.string().min(1),
+    // A map of the target entity, when it carries a coordinate. Omitted otherwise.
+    revealVisual: visualAidSchema.optional(),
   })
   .strict();
 
