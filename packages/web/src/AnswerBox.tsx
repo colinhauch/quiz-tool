@@ -1,6 +1,6 @@
 import type { EntitySummary } from "@geo/contract";
 import { type FormEvent, type KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
-import { filterSuggestions, loadSuggestionEntities } from "./suggestions.js";
+import { displayLabel, filterSuggestions, loadSuggestionEntities } from "./suggestions.js";
 
 interface AnswerBoxProps {
   value: string;
@@ -66,7 +66,7 @@ export function AnswerBox({
   }, [value]);
 
   function choose(entity: EntitySummary) {
-    onChange(entity.label);
+    onChange(displayLabel(entity));
     setDismissed(true);
     setActiveIndex(-1);
     // Move to Submit so a keyboard learner's next Enter sends the answer, rather
@@ -160,7 +160,7 @@ export function AnswerBox({
                   // Keep the styled highlight tracking Tab focus, not just arrows.
                   onFocus={() => setActiveIndex(i)}
                 >
-                  {entity.label}
+                  {displayLabel(entity)}
                 </button>
               </li>
             ))}

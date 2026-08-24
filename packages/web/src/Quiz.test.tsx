@@ -152,6 +152,32 @@ describe("Quiz", () => {
     expect(screen.queryByRole("option", { name: "Japan" })).not.toBeInTheDocument();
   });
 
+  it("fills a suggestion's short autocomplete form, not its verbose label", async () => {
+    const currencyQ: QuestionResponse = {
+      cardId: "cur:united-states:us-dollar:object",
+      prompt: "What currency does the United States use?",
+      input: "text",
+      packId: "currencies",
+      packLabel: "Currencies",
+      answerTypes: ["currency"],
+    };
+    const usd: EntitySummary = {
+      id: "Q4917",
+      label: "United States dollar",
+      aliases: ["dollar", "dollars", "USD"],
+      autocomplete: "dollar",
+    };
+    stubFetch([currencyQ], { correct: true, acceptedAnswer: "United States dollar" }, [usd]);
+    render(<Quiz />);
+
+    const box = (await screen.findByLabelText(/your answer/i)) as HTMLInputElement;
+    fireEvent.change(box, { target: { value: "doll" } });
+    // The row shows the short form, not "United States dollar".
+    const option = await screen.findByRole("button", { name: "dollar" });
+    fireEvent.click(option);
+    expect(box.value).toBe("dollar");
+  });
+
   it("selects a keyboard-focused suggestion on Enter, then focus lands on Submit", async () => {
     stubFetch([tokyo], { correct: true, acceptedAnswer: "Japan" });
     render(<Quiz />);
