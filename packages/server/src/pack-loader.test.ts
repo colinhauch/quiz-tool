@@ -541,7 +541,7 @@ describe("loadAllPacks over the packs actually shipped", () => {
     // the short form grades correct.
     const patois = p.entities.get("Q35939");
     expect(patois?.labels.en).toBe("Jamaican Patois");
-    expect(patois?.autocomplete).toBe("patois");
+    expect(patois?.autocomplete).toBe("Patois"); // proper-noun case preserved
     const jamaica = makeCardId("lang:jamaica:jamaican-patois", "object");
     expect(checkAnswer(p, jamaica, "Patois").correct).toBe(true);
     expect(checkAnswer(p, jamaica, "Jamaican Patois").correct).toBe(true); // full name still accepted

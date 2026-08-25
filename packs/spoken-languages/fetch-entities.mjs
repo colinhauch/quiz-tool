@@ -40,14 +40,15 @@ const SHORT_FORM_OVERRIDES = {
  * prefix would otherwise leak, and the last word alone is the useless
  * "language"); and a few proper names are pinned via SHORT_FORM_OVERRIDES.
  * Returns null for a single-word label (already the short answer) or a pinned
- * skip.
+ * skip. Case is preserved from the label — language names are proper nouns
+ * ("Jamaican Patois" → "Patois", not "patois").
  */
 function shortForm(id, label) {
   if (id in SHORT_FORM_OVERRIDES) return SHORT_FORM_OVERRIDES[id];
   if (/\bsign language$/i.test(label)) return "Sign Language";
   const words = label.trim().split(/\s+/);
   if (words.length < 2) return null;
-  return words[words.length - 1].toLowerCase();
+  return words[words.length - 1];
 }
 
 /** Read core-geo's entities.jsonl into a { qid → entity } map. */
