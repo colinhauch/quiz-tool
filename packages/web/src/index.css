@@ -493,21 +493,16 @@ body {
 }
 
 .map-aid__ocean {
-  fill: var(--periwinkle);
-  opacity: 0.25;
+  fill: var(--cornflower);
+  opacity: 0.35;
 }
 
-.map-aid__grid line {
-  stroke: var(--indigo);
-  stroke-width: 0.25;
-  opacity: 0.15;
-}
-
-.map-aid__equator,
-.map-aid__meridian {
-  stroke: var(--indigo);
-  stroke-width: 0.4;
-  opacity: 0.3;
+.map-aid__land {
+  fill: var(--green);
+  fill-opacity: 0.9;
+  stroke: var(--green-text);
+  stroke-width: 0.3;
+  stroke-linejoin: round;
 }
 
 .map-aid__frame {
@@ -520,14 +515,19 @@ body {
 .map-aid__point {
   fill: var(--orange);
   stroke: var(--platinum);
-  stroke-width: 0.75;
+  stroke-width: 1;
 }
 
 .map-aid__label {
   fill: var(--orange);
+  /* Halo so the label stays legible over land or water. */
+  stroke: var(--platinum);
+  stroke-width: 2;
+  paint-order: stroke;
+  stroke-linejoin: round;
   font-family: var(--sans);
   font-size: 8px;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .map-aid__coords {
