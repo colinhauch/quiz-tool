@@ -450,12 +450,21 @@ describe("loadAllPacks over the packs actually shipped", () => {
     // continental-countries ships statements for every country in core-geo.
     // France is Q142 — this assertion said Q42 (Douglas Adams), a Q-ID core-geo
     // does not contain at all, so it had been failing since it was written.
-    const franceStatement = p.statements.find((s) => s.id === "cc:france");
+    // Statement ids carry the continent slug so a transcontinental country's
+    // several statements stay unique (e.g. cc:kazakhstan-asia, cc:kazakhstan-europe).
+    const franceStatement = p.statements.find((s) => s.id === "cc:france-europe");
     expect(franceStatement).toBeDefined();
     expect(franceStatement?.subject).toBe("Q142");
     // Its own relation id, not core-cities' city→country `located_in` (#38).
     expect(franceStatement?.relation).toBe("located_in_continent");
     expect(franceStatement?.object).toEqual({ kind: "entity", id: "Q46" });
+
+    // Kazakhstan is transcontinental: both Asia and Europe, each its own statement.
+    const kazakhstan = p.statements.filter((s) => s.subject === "Q232" && s.relation === "located_in_continent");
+    expect(kazakhstan.map((s) => s.object).sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)))).toEqual([
+      { kind: "entity", id: "Q48" }, // Asia
+      { kind: "entity", id: "Q46" }, // Europe
+    ].sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b))));
 
     // Verify France (Q142) and Europe (Q46) are both in core-geo
     expect(p.entities.get("Q142")?.labels.en).toBe("France");

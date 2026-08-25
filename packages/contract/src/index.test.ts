@@ -81,19 +81,36 @@ describe("answerRequestSchema", () => {
 
 describe("answerResponseSchema", () => {
   it("validates a well-formed response", () => {
-    const res = { correct: true, acceptedAnswer: "Japan" };
+    const res = { correct: true, acceptedAnswer: "Japan", acceptedAnswers: ["Japan"] };
     expect(answerResponseSchema.parse(res)).toEqual(res);
   });
 
+  it("validates a transcontinental response listing several accepted answers", () => {
+    const res = { correct: true, acceptedAnswer: "Asia", acceptedAnswers: ["Asia", "Europe"] };
+    expect(answerResponseSchema.parse(res)).toEqual(res);
+  });
+
+  it("rejects an empty acceptedAnswers list", () => {
+    expect(
+      answerResponseSchema.safeParse({ correct: true, acceptedAnswer: "Japan", acceptedAnswers: [] }).success,
+    ).toBe(false);
+  });
+
   it("rejects a non-boolean correct", () => {
-    expect(answerResponseSchema.safeParse({ correct: "yes", acceptedAnswer: "Japan" }).success).toBe(
-      false,
-    );
+    expect(
+      answerResponseSchema.safeParse({ correct: "yes", acceptedAnswer: "Japan", acceptedAnswers: ["Japan"] })
+        .success,
+    ).toBe(false);
   });
 
   it("rejects extra fields", () => {
     expect(
-      answerResponseSchema.safeParse({ correct: true, acceptedAnswer: "Japan", debug: 1 }).success,
+      answerResponseSchema.safeParse({
+        correct: true,
+        acceptedAnswer: "Japan",
+        acceptedAnswers: ["Japan"],
+        debug: 1,
+      }).success,
     ).toBe(false);
   });
 
@@ -101,6 +118,7 @@ describe("answerResponseSchema", () => {
     const res = {
       correct: true,
       acceptedAnswer: "Tokyo",
+      acceptedAnswers: ["Tokyo"],
       revealVisual: { renderer: "map", entityId: "Q1490", lat: 35.6897, lon: 139.6922, label: "Tokyo" },
     };
     expect(answerResponseSchema.parse(res)).toEqual(res);
@@ -110,6 +128,7 @@ describe("answerResponseSchema", () => {
     const res = {
       correct: true,
       acceptedAnswer: "Tokyo",
+      acceptedAnswers: ["Tokyo"],
       revealVisual: { renderer: "map", entityId: "Q1490", lat: "north", lon: 139.6922, label: "Tokyo" },
     };
     expect(answerResponseSchema.safeParse(res).success).toBe(false);

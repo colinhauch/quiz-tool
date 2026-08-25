@@ -5,6 +5,9 @@ import { getQuestion, submitAnswer as submitAnswerRequest } from "./apiClient.js
 import { readAutocompletePref, writeAutocompletePref } from "./autocompletePref.js";
 import { VisualAid } from "./VisualAid.js";
 
+// "Asia or Europe" for a transcontinental country; "Japan" for a single answer.
+const answerList = new Intl.ListFormat("en", { type: "disjunction" });
+
 type View =
   | { state: "loading" }
   | { state: "error" }
@@ -93,7 +96,7 @@ export function Quiz() {
               <strong className="quiz-result__verdict">
                 {view.result.correct ? "Correct!" : "Incorrect."}
               </strong>{" "}
-              The answer is {view.result.acceptedAnswer}.
+              The answer is {answerList.format(view.result.acceptedAnswers)}.
             </p>
             <VisualAid visual={view.result.revealVisual} slot="reveal" />
             <button

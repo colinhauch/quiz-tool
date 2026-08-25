@@ -118,6 +118,10 @@ export const answerResponseSchema = z
   .object({
     correct: z.boolean(),
     acceptedAnswer: z.string().min(1),
+    // Every canonical label the card accepts, for the reveal to list them all —
+    // a transcontinental country returns both its continents. Single-valued
+    // cards carry a one-element list; `acceptedAnswer` is always one of these.
+    acceptedAnswers: z.array(z.string().min(1)).min(1),
     // A map of the target entity, when it carries a coordinate. Omitted otherwise.
     revealVisual: visualAidSchema.optional(),
   })

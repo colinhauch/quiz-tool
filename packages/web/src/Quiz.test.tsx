@@ -35,13 +35,19 @@ const countries: EntitySummary[] = [
  */
 function stubFetch(
   questions: QuestionResponse[],
-  result: AnswerResponse,
+  // acceptedAnswers defaults to [acceptedAnswer] so single-answer tests stay terse;
+  // the transcontinental test passes the full list explicitly.
+  result: Omit<AnswerResponse, "acceptedAnswers"> & { acceptedAnswers?: string[] },
   entities: EntitySummary[] = countries,
 ) {
+  const answerResult: AnswerResponse = {
+    ...result,
+    acceptedAnswers: result.acceptedAnswers ?? [result.acceptedAnswer],
+  };
   const queue = [...questions];
   const fetchMock = vi.fn((url: string, init?: { method?: string }) => {
     if (url === "/api/answer" && init?.method === "POST") {
-      return Promise.resolve({ json: async () => result });
+      return Promise.resolve({ json: async () => answerResult });
     }
     if (url.startsWith("/api/entities")) {
       return Promise.resolve({ json: async () => entities });
@@ -107,6 +113,16 @@ describe("Quiz", () => {
     fireEvent.click(screen.getByRole("button", { name: /submit/i }));
 
     expect(await screen.findByRole("status")).toHaveTextContent("Incorrect. The answer is Japan.");
+  });
+
+  it("lists every accepted answer for a transcontinental card", async () => {
+    stubFetch([tokyo], { correct: true, acceptedAnswer: "Asia", acceptedAnswers: ["Asia", "Europe"] });
+    render(<Quiz />);
+
+    fireEvent.change(await screen.findByLabelText(/your answer/i), { target: { value: "Asia" } });
+    fireEvent.click(screen.getByRole("button", { name: /submit/i }));
+
+    expect(await screen.findByRole("status")).toHaveTextContent("Correct! The answer is Asia or Europe.");
   });
 
   it("fetches a fresh question after answering", async () => {

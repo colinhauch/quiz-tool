@@ -44,6 +44,13 @@ export interface AnswerResult {
   /** The canonical label of the correct answer, for feedback. */
   acceptedAnswer: string;
   /**
+   * Every canonical label the card accepts, for the reveal to show them all: a
+   * transcontinental country returns `["Asia", "Europe"]`, a single-valued card
+   * a one-element list. Deterministically ordered; `acceptedAnswer` is one of
+   * these (the card's own object, or the matched one when correct).
+   */
+  acceptedAnswers: string[];
+  /**
    * A map of the card's most locatable entity, when one carries a coordinate.
    * Its `label` names the *mapped* place, which is not always `acceptedAnswer`:
    * for "What continent is Andorra in?" the map pins Andorra, not Europe.
@@ -128,8 +135,8 @@ export function checkAnswer(pack: Pack, cardId: string, input: string): AnswerRe
 
   // The map depicts the card's place, independent of which slot is graded.
   const revealVisual = revealVisualFor(mapEntityFor(statement, graph));
-  const finish = (correct: boolean, accepted: Entity): AnswerResult => {
-    const result: AnswerResult = { correct, acceptedAnswer: accepted.labels.en };
+  const finish = (correct: boolean, acceptedAnswer: string, acceptedAnswers: string[]): AnswerResult => {
+    const result: AnswerResult = { correct, acceptedAnswer, acceptedAnswers };
     if (revealVisual) result.revealVisual = revealVisual;
     return result;
   };
@@ -138,7 +145,7 @@ export function checkAnswer(pack: Pack, cardId: string, input: string): AnswerRe
   // literal-object and unsupported-slot guards shared with object grading.
   if (hiddenSlot !== "object") {
     const target = graph.getEntity(targetEntityId(statement, hiddenSlot));
-    return finish(matchesEntity(input, target), target);
+    return finish(matchesEntity(input, target), target.labels.en, [target.labels.en]);
   }
 
   if (statement.object.kind !== "entity") {
@@ -150,14 +157,23 @@ export function checkAnswer(pack: Pack, cardId: string, input: string): AnswerRe
   const siblings = pack.statements.filter(
     (s) => s.subject === statement.subject && s.relation === statement.relation,
   );
+  // All accepted labels, deduped and sorted, so the reveal can list them all.
+  const acceptedAnswers = [
+    ...new Set(
+      siblings
+        .filter((s) => s.object.kind === "entity")
+        .map((s) => graph.getEntity((s.object as { id: string }).id).labels.en),
+    ),
+  ].sort((a, b) => a.localeCompare(b));
+
   for (const sibling of siblings) {
     if (sibling.object.kind !== "entity") continue;
     const candidate = graph.getEntity(sibling.object.id);
     if (matchesEntity(input, candidate)) {
-      return finish(true, candidate);
+      return finish(true, candidate.labels.en, acceptedAnswers);
     }
   }
 
   // Wrong: reveal the card's own object as the expected answer.
-  return finish(false, graph.getEntity(statement.object.id));
+  return finish(false, graph.getEntity(statement.object.id).labels.en, acceptedAnswers);
 }
