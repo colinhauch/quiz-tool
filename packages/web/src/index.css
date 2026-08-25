@@ -465,6 +465,78 @@ body {
   color: var(--red);
 }
 
+/* ── Visual aid slot (prompt- and reveal-time) ──────────────
+   `.visual-aid` only exists in the DOM when there's a descriptor to draw —
+   VisualAid renders null otherwise — so an empty slot adds zero margin and
+   zero height instead of reserving space. The modifiers only tweak which
+   side carries the gap, since the prompt slot sits above content and the
+   reveal slot sits below it. */
+.visual-aid {
+  margin-bottom: 2rem;
+}
+
+.visual-aid--prompt {
+  margin-top: -0.75rem;
+}
+
+/* The map itself: capped width so it doesn't dominate the card on desktop,
+   centered under the verdict text as one composition; goes full-width at
+   mobile widths (see the responsive block below). */
+.map-aid {
+  display: block;
+  width: 100%;
+  max-width: 26rem;
+  height: auto;
+  margin: 0 auto;
+  border-radius: 0.375rem;
+  background: var(--platinum);
+}
+
+.map-aid__ocean {
+  fill: var(--periwinkle);
+  opacity: 0.25;
+}
+
+.map-aid__grid line {
+  stroke: var(--indigo);
+  stroke-width: 0.25;
+  opacity: 0.15;
+}
+
+.map-aid__equator,
+.map-aid__meridian {
+  stroke: var(--indigo);
+  stroke-width: 0.4;
+  opacity: 0.3;
+}
+
+.map-aid__frame {
+  fill: none;
+  stroke: var(--indigo);
+  stroke-width: 0.6;
+  opacity: 0.4;
+}
+
+.map-aid__point {
+  fill: var(--orange);
+  stroke: var(--platinum);
+  stroke-width: 0.75;
+}
+
+.map-aid__label {
+  fill: var(--orange);
+  font-family: var(--sans);
+  font-size: 8px;
+  font-weight: 600;
+}
+
+.map-aid__coords {
+  fill: var(--indigo);
+  opacity: 0.5;
+  font-family: var(--sans);
+  font-size: 6px;
+}
+
 /* ── Status / transient messages ─────────────────────────── */
 .quiz-message {
   padding: 2rem 0;
@@ -750,6 +822,12 @@ body {
   }
   .quiz-prompt {
     font-size: 1.25rem;
+  }
+  .map-aid {
+    max-width: 100%;
+  }
+  .visual-aid {
+    margin-bottom: 1.5rem;
   }
   .packs__title {
     font-size: 1.6rem;

@@ -1,4 +1,4 @@
-import type { AnswerResponse, EntitySummary, QuestionResponse } from "@geo/contract";
+import type { AnswerResponse, EntitySummary, QuestionResponse, VisualAid } from "@geo/contract";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { Quiz } from "./Quiz.js";
@@ -206,6 +206,109 @@ describe("Quiz", () => {
       "/api/answer",
       expect.objectContaining({ body: JSON.stringify({ cardId: tokyo.cardId, input: "Nippon" }) }),
     );
+  });
+
+  it("shows the reveal map when the answer carries a revealVisual", async () => {
+    stubFetch([tokyo], {
+      correct: true,
+      acceptedAnswer: "Japan",
+      revealVisual: { renderer: "map", entityId: "Q1490", lat: 35.6895, lon: 139.6917, label: "Tokyo" },
+    });
+    render(<Quiz />);
+
+    fireEvent.change(await screen.findByLabelText(/your answer/i), { target: { value: "Japan" } });
+    fireEvent.click(screen.getByRole("button", { name: /submit/i }));
+
+    await screen.findByRole("status");
+    expect(screen.getByRole("img")).toBeInTheDocument();
+  });
+
+  it("shows no map when the answer carries no revealVisual", async () => {
+    stubFetch([tokyo], { correct: true, acceptedAnswer: "Japan" });
+    render(<Quiz />);
+
+    fireEvent.change(await screen.findByLabelText(/your answer/i), { target: { value: "Japan" } });
+    fireEvent.click(screen.getByRole("button", { name: /submit/i }));
+
+    await screen.findByRole("status");
+    expect(screen.queryByRole("img")).not.toBeInTheDocument();
+  });
+
+  // #111: layout/presence-state coverage for the visual-aid slots. v1 never
+  // produces a promptVisual — these stubs exist only to prove the layout
+  // (container collapses when empty, both slots can render together) holds
+  // up for future card kinds. Never ship a stub descriptor like this outside
+  // a test.
+  const stubMap = (label: string): VisualAid => ({
+    renderer: "map",
+    entityId: "Q999",
+    lat: 1,
+    lon: 2,
+    label,
+  });
+
+  describe("visual-aid presence states", () => {
+    it("reserves no space for either slot when neither the prompt nor the answer carries a visual", async () => {
+      stubFetch([tokyo], { correct: true, acceptedAnswer: "Japan" });
+      const { container } = render(<Quiz />);
+
+      fireEvent.change(await screen.findByLabelText(/your answer/i), {
+        target: { value: "Japan" },
+      });
+      fireEvent.click(screen.getByRole("button", { name: /submit/i }));
+      await screen.findByRole("status");
+
+      expect(container.querySelectorAll(".visual-aid")).toHaveLength(0);
+      expect(screen.queryByRole("img")).not.toBeInTheDocument();
+    });
+
+    it("shows only the reveal map when just the answer carries a visual (the v1 case)", async () => {
+      stubFetch([tokyo], {
+        correct: true,
+        acceptedAnswer: "Japan",
+        revealVisual: stubMap("Tokyo"),
+      });
+      const { container } = render(<Quiz />);
+
+      fireEvent.change(await screen.findByLabelText(/your answer/i), {
+        target: { value: "Japan" },
+      });
+      fireEvent.click(screen.getByRole("button", { name: /submit/i }));
+      await screen.findByRole("status");
+
+      expect(container.querySelectorAll(".visual-aid")).toHaveLength(1);
+      expect(screen.getAllByRole("img")).toHaveLength(1);
+    });
+
+    it("shows only the prompt map while asking when just the question carries a visual", async () => {
+      const withPromptVisual: QuestionResponse = { ...tokyo, promptVisual: stubMap("Japan") };
+      stubFetch([withPromptVisual], { correct: true, acceptedAnswer: "Japan" });
+      const { container } = render(<Quiz />);
+
+      await screen.findByText("What country is Tokyo in?");
+
+      expect(container.querySelectorAll(".visual-aid")).toHaveLength(1);
+      expect(screen.getAllByRole("img")).toHaveLength(1);
+    });
+
+    it("shows both the prompt and reveal maps once answered when both carry a visual", async () => {
+      const withPromptVisual: QuestionResponse = { ...tokyo, promptVisual: stubMap("Japan") };
+      stubFetch([withPromptVisual], {
+        correct: true,
+        acceptedAnswer: "Japan",
+        revealVisual: stubMap("Tokyo"),
+      });
+      const { container } = render(<Quiz />);
+
+      fireEvent.change(await screen.findByLabelText(/your answer/i), {
+        target: { value: "Japan" },
+      });
+      fireEvent.click(screen.getByRole("button", { name: /submit/i }));
+      await screen.findByRole("status");
+
+      expect(container.querySelectorAll(".visual-aid")).toHaveLength(2);
+      expect(screen.getAllByRole("img")).toHaveLength(2);
+    });
   });
 
   it("defaults the autocomplete toggle on", async () => {

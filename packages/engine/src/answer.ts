@@ -1,6 +1,6 @@
 import { findCard, targetEntityId } from "./card.js";
 import { createGraph } from "./graph.js";
-import type { Entity, Pack } from "./types.js";
+import type { Entity, Pack, VisualAid } from "./types.js";
 
 /**
  * Folds a typed answer to its comparison form so surface differences a learner
@@ -43,6 +43,32 @@ export interface AnswerResult {
   correct: boolean;
   /** The canonical label of the correct answer, for feedback. */
   acceptedAnswer: string;
+  /** A map of the answer entity, when it carries a coordinate. Omitted otherwise. */
+  revealVisual?: VisualAid;
+}
+
+/**
+ * The reveal's visual aid for the entity whose label the reveal shows: a map of
+ * that entity when it carries a coordinate, omitted otherwise. Its `label`
+ * equals `acceptedAnswer` by construction, since both come from the same entity.
+ */
+function revealVisualFor(entity: Entity): VisualAid | undefined {
+  if (!entity.coordinate) return undefined;
+  return {
+    renderer: "map",
+    entityId: entity.id,
+    lat: entity.coordinate.lat,
+    lon: entity.coordinate.lon,
+    label: entity.labels.en,
+  };
+}
+
+/** Grades against `entity` as the shown answer, attaching its map when it has one. */
+function gradeAgainst(correct: boolean, entity: Entity): AnswerResult {
+  const result: AnswerResult = { correct, acceptedAnswer: entity.labels.en };
+  const visual = revealVisualFor(entity);
+  if (visual) result.revealVisual = visual;
+  return result;
 }
 
 /**
@@ -51,7 +77,8 @@ export interface AnswerResult {
  * (the country in "Bern is the capital of what country?"), an object-hidden card
  * against the object (the country in "what country is Tokyo in?"). Correct means
  * the input matches one of the target's names; the canonical label comes back
- * either way, so a wrong answer can still be shown what was expected.
+ * either way, so a wrong answer can still be shown what was expected. The reveal
+ * also carries a map of the shown answer entity when it has a coordinate.
  *
  * Object-hidden grading is *any-of*: a fact can have several true answers — a
  * country with several official languages, each modeled as its own statement —
@@ -68,7 +95,7 @@ export function checkAnswer(pack: Pack, cardId: string, input: string): AnswerRe
   // literal-object and unsupported-slot guards shared with object grading.
   if (hiddenSlot !== "object") {
     const target = graph.getEntity(targetEntityId(statement, hiddenSlot));
-    return { correct: matchesEntity(input, target), acceptedAnswer: target.labels.en };
+    return gradeAgainst(matchesEntity(input, target), target);
   }
 
   if (statement.object.kind !== "entity") {
@@ -84,11 +111,10 @@ export function checkAnswer(pack: Pack, cardId: string, input: string): AnswerRe
     if (sibling.object.kind !== "entity") continue;
     const candidate = graph.getEntity(sibling.object.id);
     if (matchesEntity(input, candidate)) {
-      return { correct: true, acceptedAnswer: candidate.labels.en };
+      return gradeAgainst(true, candidate);
     }
   }
 
   // Wrong: reveal the card's own object as the expected answer.
-  const own = graph.getEntity(statement.object.id);
-  return { correct: false, acceptedAnswer: own.labels.en };
+  return gradeAgainst(false, graph.getEntity(statement.object.id));
 }

@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { AnswerBox } from "./AnswerBox.js";
 import { getQuestion, submitAnswer as submitAnswerRequest } from "./apiClient.js";
 import { readAutocompletePref, writeAutocompletePref } from "./autocompletePref.js";
+import { VisualAid } from "./VisualAid.js";
 
 type View =
   | { state: "loading" }
@@ -71,6 +72,7 @@ export function Quiz() {
       </div>
       <div className="quiz-card__body">
         <p className="quiz-prompt">{view.question.prompt}</p>
+        <VisualAid visual={view.question.promptVisual} slot="prompt" />
 
         {view.state === "asking" ? (
           <AnswerBox
@@ -93,6 +95,7 @@ export function Quiz() {
               </strong>{" "}
               The answer is {view.result.acceptedAnswer}.
             </p>
+            <VisualAid visual={view.result.revealVisual} slot="reveal" />
             <button
               ref={nextButtonRef}
               className="btn-primary"

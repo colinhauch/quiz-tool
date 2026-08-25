@@ -1,400 +1,400 @@
-{"id":"Q15","labels":{"en":"Africa"},"types":["continent"],"aliases":{"en":["African continent"]}}
-{"id":"Q18","labels":{"en":"South America"},"types":["continent"],"aliases":{"en":["S America","S. America","South American continent"]}}
-{"id":"Q46","labels":{"en":"Europe"},"types":["continent"],"aliases":{"en":["European Continent","European Peninsula","European continent","Old Continent","The Old Continent"]}}
-{"id":"Q48","labels":{"en":"Asia"},"types":["continent"],"aliases":{"en":["Asian continent","Continental Asia"]}}
-{"id":"Q49","labels":{"en":"North America"},"types":["continent"],"aliases":{"en":["003 (UN M.49 code)","Amérique du Nord","N Am","N America","N america","N. America","NA","NOAM","NoAm","North Am","North Amer","North America (Americas)","North America (continent)","North America (region)","North American Continent","North American continent","North america","North and Central America","North-America","Turtle Island"]}}
-{"id":"Q51","labels":{"en":"Antarctica"},"types":["continent"]}
-{"id":"Q55643","labels":{"en":"Oceania"},"types":["continent"],"aliases":{"en":["Australia and Oceania","Moana Oceania","Oceania and Australia"]}}
-{"id":"Q16","labels":{"en":"Canada"},"types":["country"],"aliases":{"en":["Can"]}}
-{"id":"Q17","labels":{"en":"Japan"},"types":["country"],"aliases":{"en":["Iapan","Iapon","Land of Rising Sun","Land of the Rising Sun","Nihon-koku","Nippon-koku","State of Japan"]}}
-{"id":"Q20","labels":{"en":"Norway"},"types":["country"],"aliases":{"en":["Kingdom of Norway"]}}
-{"id":"Q27","labels":{"en":"Ireland"},"types":["country"],"aliases":{"en":["Hibernia","Irish Republic","Southern Ireland"]}}
-{"id":"Q28","labels":{"en":"Hungary"},"types":["country"]}
-{"id":"Q29","labels":{"en":"Spain"},"types":["country"],"aliases":{"en":["Kingdom of Spain"]}}
-{"id":"Q30","labels":{"en":"United States"},"types":["country"],"aliases":{"en":["Merica","Murica","U. S.","U. S. A.","U.S. of America","US of A","US of America","the States","the U.S.","the U.S. of A","the U.S. of America","the U.S.A.","the US","the US of A","the US of America","the USA","the United States","the United States of America"]}}
-{"id":"Q31","labels":{"en":"Belgium"},"types":["country"],"aliases":{"en":["Kingdom of Belgium"]}}
-{"id":"Q32","labels":{"en":"Luxembourg"},"types":["country"],"aliases":{"en":["Grand Duchy of Luxembourg"]}}
-{"id":"Q33","labels":{"en":"Finland"},"types":["country"],"aliases":{"en":["Finnia","Land of Thousand Lakes","Republic of Finland","Republiken Finland","Suomen tasavalta","fi"]}}
-{"id":"Q34","labels":{"en":"Sweden"},"types":["country"],"aliases":{"en":["Kingdom of Sweden","Swedish Kingdom","se"]}}
-{"id":"Q36","labels":{"en":"Poland"},"types":["country"],"aliases":{"en":["Republic of Poland"]}}
-{"id":"Q37","labels":{"en":"Lithuania"},"types":["country"],"aliases":{"en":["Republic of Lithuania"]}}
-{"id":"Q38","labels":{"en":"Italy"},"types":["country"],"aliases":{"en":["Italian Republic","Republic of Italy"]}}
-{"id":"Q39","labels":{"en":"Switzerland"},"types":["country"],"aliases":{"en":["Confoederatio Helvetica","Swiss","Swiss Confederation"]}}
-{"id":"Q40","labels":{"en":"Austria"},"types":["country"],"aliases":{"en":["Republic of Austria"]}}
-{"id":"Q41","labels":{"en":"Greece"},"types":["country"],"aliases":{"en":["Ellada","Greek Republic","Hellas","Hellas, Greece","Hellenic Republic","el","gr"]}}
-{"id":"Q43","labels":{"en":"Turkey"},"types":["country"],"aliases":{"en":["Republic of Turkey","Republic of Türkiye"]}}
-{"id":"Q45","labels":{"en":"Portugal"},"types":["country"],"aliases":{"en":["POR","PRT","Portuguese Republic"]}}
-{"id":"Q77","labels":{"en":"Uruguay"},"types":["country"],"aliases":{"en":["Eastern Republic of Uruguay","Oriental Republic of Uruguay","URU","uy"]}}
-{"id":"Q79","labels":{"en":"Egypt"},"types":["country"],"aliases":{"en":["Arab Rep. Egypt","Arab Republic of Egypt","Misr","Rep. Egypt","Republic of Egypt"]}}
-{"id":"Q96","labels":{"en":"Mexico"},"types":["country"],"aliases":{"en":["MXN","Mexican Republic","Mexican United States","US of M","United Mexican States","United States of Mexico","mx"]}}
-{"id":"Q114","labels":{"en":"Kenya"},"types":["country"],"aliases":{"en":["Republic of Kenya","ke"]}}
-{"id":"Q115","labels":{"en":"Ethiopia"},"types":["country"],"aliases":{"en":["Federal Democratic Republic of Ethiopia","et"]}}
-{"id":"Q117","labels":{"en":"Ghana"},"types":["country"]}
-{"id":"Q142","labels":{"en":"France"},"types":["country"],"aliases":{"en":["French Republic"]}}
-{"id":"Q145","labels":{"en":"United Kingdom"},"types":["country"],"aliases":{"en":["G B","Great Britain","Great Britain and Northern Ireland","U K","United Kingdom of Great Britain and Northern Ireland","the UK","the United Kingdom","the United Kingdom of Great Britain and Northern Ireland"]}}
-{"id":"Q148","labels":{"en":"People's Republic of China"},"types":["country"],"aliases":{"en":["China PR","Communist China","P.R.C.","PR China","Red China","The PRC","cn","the People's Republic of China"]}}
-{"id":"Q155","labels":{"en":"Brazil"},"types":["country"],"aliases":{"en":["Federative Republic of Brazil"]}}
-{"id":"Q159","labels":{"en":"Russia"},"types":["country"],"aliases":{"en":["Federation of Russia","Russian Federation"]}}
-{"id":"Q183","labels":{"en":"Germany"},"types":["country"],"aliases":{"en":["BRD","DE","DEU","FRG","Federal Republic of Germany"]}}
-{"id":"Q184","labels":{"en":"Belarus"},"types":["country"],"aliases":{"en":["Belorussia","Bielaruś","Bielorussia","Byeloruss","Byelorussia","Republic of Belarus","Respublika Belarus'","Respublika Bielaruś","White Russia","White Ruthenia","by"]}}
-{"id":"Q189","labels":{"en":"Iceland"},"types":["country"],"aliases":{"en":["Icelandic republic","Isl.","Republic of Iceland","Ysland"]}}
-{"id":"Q191","labels":{"en":"Estonia"},"types":["country"],"aliases":{"en":["Eesti Vabariik","Estland","Republic of Estonia","ee"]}}
-{"id":"Q211","labels":{"en":"Latvia"},"types":["country"],"aliases":{"en":["Latveja","Latvejas Republika","Latvian Republic","Latvija","Latvijas Republika","Leţmо̄","Leţmо̄ Vabāmо̄","Republic of Latvia","lv"]}}
-{"id":"Q212","labels":{"en":"Ukraine"},"types":["country"],"aliases":{"en":["Ukr.","Ukraina","Ukrainia","Ukraïna"]}}
-{"id":"Q213","labels":{"en":"Czech Republic"},"types":["country"],"aliases":{"en":["Czechia"]}}
-{"id":"Q214","labels":{"en":"Slovakia"},"types":["country"],"aliases":{"en":["SK","SVK","Slovak Republic"]}}
-{"id":"Q215","labels":{"en":"Slovenia"},"types":["country"],"aliases":{"en":["Republic of Slovenia","Slovenija","si","slo","svn"]}}
-{"id":"Q217","labels":{"en":"Moldova"},"types":["country"],"aliases":{"en":["Moldavia","Republic of Moldova","Republica Moldova"]}}
-{"id":"Q218","labels":{"en":"Romania"},"types":["country"],"aliases":{"en":["Roumania","Rumania"]}}
-{"id":"Q219","labels":{"en":"Bulgaria"},"types":["country"],"aliases":{"en":["Bulgarian Republic","Republic of Bulgaria"]}}
-{"id":"Q221","labels":{"en":"North Macedonia"},"types":["country"],"aliases":{"en":["FYR Macedonia","Former Yugoslav Republic of Macedonia","Republic of Macedonia","Republic of North Macedonia"]}}
-{"id":"Q222","labels":{"en":"Albania"},"types":["country"],"aliases":{"en":["People's Republic of Albania","People's Socialist Republic of Albania","Republic of Albania","Republika Popullore Socialiste e Shqiperise","Republika Popullore e Shqiperise","Shqipërisë"]}}
-{"id":"Q224","labels":{"en":"Croatia"},"types":["country"],"aliases":{"en":["CRO","HR","HRV","RH","Republic of Croatia"]}}
-{"id":"Q225","labels":{"en":"Bosnia and Herzegovina"},"types":["country"],"aliases":{"en":["Bosnia & Herzegovina","Bosnia and Hercegovina","Bosnia-Herzegovina","ba"]}}
-{"id":"Q227","labels":{"en":"Azerbaijan"},"types":["country"],"aliases":{"en":["Republic of Azerbaijan"]}}
-{"id":"Q228","labels":{"en":"Andorra"},"types":["country"],"aliases":{"en":["Principality of Andorra","Principality of the Valleys of Andorra"]}}
-{"id":"Q229","labels":{"en":"Cyprus"},"types":["country"],"aliases":{"en":["Greek Administration of Southern Cyprus","Greek Cypriot State","Republic of Cyprus"]}}
-{"id":"Q230","labels":{"en":"Georgia"},"types":["country"],"aliases":{"en":["Georgia (Sakartvelo)","Georgia (country)","Republic of Georgia","Sakartvelo"]}}
-{"id":"Q232","labels":{"en":"Kazakhstan"},"types":["country"],"aliases":{"en":["Qazaqstan","Republic of Kazakhstan","Republic of Qazaqstan","kz"]}}
-{"id":"Q233","labels":{"en":"Malta"},"types":["country"],"aliases":{"en":["Republic of Malta"]}}
-{"id":"Q235","labels":{"en":"Monaco"},"types":["country"],"aliases":{"en":["Fort-Hercule","Mùnegu","Principality and Diocese of Monaco","Principality of Monaco","Principato di Monaco","Principatu de Mu̍negu","Principauté de Monaco","Prinçipatu de Mùnegu","mc"]}}
-{"id":"Q236","labels":{"en":"Montenegro"},"types":["country"]}
-{"id":"Q238","labels":{"en":"San Marino"},"types":["country"],"aliases":{"en":["Most Serene Republic of San Marino","sm"]}}
-{"id":"Q241","labels":{"en":"Cuba"},"types":["country"],"aliases":{"en":["Republic of Cuba","cu"]}}
-{"id":"Q242","labels":{"en":"Belize"},"types":["country"],"aliases":{"en":["bz"]}}
-{"id":"Q244","labels":{"en":"Barbados"},"types":["country"],"aliases":{"en":["BAR","Barbadoes","bb"]}}
-{"id":"Q252","labels":{"en":"Indonesia"},"types":["country"],"aliases":{"en":["Republic of Indonesia","id"]}}
-{"id":"Q258","labels":{"en":"South Africa"},"types":["country"],"aliases":{"en":["R.S.A.","RSA","Republic of South Africa","SA","zaf"]}}
-{"id":"Q262","labels":{"en":"Algeria"},"types":["country"],"aliases":{"en":["Djazaïr","Dzayer","People's Democratic Republic of Algeria"]}}
-{"id":"Q265","labels":{"en":"Uzbekistan"},"types":["country"],"aliases":{"en":["Republic of Uzbekistan"]}}
-{"id":"Q298","labels":{"en":"Chile"},"types":["country"],"aliases":{"en":["CHI","Republic of Chile"]}}
-{"id":"Q334","labels":{"en":"Singapore"},"types":["country"],"aliases":{"en":["Garden City","Lion City","Republic of Singapore","S'pore","SG","SGP","SIN","Singapore City","sg"]}}
-{"id":"Q347","labels":{"en":"Liechtenstein"},"types":["country"],"aliases":{"en":["FL","Principality of Liechtenstein","li"]}}
-{"id":"Q398","labels":{"en":"Bahrain"},"types":["country"],"aliases":{"en":["Bahrein Islands","Dawlat al-Bahrain","ISO 3166-1:BH","Kingdom of Bahrain","Mamlakat al-Baḥrayn","bh"]}}
-{"id":"Q399","labels":{"en":"Armenia"},"types":["country"],"aliases":{"en":["Hayastan","Hayastani Hanrapetut’yun","Republic of Armenia","Հայաստան"]}}
-{"id":"Q403","labels":{"en":"Serbia"},"types":["country"],"aliases":{"en":["Republic of Serbia"]}}
-{"id":"Q408","labels":{"en":"Australia"},"types":["country"],"aliases":{"en":["'Straya","Aussieland","Commonwealth of Australia","Down Under","New Holland","New Hollandia","Nova Hollandia","Oz","Stralia","Straya","Stria","The Commonwealth of Australia"]}}
-{"id":"Q414","labels":{"en":"Argentina"},"types":["country"],"aliases":{"en":["Argentine Republic","Republic of Argentina","Republica Argentina"]}}
-{"id":"Q419","labels":{"en":"Peru"},"types":["country"],"aliases":{"en":["Republic of Peru","Republica del Peru","pe","per"]}}
-{"id":"Q423","labels":{"en":"North Korea"},"types":["country"],"aliases":{"en":["DPR Korea","DPRK","Democratic People's Republic of Korea","N. Korea","kp"]}}
-{"id":"Q424","labels":{"en":"Cambodia"},"types":["country"],"aliases":{"en":["Camboya","Campuchia","Kambodzha","Kamboja","Kampuchea","Kingdom of Cambodia","kh"]}}
-{"id":"Q574","labels":{"en":"Timor-Leste"},"types":["country"],"aliases":{"en":["Democratic Republic of Timor-Leste","East Timor","TL"]}}
-{"id":"Q657","labels":{"en":"Chad"},"types":["country"],"aliases":{"en":["CHA","GUM","Republic of Chad","td"]}}
-{"id":"Q664","labels":{"en":"New Zealand"},"types":["country"],"aliases":{"en":["Aotearoa New Zealand","Dominion of New Zealand","nz"]}}
-{"id":"Q668","labels":{"en":"India"},"types":["country"],"aliases":{"en":["Al Hind","Bharat Ganarajya","Bharata","Bharatvarsh","Hindoostan","Hindustan","Indostan","Republic of India","Tenjiku","Tianzhu"]}}
-{"id":"Q672","labels":{"en":"Tuvalu"},"types":["country"],"aliases":{"en":["Ellice Islands","TUV","tv"]}}
-{"id":"Q678","labels":{"en":"Tonga"},"types":["country"],"aliases":{"en":["Friendly Islands","Kingdom of Tonga","TGA","Tonga Islands","to"]}}
-{"id":"Q683","labels":{"en":"Samoa"},"types":["country"],"aliases":{"en":["Independent State of Samoa","SAM","Western Samoa","ws"]}}
-{"id":"Q685","labels":{"en":"Solomon Islands"},"types":["country"],"aliases":{"en":["SOL","sb","the Solomon Islands"]}}
-{"id":"Q686","labels":{"en":"Vanuatu"},"types":["country"],"aliases":{"en":["Republic of Vanuatu","VAN","van","vu","vut"]}}
-{"id":"Q691","labels":{"en":"Papua New Guinea"},"types":["country"],"aliases":{"en":["Independent State of Papua New Guinea","PNG","pg"]}}
-{"id":"Q695","labels":{"en":"Palau"},"types":["country"],"aliases":{"en":["Belau","Peeloo","Pelew","Pelew islands","Pellew","Republic of Belau","Republic of Palau","pw"]}}
-{"id":"Q697","labels":{"en":"Nauru"},"types":["country"],"aliases":{"en":["Naoero","Pleasant Island","Republic of Nauru","nr"]}}
-{"id":"Q702","labels":{"en":"Federated States of Micronesia"},"types":["country"],"aliases":{"en":["FSM","Fed. Sts. Micronesia","Fed. Sts. of Micronesia","Federated States of Micronesia, FSM","Micronesia","fm"]}}
-{"id":"Q709","labels":{"en":"Marshall Islands"},"types":["country"],"aliases":{"en":["Republic of the Marshall Islands","mh"]}}
-{"id":"Q710","labels":{"en":"Kiribati"},"types":["country"],"aliases":{"en":["Republic of Kiribati","ki"]}}
-{"id":"Q711","labels":{"en":"Mongolia"},"types":["country"],"aliases":{"en":["Mongol State","State of Mongolia"]}}
-{"id":"Q712","labels":{"en":"Fiji"},"types":["country"],"aliases":{"en":["Fijī","Fijī Gaṇarājya","Matanitu Tugalala o Viti","Republic of Fiji","Republic of the Fiji Islands","Viti","fj"]}}
-{"id":"Q717","labels":{"en":"Venezuela"},"types":["country"],"aliases":{"en":["BR Venezuela","Bolivarian Republic of Venezuela","Republic of Venezuela"]}}
-{"id":"Q730","labels":{"en":"Suriname"},"types":["country"],"aliases":{"en":["Dutch Guiana","Republic of Surinam","Republic of Suriname","Surinam","Surrinam","sr"]}}
-{"id":"Q733","labels":{"en":"Paraguay"},"types":["country"],"aliases":{"en":["Heart of South America","Republic of Paraguay"]}}
-{"id":"Q734","labels":{"en":"Guyana"},"types":["country"],"aliases":{"en":["Co-operative Republic of Guyana","Republic of Guyana","gy"]}}
-{"id":"Q736","labels":{"en":"Ecuador"},"types":["country"],"aliases":{"en":["Republic of Ecuador","Republic of Equator","Republic of the Equator","The Ecuadorian State"]}}
-{"id":"Q739","labels":{"en":"Colombia"},"types":["country"],"aliases":{"en":["Colombiá","Republic of Colombia","The Republic of Colombia"]}}
-{"id":"Q750","labels":{"en":"Bolivia"},"types":["country"],"aliases":{"en":["Bolivia (Plurinational State of)","Plurinational State of Bolivia","Republic of Bolivia"]}}
-{"id":"Q754","labels":{"en":"Trinidad and Tobago"},"types":["country"],"aliases":{"en":["Republic of Trinidad and Tobago","Trinidad & Tobago","tt"]}}
-{"id":"Q757","labels":{"en":"Saint Vincent and the Grenadines"},"types":["country"],"aliases":{"en":["Saint Vincent","St Vincent","St Vincent and the Grenadines","St. Vincent","St. Vincent and the Grenadines","vc","vct"]}}
-{"id":"Q760","labels":{"en":"Saint Lucia"},"types":["country"],"aliases":{"en":["Hewanorra","Iyonola","St Lucia","St. Lucia","lc","lca"]}}
-{"id":"Q763","labels":{"en":"Saint Kitts and Nevis"},"types":["country"],"aliases":{"en":["Federation of Saint Christopher and Nevis","Federation of Saint Kitts and Nevis","Kitts & Nevis","Kitts and Nevis","SKN","Saint Christopher and Nevis","St Kitts & Nevis","St Kitts and Nevis","St. Kitts & Nevis","St. Kitts and Nevis"]}}
-{"id":"Q766","labels":{"en":"Jamaica"},"types":["country"],"aliases":{"en":["Commonwealth of Jamaica","JA"]}}
-{"id":"Q769","labels":{"en":"Grenada"},"types":["country"],"aliases":{"en":["GRN","gd"]}}
-{"id":"Q774","labels":{"en":"Guatemala"},"types":["country"],"aliases":{"en":["GT","GTM","Republic of Guatemala","gt"]}}
-{"id":"Q778","labels":{"en":"The Bahamas"},"types":["country"],"aliases":{"en":["Bahama Islands","Bahamas","Bahamas, The","Commonwealth of The Bahamas","Commonwealth of the Bahamas","bs"]}}
-{"id":"Q781","labels":{"en":"Antigua and Barbuda"},"types":["country"],"aliases":{"en":["Antigua & Barbuda","Antigua-Barbuda","Antigua–Barbuda"]}}
-{"id":"Q783","labels":{"en":"Honduras"},"types":["country"],"aliases":{"en":["HON","Honduran Republic","Republic of Honduras","hn"]}}
-{"id":"Q784","labels":{"en":"Dominica"},"types":["country"],"aliases":{"en":["Commonwealth of Dominica","DOM","Island of Dominica","The Commonwealth of Dominica","Wai'tu kubuli","Wai‘tu kubuli","dm"]}}
-{"id":"Q786","labels":{"en":"Dominican Republic"},"types":["country"],"aliases":{"en":["DomRep","Dominicana","RD","Republica Dominicana","República Dominicana"]}}
-{"id":"Q790","labels":{"en":"Haiti"},"types":["country"],"aliases":{"en":["Ayiti","HAI","Haitian Republic","Hayti","Republic of Haiti","ht"]}}
-{"id":"Q792","labels":{"en":"El Salvador"},"types":["country"],"aliases":{"en":["ESA","Republic of El Salvador","Salvador","sv"]}}
-{"id":"Q794","labels":{"en":"Iran"},"types":["country"],"aliases":{"en":["IRI","Islamic Rep. Iran","Islamic Republic of Iran","ir"]}}
-{"id":"Q796","labels":{"en":"Iraq"},"types":["country"],"aliases":{"en":["Republic of Iraq","iq"]}}
-{"id":"Q800","labels":{"en":"Costa Rica"},"types":["country"],"aliases":{"en":["Republic of Costa Rica","cr"]}}
-{"id":"Q801","labels":{"en":"Israel"},"types":["country"],"aliases":{"en":["ISR","State of Israel","Yisrael","il"]}}
-{"id":"Q804","labels":{"en":"Panama"},"types":["country"],"aliases":{"en":["Republic of Panama","pa"]}}
-{"id":"Q805","labels":{"en":"Yemen"},"types":["country"],"aliases":{"en":["Rep. Yemen","Republic of Yemen","ye"]}}
-{"id":"Q810","labels":{"en":"Jordan"},"types":["country"],"aliases":{"en":["Giordania","HKJ","Hashemite Kingdom of Jordan","ISO 3166-1:JO","Kingdom of Jordan","State of Jordan","Yarden"]}}
-{"id":"Q811","labels":{"en":"Nicaragua"},"types":["country"],"aliases":{"en":["NCA","NI","NIC","Republic of Nicaragua","ni"]}}
-{"id":"Q813","labels":{"en":"Kyrgyzstan"},"types":["country"],"aliases":{"en":["Kyrgyz Republic","kg"]}}
-{"id":"Q817","labels":{"en":"Kuwait"},"types":["country"],"aliases":{"en":["State of Kuwait","kw"]}}
-{"id":"Q819","labels":{"en":"Laos"},"types":["country"],"aliases":{"en":["Lao PDR","Lao People's Democratic Republic","la"]}}
-{"id":"Q822","labels":{"en":"Lebanon"},"types":["country"],"aliases":{"en":["Lebanese Republic","Lubnan","Republic of Lebanon","State of Lebanon","lb"]}}
-{"id":"Q826","labels":{"en":"Maldives"},"types":["country"],"aliases":{"en":["MDV","Republic of Maldives","mv"]}}
-{"id":"Q833","labels":{"en":"Malaysia"},"types":["country"],"aliases":{"en":["Federation of Malaysia","Malaysia Federation"]}}
-{"id":"Q836","labels":{"en":"Myanmar"},"types":["country"],"aliases":{"en":["Republic of the Union of Myanmar","Union of Burma"]}}
-{"id":"Q837","labels":{"en":"Nepal"},"types":["country"],"aliases":{"en":["Bal-bo","Bal-po'i yul","Bal-yul","Balbo","Balpo","Balpo-yul","Federal Democratic Republic of Nepal","Naipala","Naipál","Naipála","Ne-pel","Necbal","Nehpal","Nei-pal","Nekbal","Nekpal","Nepall","Nepaul","Nepál","Nercerri","Ni-po-lo","Ni-po-louo","Niepal","Nipal","Népaal","Népál","Pa-eul-pou","Pa-le-pou","Pa-lo-pou","Pai-pou","Palpa","Palpou","Paï-pou"]}}
-{"id":"Q842","labels":{"en":"Oman"},"types":["country"],"aliases":{"en":["Sultanate of Oman","Uman","om","omn"]}}
-{"id":"Q843","labels":{"en":"Pakistan"},"types":["country"],"aliases":{"en":["Hồi Quốc","Islamic Republic of Pakistan","Republic of Pakistan","Tây Hồi","pk"]}}
-{"id":"Q846","labels":{"en":"Qatar"},"types":["country"],"aliases":{"en":["State of Qatar","qa","qat"]}}
-{"id":"Q851","labels":{"en":"Saudi Arabia"},"types":["country"],"aliases":{"en":["Kingdom of Saudi Arabia","Saudi"]}}
-{"id":"Q854","labels":{"en":"Sri Lanka"},"types":["country"],"aliases":{"en":["Ceylan","Democratic Socialist Republic of Sri Lanka","Lanka, Sri","SRI","Serendib","Srilanka","Taprobane","ce","lk","lke","sri"]}}
-{"id":"Q858","labels":{"en":"Syria"},"types":["country"],"aliases":{"en":["Surya","Syrian Arab Republic"]}}
-{"id":"Q863","labels":{"en":"Tajikistan"},"types":["country"],"aliases":{"en":["Republic of Tajikistan","tj"]}}
-{"id":"Q869","labels":{"en":"Thailand"},"types":["country"],"aliases":{"en":["Kingdom of Siam","Kingdom of Thailand","Prathet Thai","Ratcha-anachak Thai","Thai","The Kingdom of Siam","The Kingdom of Thailand","th"]}}
-{"id":"Q874","labels":{"en":"Turkmenistan"},"types":["country"],"aliases":{"en":["TKM","Turkmenia","tm"]}}
-{"id":"Q878","labels":{"en":"United Arab Emirates"},"types":["country"],"aliases":{"en":["Emirates","U.A.E.","ae","the Emirates","the U.A.E.","the UAE","the United Arab Emirates"]}}
-{"id":"Q881","labels":{"en":"Vietnam"},"types":["country"],"aliases":{"en":["SRV","Socialist Republic of Viet Nam","Socialist Republic of Vietnam","VIE","VN","VNM","Viet Nam","Việt Nam"]}}
-{"id":"Q884","labels":{"en":"South Korea"},"types":["country"],"aliases":{"en":["Choson","Daehan Minguk","Daehanminguk","Hanguk","Korea (South)","Korea Republic","Rep. Korea","Republic of Korea","S. Korea","Silla"]}}
-{"id":"Q889","labels":{"en":"Afghanistan"},"types":["country"],"aliases":{"en":["Affghanistan","Affghanisthan","Affghaunistan","Afghania","Afghanisthan","Afghaunistan","Afghaunistaun"]}}
-{"id":"Q902","labels":{"en":"Bangladesh"},"types":["country"],"aliases":{"en":["Bangla Desh","Country of Bengal","Land of Bengal","People's Republic of Bangladesh","bd"]}}
-{"id":"Q912","labels":{"en":"Mali"},"types":["country"],"aliases":{"en":["Republic of Mali","ml"]}}
-{"id":"Q916","labels":{"en":"Angola"},"types":["country"],"aliases":{"en":["Ngola","Republic of Angola","ao"]}}
-{"id":"Q917","labels":{"en":"Bhutan"},"types":["country"],"aliases":{"en":["BHU","Kingdom of Bhutan","bt"]}}
-{"id":"Q921","labels":{"en":"Brunei"},"types":["country"],"aliases":{"en":["BRN","BRU","Brunei Darussalam","Nation of Brunei, the Abode of Peace","Negara Brunei Darussalam","bn"]}}
-{"id":"Q924","labels":{"en":"Tanzania"},"types":["country"],"aliases":{"en":["Tanzania, United Republic of","United Republic of Tanganyika and Zanzibar","United Republic of Tanzania","tz","tza"]}}
-{"id":"Q928","labels":{"en":"Philippines"},"types":["country"],"aliases":{"en":["Philippine Islands","RP","Republic of the Philippines","The Philippines"]}}
-{"id":"Q929","labels":{"en":"Central African Republic"},"types":["country"],"aliases":{"en":["Central Africa","cf"]}}
-{"id":"Q945","labels":{"en":"Togo"},"types":["country"],"aliases":{"en":["Togolese Republic","tg"]}}
-{"id":"Q948","labels":{"en":"Tunisia"},"types":["country"],"aliases":{"en":["Republic of Tunisia","Tunisian Republic","tn"]}}
-{"id":"Q953","labels":{"en":"Zambia"},"types":["country"],"aliases":{"en":["Republic of Zambia","Zed"]}}
-{"id":"Q954","labels":{"en":"Zimbabwe"},"types":["country"],"aliases":{"en":["Republic of Zimbabwe","Rhodesia","Southern Rhodesia","Zimbabwe Rhodesia"]}}
-{"id":"Q958","labels":{"en":"South Sudan"},"types":["country"],"aliases":{"en":["Republic of South Sudan","SSD","Southern Sudan","ss"]}}
-{"id":"Q962","labels":{"en":"Benin"},"types":["country"],"aliases":{"en":["Republic of Benin"]}}
-{"id":"Q963","labels":{"en":"Botswana"},"types":["country"],"aliases":{"en":["Lefatshe la Botswana","Republic of Botswana","bw"]}}
-{"id":"Q965","labels":{"en":"Burkina Faso"},"types":["country"],"aliases":{"en":["Republic of Burkina Faso","Republic of Upper Volta (-1984)","bf"]}}
-{"id":"Q967","labels":{"en":"Burundi"},"types":["country"],"aliases":{"en":["Gouvernement du Burundi","Republic of Burundi","Republika y'Uburundi","bi"]}}
-{"id":"Q970","labels":{"en":"Comoros"},"types":["country"],"aliases":{"en":["Juzur al-Qamar","Juzur al-Qumur","Massiwa ya komori","Udzima wa Komori","Union des Comores","Union of the Comoros","al-Ittiḥād al-Qumurī","km","ouvoimoja wakomori","the Comoros"]}}
-{"id":"Q971","labels":{"en":"Republic of the Congo"},"types":["country"],"aliases":{"en":["CGO","Congo","Congo (Brazzaville)","Congo Republic","Congo-Brazzaville","Rep. Congo","Republic of Congo","Republique du Congo","République du Congo","cg"]}}
-{"id":"Q974","labels":{"en":"Democratic Republic of the Congo"},"types":["country"],"aliases":{"en":["COD","Congo (Kinshasa)","D.R.C.","DR Congo","DRC","Dem. Rep. Congo","Dem. Republic of Congo","Dem. Republic of the Congo","Democratic Republic of Congo","cd"]}}
-{"id":"Q977","labels":{"en":"Djibouti"},"types":["country"],"aliases":{"en":["Gabuuti","Jabuuti","Jībūtī","Republic of Djibouti","dj"]}}
-{"id":"Q983","labels":{"en":"Equatorial Guinea"},"types":["country"],"aliases":{"en":["GEQ","Republic of Equatorial Guinea","gq"]}}
-{"id":"Q986","labels":{"en":"Eritrea"},"types":["country"],"aliases":{"en":["Ertrā","Iritriyā","State of Eritrea","er"]}}
-{"id":"Q1000","labels":{"en":"Gabon"},"types":["country"],"aliases":{"en":["GAB","Gabonese Republic","Republique Gabonaise","République Gabonaise","ga"]}}
-{"id":"Q1005","labels":{"en":"The Gambia"},"types":["country"],"aliases":{"en":["Gambia","Islamic Republic of the Gambia","Republic of the Gambia"]}}
-{"id":"Q1006","labels":{"en":"Guinea"},"types":["country"],"aliases":{"en":["GUI","Guinea-Conakry","Republic of Guinea","gn"]}}
-{"id":"Q1007","labels":{"en":"Guinea-Bissau"},"types":["country"],"aliases":{"en":["GBS","Republic of Guinea-Bissau","gw"]}}
-{"id":"Q1008","labels":{"en":"Ivory Coast"},"types":["country"],"aliases":{"en":["Cote Ivoire","Cote d'Ivoire","Cote d'lvoire","Cote-d'Ivoire","Côte-d'Ivoire","Republic of Cote d'Ivoire","Republic of Côte d'Ivoire","Republic of Ivory Coast","Republic of the Ivory Coast","The Ivory Coast","ci"]}}
-{"id":"Q1009","labels":{"en":"Cameroon"},"types":["country"],"aliases":{"en":["Republic of Cameroon"]}}
-{"id":"Q1011","labels":{"en":"Cape Verde"},"types":["country"],"aliases":{"en":["Cape Verde Islands","Republic of Cabo Verde","Republic of Cape Verde"]}}
-{"id":"Q1013","labels":{"en":"Lesotho"},"types":["country"],"aliases":{"en":["Kingdom of Lesotho","LES","The Mountain Kingdom","ls"]}}
-{"id":"Q1014","labels":{"en":"Liberia"},"types":["country"],"aliases":{"en":["Liber","Republic of Liberia","lr"]}}
-{"id":"Q1016","labels":{"en":"Libya"},"types":["country"],"aliases":{"en":["LBA","State of Libya","ly"]}}
-{"id":"Q1019","labels":{"en":"Madagascar"},"types":["country"],"aliases":{"en":["Malagascar","Malagaskar","Republic of Madagascar","mg"]}}
-{"id":"Q1020","labels":{"en":"Malawi"},"types":["country"],"aliases":{"en":["MAW","Republic of Malawi","mw"]}}
-{"id":"Q1025","labels":{"en":"Mauritania"},"types":["country"],"aliases":{"en":["Agawej","Gannaar","Gànnaar","Islamic Republic of Mauritania","Mauretania","Moritani","Muritanya","Murutaane","mr"]}}
-{"id":"Q1027","labels":{"en":"Mauritius"},"types":["country"],"aliases":{"en":["MRI","MU","Maurice","Moris","Republic of Mauritius"]}}
-{"id":"Q1028","labels":{"en":"Morocco"},"types":["country"],"aliases":{"en":["Kingdom of Morocco","Lmaġrib","Maroc","Marocco","al-Maġrib"]}}
-{"id":"Q1029","labels":{"en":"Mozambique"},"types":["country"],"aliases":{"en":["Moçambique","Republic of Mozambique","República de Moçambique","mz"]}}
-{"id":"Q1030","labels":{"en":"Namibia"},"types":["country"],"aliases":{"en":["Republic of Namibia","na"]}}
-{"id":"Q1032","labels":{"en":"Niger"},"types":["country"],"aliases":{"en":["Republic Niger","Republic of Niger","Republic of the Niger","The Niger","ne"]}}
-{"id":"Q1033","labels":{"en":"Nigeria"},"types":["country"],"aliases":{"en":["Federal Republic of Nigeria","Naija"]}}
-{"id":"Q1036","labels":{"en":"Uganda"},"types":["country"],"aliases":{"en":["+256","Ouganda","Pearl of Africa","Republic of Uganda","The Republic of Uganda","Ugandah","ug"]}}
-{"id":"Q1037","labels":{"en":"Rwanda"},"types":["country"],"aliases":{"en":["Republic of Rwanda","The Land of a Thousand Hills"]}}
-{"id":"Q1039","labels":{"en":"São Tomé and Príncipe"},"types":["country"],"aliases":{"en":["Democratic Republic of São Tomé and Príncipe","Sao Tome & Principe","Sao Tome and Principe","São Tomé og Príncipe","st"]}}
-{"id":"Q1041","labels":{"en":"Senegal"},"types":["country"],"aliases":{"en":["Republic of Senegal"]}}
-{"id":"Q1042","labels":{"en":"Seychelles"},"types":["country"],"aliases":{"en":["Republic of Seychelles","SEY","sc"]}}
-{"id":"Q1044","labels":{"en":"Sierra Leone"},"types":["country"],"aliases":{"en":["Republic of Sierra Leone","SLE","sl"]}}
-{"id":"Q1045","labels":{"en":"Somalia"},"types":["country"],"aliases":{"en":["Federal Republic of Somalia"]}}
-{"id":"Q1049","labels":{"en":"Sudan"},"types":["country"],"aliases":{"en":["North Sudan","Republic of Sudan","Republic of the Sudan","SUD","Soudan","al-Sudan","as-Sudan","as-Sūdān","sd","the Sudan"]}}
-{"id":"Q1050","labels":{"en":"Eswatini"},"types":["country"],"aliases":{"en":["Kingdom of Eswatini","Kingdom of Swaziland","Swaziland","Umbuso weSwatini","eSwatini","sz"]}}
-{"id":"Q29999","labels":{"en":"Kingdom of the Netherlands"},"types":["country"],"aliases":{"en":["Kingdom of Netherlands","Nederlanden","Netherlands","the Netherlands"]}}
-{"id":"Q756617","labels":{"en":"Kingdom of Denmark"},"types":["country"],"aliases":{"en":["Danish Commonwealth","Danish Realm","Danmarkar Ríki","Danmarkip Naalagaaffik","Danmarks Rige","Denmark","Kongeriget Danmark","Kongsríki Danmarkar","Kunngeqarfik Danmarki","Realm of Denmark"]}}
-{"id":"Q60","labels":{"en":"New York City"},"types":["city"],"aliases":{"en":["Capital of the World","Center of the Universe","City of New York","Empire City","N. Y., N. Y.","NY City","NY, NY","New York (NY)","New York (city)","New York City (NYC)","New York City, NY","New York City, New York","New York City, New York, United States","New York City, USA","New York City, United States","New York City, United States of America","New York, N.Y.","New York, NY","New York, New York, USA","city of New York","the five boroughs"]}}
-{"id":"Q61","labels":{"en":"Washington, D.C."},"types":["city"],"aliases":{"en":["City of Washington, D.C.","D.C. Washington","District of Columbia","Federal City (D.C.)","Nation's Capital (D.C.)","The District","Washington City, D.C.","Washington, District of Columbia"]}}
-{"id":"Q64","labels":{"en":"Berlin"},"types":["city"],"aliases":{"en":["Berlin, Germany","DE-BE"]}}
-{"id":"Q70","labels":{"en":"Bern"},"types":["city"],"aliases":{"en":["Berna","Berne","city of Bern"]}}
-{"id":"Q84","labels":{"en":"London"},"types":["city"],"aliases":{"en":["Augusta","Big Smoke","Kaerlud","Karelundein","LDN","Llan Dian","Llyn Dain","Lon.","Lond.","Londini","Londiniensium","Londinio","Londinion","Londinium","London U.K.","London UK","London, England","London, UK","London, United Kingdom","Loniniensi","Loñ","Loñ.","Lunden","Lundenburgh","Lundenburh","Lundenwic","Trinovantum","the Big Smoke"]}}
-{"id":"Q85","labels":{"en":"Cairo"},"types":["city"],"aliases":{"en":["Cairo, Egypt","Qahira","ghahere"]}}
-{"id":"Q90","labels":{"en":"Paris"},"types":["city"],"aliases":{"en":["City of Light","City of Love","Lutetia"]}}
-{"id":"Q174","labels":{"en":"São Paulo"},"types":["city"],"aliases":{"en":["City of São Paulo","Saint Paul","Sao Paulo","St. Paul"]}}
-{"id":"Q216","labels":{"en":"Vilnius"},"types":["city"],"aliases":{"en":["Vilna","Vilnia","Vilno","Vilnyus","Vilnė","Viĺnia","Viļņa","Wilna","Wilno"]}}
-{"id":"Q220","labels":{"en":"Rome"},"types":["city"],"aliases":{"en":["Capital of the World","City of Marble","City of Seven Hills","Eternal City","Rome, Italy","The Capital of the World","The City of Marble","The Eternal City"]}}
-{"id":"Q239","labels":{"en":"Brussels"},"types":["city"],"aliases":{"en":["Brussels (municipality)","Brussels City","City of Brussels"]}}
-{"id":"Q269","labels":{"en":"Tashkent"},"types":["city"],"aliases":{"en":["Binkath","Chach","Choch","Shash","Shosh","Tashkand","Toshkent"]}}
-{"id":"Q270","labels":{"en":"Warsaw"},"types":["city"]}
-{"id":"Q384","labels":{"en":"Skopje"},"types":["city"],"aliases":{"en":["Escópia","Shkup","Shkupi","Skoplje","Üsküb"]}}
-{"id":"Q437","labels":{"en":"Ljubljana"},"types":["city"],"aliases":{"en":["Labacum","Ljubljana, Slovenia","Lublana"]}}
-{"id":"Q472","labels":{"en":"Sofia"},"types":["city"],"aliases":{"en":["Serdica","Sofija","Sredets","Sredez"]}}
-{"id":"Q585","labels":{"en":"Oslo"},"types":["city"],"aliases":{"en":["NOOSL","Oslo, Norway"]}}
-{"id":"Q597","labels":{"en":"Lisbon"},"types":["city"]}
-{"id":"Q649","labels":{"en":"Moscow"},"types":["city"],"aliases":{"en":["City of Moscow","Moscow, Russia","Moscow, Russian Federation","Moscow, Russian SFSR","Moscow, Soviet Union","Moscow, USSR","Moskovĭ","Moskva Federal City, Russia","Moskva, Rossiya","Moskva, Russia","Moskve","Moskvi","Moskvë","Mosky","Москва"]}}
-{"id":"Q727","labels":{"en":"Amsterdam"},"types":["city"],"aliases":{"en":["A'dam","Amsterdam, NL","Amsterdam, Netherlands","Amsterdam, North Holland","Mokum"]}}
-{"id":"Q956","labels":{"en":"Beijing"},"types":["city"],"aliases":{"en":["BJ","Beeijing","Bei Jing Shi","Beijing Shi","Beiping","Bākgīng","Chi","Chi-ch'eng","Chi-cheng","Chi-ch’êng","Chung-tu","Chungtu","Ji","Jicheng","Khanbalik","Khanbaliq","Pak-kiann","Pe-king","Pei-ching","Pei-p'ing","Pei-ping","Peip'ing","Peiping","Pekin","Peking Shi","Poh-cin","Shun-t'ien","Shun-tien","Shuntian","Shuntian Fu","Shuntianfu","Yan-ching","Yanjing","Yanking","Zhongdu"]}}
-{"id":"Q987","labels":{"en":"New Delhi"},"types":["city"],"aliases":{"en":["NDMC area","Nai Dilli","Nayi Dilli","New Delhi Municipal Council Area"]}}
-{"id":"Q994","labels":{"en":"Tbilisi"},"types":["city"],"aliases":{"en":["Tbilisi, Georgia","Tbilissi","Tiflis","Tpilisi","Tpilissi"]}}
-{"id":"Q1085","labels":{"en":"Prague"},"types":["city"],"aliases":{"en":["City of Prague","Hlavní město Praha"]}}
-{"id":"Q1218","labels":{"en":"Jerusalem"},"types":["city"],"aliases":{"en":["Aelia Capitolina","J'lem","Mint of Aelia Capitolina"]}}
-{"id":"Q1297","labels":{"en":"Chicago"},"types":["city"],"aliases":{"en":["Chi-Raq","Chi-Town","Chicago, IL","Chicago, Illinois","Chitown","City by the Lake","City of Broad Shoulders","City of Chicago","The Queen of the West","The Second City","The Windy City"]}}
-{"id":"Q1335","labels":{"en":"Montevideo"},"types":["city"]}
-{"id":"Q1354","labels":{"en":"Dhaka"},"types":["city"],"aliases":{"en":["Dacca","Dhaka City"]}}
-{"id":"Q1362","labels":{"en":"Islamabad"},"types":["city"]}
-{"id":"Q1435","labels":{"en":"Zagreb"},"types":["city"]}
-{"id":"Q1461","labels":{"en":"Manila"},"types":["city"],"aliases":{"en":["City of Manila","Pearl of the Orient","Queen City of the Pacific and others"]}}
-{"id":"Q1486","labels":{"en":"Buenos Aires"},"types":["city"],"aliases":{"en":["Ciudad Autonoma de Buenos Aires","Ciudad de Buenos Aires"]}}
-{"id":"Q1489","labels":{"en":"Mexico City"},"types":["city"],"aliases":{"en":["City of Mexico","Mexico","Mexico City, Mexico","Mexico D.F."]}}
-{"id":"Q1490","labels":{"en":"Tokyo"},"types":["city"],"aliases":{"en":["Edo","Jedo","Tokei","Tokio","Tokyo (Japan)","Tokyo Metropolis","Tokyo Metropolitan prefecture","Tokyo Prefecture","Tokyo, Japan","Tokyo-to","Tôkyô","Tôkyô-to","Tōkyō-to","Yedo"]}}
-{"id":"Q1491","labels":{"en":"La Paz"},"types":["city"],"aliases":{"en":["Chuqi Yapu","Chuqiyapu","Nuestra Señora de La Paz"]}}
-{"id":"Q1519","labels":{"en":"Abu Dhabi"},"types":["city"],"aliases":{"en":["Abudhabi","Abū Dhabi"]}}
-{"id":"Q1520","labels":{"en":"Astana"},"types":["city"],"aliases":{"en":["Akmola","Akmolinsk","Aqmola","Nur-Sultan","Tselinograd"]}}
-{"id":"Q1524","labels":{"en":"Athens"},"types":["city"],"aliases":{"en":["Athenae","Athens city"]}}
-{"id":"Q1530","labels":{"en":"Baghdad"},"types":["city"],"aliases":{"en":["Bagdat","Baghdād"]}}
-{"id":"Q1533","labels":{"en":"Caracas"},"types":["city"],"aliases":{"en":["CCS","Carracas","Santiago de León de Caracas"]}}
-{"id":"Q1555","labels":{"en":"Guatemala City"},"types":["city"],"aliases":{"en":["City of Guatemala","Ciudad de Guatemala","Guate","Guatemala","Guatemala (Guatemala)","New Guatemala of Assumption","Nueva Guatemala de la Asunción"]}}
-{"id":"Q1563","labels":{"en":"Havana"},"types":["city"],"aliases":{"en":["Habana","Havana, Cuba","La Habana"]}}
-{"id":"Q1741","labels":{"en":"Vienna"},"types":["city"],"aliases":{"en":["Vienna, Austria"]}}
-{"id":"Q1748","labels":{"en":"Copenhagen"},"types":["city"],"aliases":{"en":["CPH","Copenhagen, Denmark","Hafn","KBH","Kbh.","Kobenhavn","Kopenhagen","Köbenhavn"]}}
-{"id":"Q1754","labels":{"en":"Stockholm"},"types":["city"],"aliases":{"en":["STHLM","Sthlm"]}}
-{"id":"Q1757","labels":{"en":"Helsinki"},"types":["city"],"aliases":{"en":["Helsingia","Helsingin kaupunki","Hesa","Stadi"]}}
-{"id":"Q1761","labels":{"en":"Dublin"},"types":["city"],"aliases":{"en":["City of Dublin","Dublin city","Dublin, Ireland"]}}
-{"id":"Q1764","labels":{"en":"Reykjavík"},"types":["city"],"aliases":{"en":["Reykjavik","Reykjavikurborg","Reykjavíkurborg"]}}
-{"id":"Q1770","labels":{"en":"Tallinn"},"types":["city"],"aliases":{"en":["Kolywan","Lindanäs","Lyndanisse","Reuel","Reval","Revel","Rewel","Tallinn, Estonia"]}}
-{"id":"Q1773","labels":{"en":"Riga"},"types":["city"],"aliases":{"en":["Rige","Riia","Rija","Rīgõ"]}}
-{"id":"Q1780","labels":{"en":"Bratislava"},"types":["city"]}
-{"id":"Q1781","labels":{"en":"Budapest"},"types":["city"],"aliases":{"en":["Alt-Ofen","Buda","Buda Pest","Buda-Pest","Buda-Pesth","Budapest, Hungary","Budapesta","Budapeszt","Budapešť","Budim","Budon","Budín","Ofen","Pest","Pešta","Pešť"]}}
-{"id":"Q1842","labels":{"en":"Luxembourg"},"types":["city"],"aliases":{"en":["City of Luxembourg","Luxembourg City","Luxemburg"]}}
-{"id":"Q1844","labels":{"en":"Vaduz"},"types":["city"],"aliases":{"en":["Vaduz, Liechtenstein"]}}
-{"id":"Q1848","labels":{"en":"San Marino"},"types":["city"],"aliases":{"en":["City of San Marino"]}}
-{"id":"Q1850","labels":{"en":"Phnom Penh"},"types":["city"]}
-{"id":"Q1858","labels":{"en":"Hanoi"},"types":["city"],"aliases":{"en":["Dong Do","Ha Noi","Hà Nội","Thang Long","Tonkin","Đại La"]}}
-{"id":"Q1861","labels":{"en":"Bangkok"},"types":["city"],"aliases":{"en":["Bangkok, Thailand","Krung Thep","Krung Thep Maha Nakhon","Krungthepmahanakhon Amonrattanakosin Mahintharayutthaya Mahadilokphop Noppharatratchathaniburirom Udomratchaniwetmahasathan Amonphimanawatansathit Sakkathattiyawitsanukamprasit","Sia-Yut'hia"]}}
-{"id":"Q1863","labels":{"en":"Andorra la Vella"},"types":["city"]}
-{"id":"Q1865","labels":{"en":"Kuala Lumpur"},"types":["city"],"aliases":{"en":["Federal Territory of Kuala Lumpur","K.L.","KL"]}}
-{"id":"Q1899","labels":{"en":"Kyiv"},"types":["city"],"aliases":{"en":["Kief","Kieff","Kiew","Kiof","Kioff","Kiou","Kiovia","Kiow","Kiowia","Kiyev","Kyiw","Kyjiw","Kyïv","Kyїv"]}}
-{"id":"Q1930","labels":{"en":"Ottawa"},"types":["city"],"aliases":{"en":["City of Ottawa","Ottawa, ON","Ottawa, Ontario"]}}
-{"id":"Q1947","labels":{"en":"Juba"},"types":["city"]}
-{"id":"Q1953","labels":{"en":"Yerevan"},"types":["city"],"aliases":{"en":["Erivan","Iravan","Irevan","The Pink City"]}}
-{"id":"Q1963","labels":{"en":"Khartoum"},"types":["city"],"aliases":{"en":["Khartum"]}}
-{"id":"Q2280","labels":{"en":"Minsk"},"types":["city"],"aliases":{"en":["Mensk","Miensk","Minskas","Mińsk","Менск","Минск","Мінск"]}}
-{"id":"Q2449","labels":{"en":"Mogadishu"},"types":["city"],"aliases":{"en":["Hamar","Maqadīshū","Mogadishu, Somalia","The Seat of the Shah","Xamar"]}}
-{"id":"Q2467","labels":{"en":"Nassau"},"types":["city"],"aliases":{"en":["City of Nassau"]}}
-{"id":"Q2471","labels":{"en":"Sanaa"},"types":["city"],"aliases":{"en":["San'a'","Sana","Sana'a","Ṣanʻāʼ","Ṣanʿāʾ"]}}
-{"id":"Q2807","labels":{"en":"Madrid"},"types":["city"]}
-{"id":"Q2841","labels":{"en":"Bogotá"},"types":["city"],"aliases":{"en":["Bogota, Colombia","Bogotá, D.C.","Santafé de Bogotá"]}}
-{"id":"Q2844","labels":{"en":"Brasília"},"types":["city"]}
-{"id":"Q2868","labels":{"en":"Lima"},"types":["city"],"aliases":{"en":["City of the Kings"]}}
-{"id":"Q2887","labels":{"en":"Santiago"},"types":["city"],"aliases":{"en":["Greater Santiago","Santiago, Chile"]}}
-{"id":"Q2900","labels":{"en":"Quito"},"types":["city"],"aliases":{"en":["Kitu","Quito, Ecuador"]}}
-{"id":"Q2907","labels":{"en":"Sucre"},"types":["city"],"aliases":{"en":["Charcas","Chuquisaca","La Plata","The Illustrious and Heroic Sucre"]}}
-{"id":"Q2933","labels":{"en":"Asunción"},"types":["city"],"aliases":{"en":["Assumption","Asu","Asuncion"]}}
-{"id":"Q3001","labels":{"en":"Paramaribo"},"types":["city"],"aliases":{"en":["Parbo"]}}
-{"id":"Q3037","labels":{"en":"Kathmandu"},"types":["city"],"aliases":{"en":["Cadmendu","Catmandir","Catmeduour","City of Temples","Kadmendu","Kantipur","Kasthamandap","Kathmandu Metropolitan City","Kathmandu Valley","Katmandir","Katmandou","Katmandu","Khatmandu","Káthmándú","Yambu","Yen"]}}
-{"id":"Q3043","labels":{"en":"Belmopan"},"types":["city"],"aliases":{"en":["City of Promise","The Garden City","The Planned City"]}}
-{"id":"Q3070","labels":{"en":"San José"},"types":["city"],"aliases":{"en":["San Jose","San José, Costa Rica"]}}
-{"id":"Q3110","labels":{"en":"San Salvador"},"types":["city"]}
-{"id":"Q3114","labels":{"en":"Canberra"},"types":["city"],"aliases":{"en":["Canberra, Australia","Canberra, Australian Capital Territory"]}}
-{"id":"Q3238","labels":{"en":"Tegucigalpa"},"types":["city"]}
-{"id":"Q3274","labels":{"en":"Managua"},"types":["city"],"aliases":{"en":["Managua Municipality","Managua, Nicaragua","Municipality of Managua"]}}
-{"id":"Q3306","labels":{"en":"Panama City"},"types":["city"],"aliases":{"en":["Ciudad de Panama","Ciudad de Panamá","Panama","Panamá"]}}
-{"id":"Q3551","labels":{"en":"Rabat"},"types":["city"],"aliases":{"en":["Rabbat"]}}
-{"id":"Q3561","labels":{"en":"Algiers"},"types":["city"]}
-{"id":"Q3572","labels":{"en":"Tunis"},"types":["city"]}
-{"id":"Q3579","labels":{"en":"Tripoli"},"types":["city"],"aliases":{"en":["Tarabulus"]}}
-{"id":"Q3604","labels":{"en":"Djibouti"},"types":["city"],"aliases":{"en":["Djibouti (city)","Djibouti City"]}}
-{"id":"Q3616","labels":{"en":"Tehran"},"types":["city"],"aliases":{"en":["Ṭihrán"]}}
-{"id":"Q3624","labels":{"en":"Addis Ababa"},"types":["city"],"aliases":{"en":["Addis Abäba","Finfinne"]}}
-{"id":"Q3630","labels":{"en":"Jakarta"},"types":["city"],"aliases":{"en":["DKI Jakarta","Djakarta","Jakarta Province","Jakarta Specific Region","Jakarta, Indonesia","Specific Capital Region of Jakarta","Specific Region of Jakarta"]}}
-{"id":"Q3640","labels":{"en":"Ankara"},"types":["city"]}
-{"id":"Q3642","labels":{"en":"Asmara"},"types":["city"],"aliases":{"en":["Asmera"]}}
-{"id":"Q3659","labels":{"en":"N'Djamena"},"types":["city"],"aliases":{"en":["N'Djaména","NDjamena"]}}
-{"id":"Q3674","labels":{"en":"Niamey"},"types":["city"]}
-{"id":"Q3688","labels":{"en":"Nouakchott"},"types":["city"],"aliases":{"en":["Capital of Mauritania","Nawakshut","Nawākshūṭ","Nouakchot","Nouakchott, Mauritania","Noukchott","Nuwākshūṭ"]}}
-{"id":"Q3692","labels":{"en":"Riyadh"},"types":["city"],"aliases":{"en":["Al Riyadh","Al-Riyadh","AlRiyadh","Ar-Riyadh","Reyadh"]}}
-{"id":"Q3703","labels":{"en":"Bamako"},"types":["city"]}
-{"id":"Q3711","labels":{"en":"Belgrade"},"types":["city"],"aliases":{"en":["Belgrade, Serbia","City of Belgrade"]}}
-{"id":"Q3718","labels":{"en":"Dakar"},"types":["city"]}
-{"id":"Q3726","labels":{"en":"Banjul"},"types":["city"],"aliases":{"en":["Bathurst","City of Banjul"]}}
-{"id":"Q3733","labels":{"en":"Conakry"},"types":["city"]}
-{"id":"Q3739","labels":{"en":"Bissau"},"types":["city"]}
-{"id":"Q3748","labels":{"en":"Monrovia"},"types":["city"]}
-{"id":"Q3751","labels":{"en":"Praia"},"types":["city"]}
-{"id":"Q3761","labels":{"en":"Accra"},"types":["city"]}
-{"id":"Q3766","labels":{"en":"Damascus"},"types":["city"],"aliases":{"en":["Jasmine city","Mint of Damascus","Sham city"]}}
-{"id":"Q3768","labels":{"en":"Yamoussoukro"},"types":["city"]}
-{"id":"Q3777","labels":{"en":"Ouagadougou"},"types":["city"],"aliases":{"en":["Kumbee-Tenga","Ouaga","Wagadugu"]}}
-{"id":"Q3780","labels":{"en":"Freetown"},"types":["city"]}
-{"id":"Q3787","labels":{"en":"Abuja"},"types":["city"]}
-{"id":"Q3792","labels":{"en":"Lomé"},"types":["city"],"aliases":{"en":["Lome","Lome, Togo","Lomé, Togo"]}}
-{"id":"Q3799","labels":{"en":"Porto-Novo"},"types":["city"],"aliases":{"en":["Ajashe","Hogbonu"]}}
-{"id":"Q3805","labels":{"en":"Amman"},"types":["city"],"aliases":{"en":["Aman","Amman, Jordan","Ammon","Mint of Philadelphia","Philadelphia","ʿAmmān"]}}
-{"id":"Q3808","labels":{"en":"Yaoundé"},"types":["city"],"aliases":{"en":["Ongola","Yaounde","Yaounde, Cameroon","Yaoundé, Cameroon"]}}
-{"id":"Q3820","labels":{"en":"Beirut"},"types":["city"],"aliases":{"en":["Beyrout"]}}
-{"id":"Q3825","labels":{"en":"Libreville"},"types":["city"]}
-{"id":"Q3826","labels":{"en":"Muscat"},"types":["city"],"aliases":{"en":["Maskat","Muskat"]}}
-{"id":"Q3832","labels":{"en":"Bangui"},"types":["city"]}
-{"id":"Q3838","labels":{"en":"Kinshasa"},"types":["city"],"aliases":{"en":["Leopoldstad","Leopoldville","Léopoldville"]}}
-{"id":"Q3844","labels":{"en":"Brazzaville"},"types":["city"]}
-{"id":"Q3856","labels":{"en":"Nicosia"},"types":["city"],"aliases":{"en":["Ledra","Ledrae","Ledroi","Ledron","Lefkosa","Lefkosia","Leucopolis","Leucosia","Leucotheon","Leukoi Theoi","Leuteon","Nicosie"]}}
-{"id":"Q3859","labels":{"en":"Kigali"},"types":["city"],"aliases":{"en":["City of Kigali","Kigali City","Kigali Province"]}}
-{"id":"Q3861","labels":{"en":"Doha"},"types":["city"]}
-{"id":"Q3866","labels":{"en":"Dodoma"},"types":["city"],"aliases":{"en":["Dodoma City"]}}
-{"id":"Q3870","labels":{"en":"Nairobi"},"types":["city"],"aliases":{"en":["Kenya capital","Kenya capital city","Kenya's capital","Kenyan capital","Nairobi, Kenya"]}}
-{"id":"Q3876","labels":{"en":"Lilongwe"},"types":["city"]}
-{"id":"Q3881","labels":{"en":"Lusaka"},"types":["city"]}
-{"id":"Q3882","labels":{"en":"Manama"},"types":["city"],"aliases":{"en":["al-Manāmah"]}}
-{"id":"Q3889","labels":{"en":"Maputo"},"types":["city"],"aliases":{"en":["Cam Phumo","Lourenço Marques"]}}
-{"id":"Q3894","labels":{"en":"Kampala"},"types":["city"]}
-{"id":"Q3897","labels":{"en":"Luanda"},"types":["city"],"aliases":{"en":["Loanda","Loanda, Angola","Luanda, Angola","Saint Paul of Loanda","Saint Paul of Luanda","Sao Paulo de Loanda","Sao Paulo, Angola","St Paul of Loanda","St Paul of Luanda","St. Paul of Loanda","St. Paul of Luanda","São Paulo da Assunção de Loanda","São Paulo de Loanda","São Paulo, Angola"]}}
-{"id":"Q3901","labels":{"en":"Moroni"},"types":["city"],"aliases":{"en":["Moroni, Comoros"]}}
-{"id":"Q3904","labels":{"en":"Mbabane"},"types":["city"],"aliases":{"en":["Mbabané"]}}
-{"id":"Q3909","labels":{"en":"Maseru"},"types":["city"]}
-{"id":"Q3915","labels":{"en":"Antananarivo"},"types":["city"],"aliases":{"en":["Analamanga","Iarivo","Tananarive"]}}
-{"id":"Q3919","labels":{"en":"Gaborone"},"types":["city"],"aliases":{"en":["Gaberones","Gabs","Motse-Mshate"]}}
-{"id":"Q3921","labels":{"en":"Harare"},"types":["city"],"aliases":{"en":["Fort Salisbury","Salisbury, Rhodesia","Salisbury, Zimbabwe"]}}
-{"id":"Q3926","labels":{"en":"Pretoria"},"types":["city"],"aliases":{"en":["Pretoria, Gauteng","Pretoria, Gauteng, South Africa","Pretoria, S Africa","Pretoria, S. Africa","Pretoria, South Africa"]}}
-{"id":"Q3929","labels":{"en":"Port Louis"},"types":["city"],"aliases":{"en":["Polwi","Porlwi","Port-Louis"]}}
-{"id":"Q3932","labels":{"en":"São Tomé"},"types":["city"]}
-{"id":"Q3935","labels":{"en":"Windhoek"},"types":["city"],"aliases":{"en":["Otjomuise","Windhuk","Windhök","ǀAi-ǁGams"]}}
-{"id":"Q3940","labels":{"en":"Victoria"},"types":["city"],"aliases":{"en":["Port Victoria","Victoria, Seychelles"]}}
-{"id":"Q5465","labels":{"en":"Cape Town"},"types":["city"],"aliases":{"en":["Cape","Cape Town, South Africa","Kaap","Mother City","Tavern of the Seas","West side","iKapa"]}}
-{"id":"Q5838","labels":{"en":"Kabul"},"types":["city"],"aliases":{"en":["Cabool","Cabul","Caubul","Kabol","Kaboul"]}}
-{"id":"Q8684","labels":{"en":"Seoul"},"types":["city"],"aliases":{"en":["Gyeongseong","Hanseong","Hanyang","Keijou","Keijō","Namgyeong","Seoul Special City","Sŏul T'ŭkpyŏlsi","Wiryeseong"]}}
-{"id":"Q9248","labels":{"en":"Baku"},"types":["city"],"aliases":{"en":["Baki","Baky","City of Winds"]}}
-{"id":"Q9270","labels":{"en":"Thimphu"},"types":["city"],"aliases":{"en":["Thimpu","ཐིམ་ཕུ་"]}}
-{"id":"Q9279","labels":{"en":"Bandar Seri Begawan"},"types":["city"],"aliases":{"en":["BSB","Bandar","Bandar Brunei","Brunei Town","Seri Begawan"]}}
-{"id":"Q9310","labels":{"en":"Dili"},"types":["city"],"aliases":{"en":["City of Dili"]}}
-{"id":"Q9326","labels":{"en":"Vientiane"},"types":["city"],"aliases":{"en":["Bientani","Nakhon Viangchan","Viang chan","Viangchan","Vien Chang","Vienchan","Vieng-Cæn","Viengchan","Vientane","Vieṅ Čan","Vieṅg-Čăn","Vyentyan","Wei-t'ien","Wiangcan","Wīangčhan","urban Vientiane"]}}
-{"id":"Q9347","labels":{"en":"Malé"},"types":["city"],"aliases":{"en":["Malé City"]}}
-{"id":"Q9361","labels":{"en":"Bishkek"},"types":["city"],"aliases":{"en":["Frunze","Pishpek"]}}
-{"id":"Q9365","labels":{"en":"Dushanbe"},"types":["city"],"aliases":{"en":["Dyushambe","Stalinabad"]}}
-{"id":"Q10717","labels":{"en":"Georgetown"},"types":["city"],"aliases":{"en":["Garden City of the Caribbean","Georgetown, British Guiana"]}}
-{"id":"Q11194","labels":{"en":"Sarajevo"},"types":["city"],"aliases":{"en":["Bosna-Serai","City of Sarajevo"]}}
-{"id":"Q12919","labels":{"en":"Majuro"},"types":["city"],"aliases":{"en":["Majuro, Marshall Islands","Mājro"]}}
-{"id":"Q18808","labels":{"en":"Pyongyang"},"types":["city"],"aliases":{"en":["Capital of Revolution","Pyeongyang","P’yŏng-yang","Ryugyong"]}}
-{"id":"Q19660","labels":{"en":"Bucharest"},"types":["city"],"aliases":{"en":["Bucharest, Romania","Bucuresti","Bucureşti","București","Little Paris","Paris of the East"]}}
-{"id":"Q19689","labels":{"en":"Tirana"},"types":["city"],"aliases":{"en":["Tiranë"]}}
-{"id":"Q21197","labels":{"en":"Chișinău"},"types":["city"],"aliases":{"en":["Chisinau","Chisnau","Chişinău","Keshenev","Keshinov","Khisinau","Kischinew","Kischiniov","Kiscinev","Kishinef","Kishinev","Kishinëv","Kiszyniów","Kişinev","Kišinìv","Kyshyniv"]}}
-{"id":"Q23430","labels":{"en":"Ulaanbaatar"},"types":["city"],"aliases":{"en":["East Hüree","Hüree","Ih Huree","Ikh Khüree","Khan of Urga","Khüree","Kulun","Niislel Hüree","Wulan Batuo","Örgöö"]}}
-{"id":"Q23438","labels":{"en":"Ashgabat"},"types":["city"],"aliases":{"en":["'Ishqabad","Ak-Gaudan","Aschchabad","Asgabat","Ashabad","Ashgabad","Ashkabad","Ashkabat","Ashkhabad","Ashqabad","Askabad","Askhabad","Aşgabat","Ašgabat","Ishqabad","Ishqabat","Konjikala","Poltoratsk","`Ishqabad","`Ishqábád"]}}
-{"id":"Q23564","labels":{"en":"Podgorica"},"types":["city"],"aliases":{"en":["Burguriçe","Capital of Montenegro","Podgoritsa","Podgoritza","Titograd"]}}
-{"id":"Q23661","labels":{"en":"Wellington"},"types":["city"],"aliases":{"en":["Port Nicholson","Port Nick","Pōneke","Te Whanga-nui-a-Tara","Te Whanganui-a-Tara","Wellington metropolitan area","Wellington, NZ","Wellington, New Zealand"]}}
-{"id":"Q23800","labels":{"en":"Valletta"},"types":["city"],"aliases":{"en":["Capital of Malta","Citta Umilissima","Città Umilissima","Il-Belt Valletta","La Valleta"]}}
-{"id":"Q31026","labels":{"en":"Yaren District"},"types":["city"],"aliases":{"en":["Makwa","Moqua","Yaren"]}}
-{"id":"Q34126","labels":{"en":"Funafuti"},"types":["city"],"aliases":{"en":["Funafuti Island"]}}
-{"id":"Q34261","labels":{"en":"Port-au-Prince"},"types":["city"],"aliases":{"en":["Port au Prince"]}}
-{"id":"Q34692","labels":{"en":"Kingston"},"types":["city"],"aliases":{"en":["Kingston, Jamaica","Kingston, Surrey"]}}
-{"id":"Q34820","labels":{"en":"Santo Domingo"},"types":["city"],"aliases":{"en":["San Domingo","Santo Domingo de Guzman","Santo Domingo, Dominican Republic"]}}
-{"id":"Q35178","labels":{"en":"Kuwait City"},"types":["city"],"aliases":{"en":["Al Kuwait","Kuwait","al-Kuwait"]}}
-{"id":"Q35381","labels":{"en":"Colombo"},"types":["city"]}
-{"id":"Q36168","labels":{"en":"Bridgetown"},"types":["city"]}
-{"id":"Q36260","labels":{"en":"Apia"},"types":["city"]}
-{"id":"Q36262","labels":{"en":"St. John's"},"types":["city"],"aliases":{"en":["Saint John's, Antigua and Barbuda","St John's","St. John's City"]}}
-{"id":"Q36281","labels":{"en":"Roseau"},"types":["city"]}
-{"id":"Q36526","labels":{"en":"Port Moresby"},"types":["city"]}
-{"id":"Q37400","labels":{"en":"Naypyidaw"},"types":["city"],"aliases":{"en":["Nay Pyi Taw","Naypyitaw"]}}
-{"id":"Q37701","labels":{"en":"Bloemfontein"},"types":["city"]}
-{"id":"Q37806","labels":{"en":"Port Vila"},"types":["city"]}
-{"id":"Q38807","labels":{"en":"Suva"},"types":["city"]}
-{"id":"Q38834","labels":{"en":"Nukuʻalofa"},"types":["city"],"aliases":{"en":["Nuku'alofa"]}}
-{"id":"Q39178","labels":{"en":"Port of Spain"},"types":["city"],"aliases":{"en":["Cumucurapo","Port-of-Spain","Puerto España"]}}
-{"id":"Q40921","labels":{"en":"Honiara"},"types":["city"]}
-{"id":"Q41295","labels":{"en":"Basseterre"},"types":["city"]}
-{"id":"Q41474","labels":{"en":"Kingstown"},"types":["city"]}
-{"id":"Q41547","labels":{"en":"St. George's"},"types":["city"],"aliases":{"en":["Saint George's","Saint George's, Grenada","Saint Georges","Saint Georges, Granada","St Georges, Granada","St. George's, Grenada"]}}
-{"id":"Q41699","labels":{"en":"Castries"},"types":["city"]}
-{"id":"Q41963","labels":{"en":"Sri Jayawardenepura Kotte"},"types":["city"],"aliases":{"en":["Kotte"]}}
-{"id":"Q42751","labels":{"en":"Palikir"},"types":["city"]}
-{"id":"Q101418","labels":{"en":"Lobamba"},"types":["city"]}
-{"id":"Q131233","labels":{"en":"South Tarawa"},"types":["city"]}
-{"id":"Q131694","labels":{"en":"Aden"},"types":["city"]}
-{"id":"Q167551","labels":{"en":"Gitega"},"types":["city"],"aliases":{"en":["Kitega"]}}
-{"id":"Q515229","labels":{"en":"Ngerulmud"},"types":["city"]}
-{"id":"Q1140136","labels":{"en":"Ciudad de la Paz"},"types":["city"],"aliases":{"en":["Oyala"]}}
+{"id":"Q15","labels":{"en":"Africa"},"types":["continent"],"aliases":{"en":["African continent"]},"coordinate":{"lat":21.09375,"lon":7.1881}}
+{"id":"Q18","labels":{"en":"South America"},"types":["continent"],"aliases":{"en":["S America","S. America","South American continent"]},"coordinate":{"lat":-21,"lon":-59}}
+{"id":"Q46","labels":{"en":"Europe"},"types":["continent"],"aliases":{"en":["European Continent","European Peninsula","European continent","Old Continent","The Old Continent"]},"coordinate":{"lat":48.690959,"lon":9.14062}}
+{"id":"Q48","labels":{"en":"Asia"},"types":["continent"],"aliases":{"en":["Asian continent","Continental Asia"]},"coordinate":{"lat":43.681111111111115,"lon":87.33111111111111}}
+{"id":"Q49","labels":{"en":"North America"},"types":["continent"],"aliases":{"en":["003 (UN M.49 code)","Amérique du Nord","N Am","N America","N america","N. America","NA","NOAM","NoAm","North Am","North Amer","North America (Americas)","North America (continent)","North America (region)","North American Continent","North American continent","North america","North and Central America","North-America","Turtle Island"]},"coordinate":{"lat":47,"lon":-105}}
+{"id":"Q51","labels":{"en":"Antarctica"},"types":["continent"],"coordinate":{"lat":-90,"lon":0}}
+{"id":"Q55643","labels":{"en":"Oceania"},"types":["continent"],"aliases":{"en":["Australia and Oceania","Moana Oceania","Oceania and Australia"]},"coordinate":{"lat":-18.5102,"lon":139.3671}}
+{"id":"Q16","labels":{"en":"Canada"},"types":["country"],"aliases":{"en":["Can"]},"coordinate":{"lat":56,"lon":-109}}
+{"id":"Q17","labels":{"en":"Japan"},"types":["country"],"aliases":{"en":["Iapan","Iapon","Land of Rising Sun","Land of the Rising Sun","Nihon-koku","Nippon-koku","State of Japan"]},"coordinate":{"lat":35,"lon":136}}
+{"id":"Q20","labels":{"en":"Norway"},"types":["country"],"aliases":{"en":["Kingdom of Norway"]},"coordinate":{"lat":59.93333333333333,"lon":10.683333333333334}}
+{"id":"Q27","labels":{"en":"Ireland"},"types":["country"],"aliases":{"en":["Hibernia","Irish Republic","Southern Ireland"]},"coordinate":{"lat":53,"lon":-8}}
+{"id":"Q28","labels":{"en":"Hungary"},"types":["country"],"coordinate":{"lat":47,"lon":19}}
+{"id":"Q29","labels":{"en":"Spain"},"types":["country"],"aliases":{"en":["Kingdom of Spain"]},"coordinate":{"lat":40.2,"lon":-3.5}}
+{"id":"Q30","labels":{"en":"United States"},"types":["country"],"aliases":{"en":["Merica","Murica","U. S.","U. S. A.","U.S. of America","US of A","US of America","the States","the U.S.","the U.S. of A","the U.S. of America","the U.S.A.","the US","the US of A","the US of America","the USA","the United States","the United States of America"]},"coordinate":{"lat":39.828175,"lon":-98.5795}}
+{"id":"Q31","labels":{"en":"Belgium"},"types":["country"],"aliases":{"en":["Kingdom of Belgium"]},"coordinate":{"lat":50.641111111111,"lon":4.6680555555556}}
+{"id":"Q32","labels":{"en":"Luxembourg"},"types":["country"],"aliases":{"en":["Grand Duchy of Luxembourg"]},"coordinate":{"lat":49.77,"lon":6.13}}
+{"id":"Q33","labels":{"en":"Finland"},"types":["country"],"aliases":{"en":["Finnia","Land of Thousand Lakes","Republic of Finland","Republiken Finland","Suomen tasavalta","fi"]},"coordinate":{"lat":65,"lon":27}}
+{"id":"Q34","labels":{"en":"Sweden"},"types":["country"],"aliases":{"en":["Kingdom of Sweden","Swedish Kingdom","se"]},"coordinate":{"lat":61,"lon":15}}
+{"id":"Q36","labels":{"en":"Poland"},"types":["country"],"aliases":{"en":["Republic of Poland"]},"coordinate":{"lat":52,"lon":19}}
+{"id":"Q37","labels":{"en":"Lithuania"},"types":["country"],"aliases":{"en":["Republic of Lithuania"]},"coordinate":{"lat":55.2,"lon":24}}
+{"id":"Q38","labels":{"en":"Italy"},"types":["country"],"aliases":{"en":["Italian Republic","Republic of Italy"]},"coordinate":{"lat":42.5,"lon":12.5}}
+{"id":"Q39","labels":{"en":"Switzerland"},"types":["country"],"aliases":{"en":["Confoederatio Helvetica","Swiss","Swiss Confederation"]},"coordinate":{"lat":46.798562,"lon":8.231973}}
+{"id":"Q40","labels":{"en":"Austria"},"types":["country"],"aliases":{"en":["Republic of Austria"]},"coordinate":{"lat":48,"lon":14}}
+{"id":"Q41","labels":{"en":"Greece"},"types":["country"],"aliases":{"en":["Ellada","Greek Republic","Hellas","Hellas, Greece","Hellenic Republic","el","gr"]},"coordinate":{"lat":38.5,"lon":23}}
+{"id":"Q43","labels":{"en":"Turkey"},"types":["country"],"aliases":{"en":["Republic of Turkey","Republic of Türkiye"]},"coordinate":{"lat":39,"lon":36}}
+{"id":"Q45","labels":{"en":"Portugal"},"types":["country"],"aliases":{"en":["POR","PRT","Portuguese Republic"]},"coordinate":{"lat":38.7,"lon":-9.183333333333334}}
+{"id":"Q77","labels":{"en":"Uruguay"},"types":["country"],"aliases":{"en":["Eastern Republic of Uruguay","Oriental Republic of Uruguay","URU","uy"]},"coordinate":{"lat":-33,"lon":-56}}
+{"id":"Q79","labels":{"en":"Egypt"},"types":["country"],"aliases":{"en":["Arab Rep. Egypt","Arab Republic of Egypt","Misr","Rep. Egypt","Republic of Egypt"]},"coordinate":{"lat":27,"lon":29}}
+{"id":"Q96","labels":{"en":"Mexico"},"types":["country"],"aliases":{"en":["MXN","Mexican Republic","Mexican United States","US of M","United Mexican States","United States of Mexico","mx"]},"coordinate":{"lat":23,"lon":-102}}
+{"id":"Q114","labels":{"en":"Kenya"},"types":["country"],"aliases":{"en":["Republic of Kenya","ke"]},"coordinate":{"lat":0.1,"lon":38}}
+{"id":"Q115","labels":{"en":"Ethiopia"},"types":["country"],"aliases":{"en":["Federal Democratic Republic of Ethiopia","et"]},"coordinate":{"lat":9,"lon":40}}
+{"id":"Q117","labels":{"en":"Ghana"},"types":["country"],"coordinate":{"lat":7.9465,"lon":-1.0232}}
+{"id":"Q142","labels":{"en":"France"},"types":["country"],"aliases":{"en":["French Republic"]},"coordinate":{"lat":47,"lon":2}}
+{"id":"Q145","labels":{"en":"United Kingdom"},"types":["country"],"aliases":{"en":["G B","Great Britain","Great Britain and Northern Ireland","U K","United Kingdom of Great Britain and Northern Ireland","the UK","the United Kingdom","the United Kingdom of Great Britain and Northern Ireland"]},"coordinate":{"lat":54.6,"lon":-2}}
+{"id":"Q148","labels":{"en":"People's Republic of China"},"types":["country"],"aliases":{"en":["China PR","Communist China","P.R.C.","PR China","Red China","The PRC","cn","the People's Republic of China"]},"coordinate":{"lat":35.844722222222224,"lon":103.45194444444445}}
+{"id":"Q155","labels":{"en":"Brazil"},"types":["country"],"aliases":{"en":["Federative Republic of Brazil"]},"coordinate":{"lat":-14,"lon":-53}}
+{"id":"Q159","labels":{"en":"Russia"},"types":["country"],"aliases":{"en":["Federation of Russia","Russian Federation"]},"coordinate":{"lat":66.41666666666667,"lon":94.25}}
+{"id":"Q183","labels":{"en":"Germany"},"types":["country"],"aliases":{"en":["BRD","DE","DEU","FRG","Federal Republic of Germany"]},"coordinate":{"lat":51,"lon":10}}
+{"id":"Q184","labels":{"en":"Belarus"},"types":["country"],"aliases":{"en":["Belorussia","Bielaruś","Bielorussia","Byeloruss","Byelorussia","Republic of Belarus","Respublika Belarus'","Respublika Bielaruś","White Russia","White Ruthenia","by"]},"coordinate":{"lat":53.528333333333,"lon":28.046666666667}}
+{"id":"Q189","labels":{"en":"Iceland"},"types":["country"],"aliases":{"en":["Icelandic republic","Isl.","Republic of Iceland","Ysland"]},"coordinate":{"lat":65,"lon":-19}}
+{"id":"Q191","labels":{"en":"Estonia"},"types":["country"],"aliases":{"en":["Eesti Vabariik","Estland","Republic of Estonia","ee"]},"coordinate":{"lat":59,"lon":26}}
+{"id":"Q211","labels":{"en":"Latvia"},"types":["country"],"aliases":{"en":["Latveja","Latvejas Republika","Latvian Republic","Latvija","Latvijas Republika","Leţmо̄","Leţmо̄ Vabāmо̄","Republic of Latvia","lv"]},"coordinate":{"lat":57,"lon":25}}
+{"id":"Q212","labels":{"en":"Ukraine"},"types":["country"],"aliases":{"en":["Ukr.","Ukraina","Ukrainia","Ukraïna"]},"coordinate":{"lat":49,"lon":32}}
+{"id":"Q213","labels":{"en":"Czech Republic"},"types":["country"],"aliases":{"en":["Czechia"]},"coordinate":{"lat":50,"lon":15}}
+{"id":"Q214","labels":{"en":"Slovakia"},"types":["country"],"aliases":{"en":["SK","SVK","Slovak Republic"]},"coordinate":{"lat":48.7,"lon":19.7}}
+{"id":"Q215","labels":{"en":"Slovenia"},"types":["country"],"aliases":{"en":["Republic of Slovenia","Slovenija","si","slo","svn"]},"coordinate":{"lat":46,"lon":15}}
+{"id":"Q217","labels":{"en":"Moldova"},"types":["country"],"aliases":{"en":["Moldavia","Republic of Moldova","Republica Moldova"]},"coordinate":{"lat":47.25,"lon":28.516667}}
+{"id":"Q218","labels":{"en":"Romania"},"types":["country"],"aliases":{"en":["Roumania","Rumania"]},"coordinate":{"lat":46,"lon":25}}
+{"id":"Q219","labels":{"en":"Bulgaria"},"types":["country"],"aliases":{"en":["Bulgarian Republic","Republic of Bulgaria"]},"coordinate":{"lat":42.75,"lon":25.5}}
+{"id":"Q221","labels":{"en":"North Macedonia"},"types":["country"],"aliases":{"en":["FYR Macedonia","Former Yugoslav Republic of Macedonia","Republic of Macedonia","Republic of North Macedonia"]},"coordinate":{"lat":41.65,"lon":21.716667}}
+{"id":"Q222","labels":{"en":"Albania"},"types":["country"],"aliases":{"en":["People's Republic of Albania","People's Socialist Republic of Albania","Republic of Albania","Republika Popullore Socialiste e Shqiperise","Republika Popullore e Shqiperise","Shqipërisë"]},"coordinate":{"lat":41,"lon":20}}
+{"id":"Q224","labels":{"en":"Croatia"},"types":["country"],"aliases":{"en":["CRO","HR","HRV","RH","Republic of Croatia"]},"coordinate":{"lat":45.25,"lon":15.466667}}
+{"id":"Q225","labels":{"en":"Bosnia and Herzegovina"},"types":["country"],"aliases":{"en":["Bosnia & Herzegovina","Bosnia and Hercegovina","Bosnia-Herzegovina","ba"]},"coordinate":{"lat":44,"lon":18}}
+{"id":"Q227","labels":{"en":"Azerbaijan"},"types":["country"],"aliases":{"en":["Republic of Azerbaijan"]},"coordinate":{"lat":40.3,"lon":47.7}}
+{"id":"Q228","labels":{"en":"Andorra"},"types":["country"],"aliases":{"en":["Principality of Andorra","Principality of the Valleys of Andorra"]},"coordinate":{"lat":42.558333333333,"lon":1.5552777777778}}
+{"id":"Q229","labels":{"en":"Cyprus"},"types":["country"],"aliases":{"en":["Greek Administration of Southern Cyprus","Greek Cypriot State","Republic of Cyprus"]},"coordinate":{"lat":35,"lon":33}}
+{"id":"Q230","labels":{"en":"Georgia"},"types":["country"],"aliases":{"en":["Georgia (Sakartvelo)","Georgia (country)","Republic of Georgia","Sakartvelo"]},"coordinate":{"lat":42,"lon":44}}
+{"id":"Q232","labels":{"en":"Kazakhstan"},"types":["country"],"aliases":{"en":["Qazaqstan","Republic of Kazakhstan","Republic of Qazaqstan","kz"]},"coordinate":{"lat":48,"lon":68}}
+{"id":"Q233","labels":{"en":"Malta"},"types":["country"],"aliases":{"en":["Republic of Malta"]},"coordinate":{"lat":35.9,"lon":14.4}}
+{"id":"Q235","labels":{"en":"Monaco"},"types":["country"],"aliases":{"en":["Fort-Hercule","Mùnegu","Principality and Diocese of Monaco","Principality of Monaco","Principato di Monaco","Principatu de Mu̍negu","Principauté de Monaco","Prinçipatu de Mùnegu","mc"]},"coordinate":{"lat":43.73111111111111,"lon":7.42}}
+{"id":"Q236","labels":{"en":"Montenegro"},"types":["country"],"coordinate":{"lat":42.766667,"lon":19.216667}}
+{"id":"Q238","labels":{"en":"San Marino"},"types":["country"],"aliases":{"en":["Most Serene Republic of San Marino","sm"]},"coordinate":{"lat":43.93333333333333,"lon":12.466666666666667}}
+{"id":"Q241","labels":{"en":"Cuba"},"types":["country"],"aliases":{"en":["Republic of Cuba","cu"]},"coordinate":{"lat":22,"lon":-79.5}}
+{"id":"Q242","labels":{"en":"Belize"},"types":["country"],"aliases":{"en":["bz"]},"coordinate":{"lat":17.066666666666666,"lon":-88.7}}
+{"id":"Q244","labels":{"en":"Barbados"},"types":["country"],"aliases":{"en":["BAR","Barbadoes","bb"]},"coordinate":{"lat":13.17,"lon":-59.5525}}
+{"id":"Q252","labels":{"en":"Indonesia"},"types":["country"],"aliases":{"en":["Republic of Indonesia","id"]},"coordinate":{"lat":-2,"lon":118}}
+{"id":"Q258","labels":{"en":"South Africa"},"types":["country"],"aliases":{"en":["R.S.A.","RSA","Republic of South Africa","SA","zaf"]},"coordinate":{"lat":-29,"lon":24}}
+{"id":"Q262","labels":{"en":"Algeria"},"types":["country"],"aliases":{"en":["Djazaïr","Dzayer","People's Democratic Republic of Algeria"]},"coordinate":{"lat":28,"lon":1}}
+{"id":"Q265","labels":{"en":"Uzbekistan"},"types":["country"],"aliases":{"en":["Republic of Uzbekistan"]},"coordinate":{"lat":41,"lon":66}}
+{"id":"Q298","labels":{"en":"Chile"},"types":["country"],"aliases":{"en":["CHI","Republic of Chile"]},"coordinate":{"lat":-33,"lon":-71}}
+{"id":"Q334","labels":{"en":"Singapore"},"types":["country"],"aliases":{"en":["Garden City","Lion City","Republic of Singapore","S'pore","SG","SGP","SIN","Singapore City","sg"]},"coordinate":{"lat":1.3,"lon":103.8}}
+{"id":"Q347","labels":{"en":"Liechtenstein"},"types":["country"],"aliases":{"en":["FL","Principality of Liechtenstein","li"]},"coordinate":{"lat":47.145,"lon":9.553889}}
+{"id":"Q398","labels":{"en":"Bahrain"},"types":["country"],"aliases":{"en":["Bahrein Islands","Dawlat al-Bahrain","ISO 3166-1:BH","Kingdom of Bahrain","Mamlakat al-Baḥrayn","bh"]},"coordinate":{"lat":26.0675,"lon":50.551111}}
+{"id":"Q399","labels":{"en":"Armenia"},"types":["country"],"aliases":{"en":["Hayastan","Hayastani Hanrapetut’yun","Republic of Armenia","Հայաստան"]},"coordinate":{"lat":40.383333,"lon":44.95}}
+{"id":"Q403","labels":{"en":"Serbia"},"types":["country"],"aliases":{"en":["Republic of Serbia"]},"coordinate":{"lat":43.95,"lon":20.933333333333}}
+{"id":"Q408","labels":{"en":"Australia"},"types":["country"],"aliases":{"en":["'Straya","Aussieland","Commonwealth of Australia","Down Under","New Holland","New Hollandia","Nova Hollandia","Oz","Stralia","Straya","Stria","The Commonwealth of Australia"]},"coordinate":{"lat":-25,"lon":133}}
+{"id":"Q414","labels":{"en":"Argentina"},"types":["country"],"aliases":{"en":["Argentine Republic","Republic of Argentina","Republica Argentina"]},"coordinate":{"lat":-34,"lon":-64}}
+{"id":"Q419","labels":{"en":"Peru"},"types":["country"],"aliases":{"en":["Republic of Peru","Republica del Peru","pe","per"]},"coordinate":{"lat":-9.4,"lon":-76}}
+{"id":"Q423","labels":{"en":"North Korea"},"types":["country"],"aliases":{"en":["DPR Korea","DPRK","Democratic People's Republic of Korea","N. Korea","kp"]},"coordinate":{"lat":40,"lon":127}}
+{"id":"Q424","labels":{"en":"Cambodia"},"types":["country"],"aliases":{"en":["Camboya","Campuchia","Kambodzha","Kamboja","Kampuchea","Kingdom of Cambodia","kh"]},"coordinate":{"lat":12.5,"lon":105}}
+{"id":"Q574","labels":{"en":"Timor-Leste"},"types":["country"],"aliases":{"en":["Democratic Republic of Timor-Leste","East Timor","TL"]},"coordinate":{"lat":-8.966667,"lon":125.75}}
+{"id":"Q657","labels":{"en":"Chad"},"types":["country"],"aliases":{"en":["CHA","GUM","Republic of Chad","td"]},"coordinate":{"lat":15.466667,"lon":19.4}}
+{"id":"Q664","labels":{"en":"New Zealand"},"types":["country"],"aliases":{"en":["Aotearoa New Zealand","Dominion of New Zealand","nz"]},"coordinate":{"lat":-41.2,"lon":174}}
+{"id":"Q668","labels":{"en":"India"},"types":["country"],"aliases":{"en":["Al Hind","Bharat Ganarajya","Bharata","Bharatvarsh","Hindoostan","Hindustan","Indostan","Republic of India","Tenjiku","Tianzhu"]},"coordinate":{"lat":22.8,"lon":83}}
+{"id":"Q672","labels":{"en":"Tuvalu"},"types":["country"],"aliases":{"en":["Ellice Islands","TUV","tv"]},"coordinate":{"lat":-7.475,"lon":178.005556}}
+{"id":"Q678","labels":{"en":"Tonga"},"types":["country"],"aliases":{"en":["Friendly Islands","Kingdom of Tonga","TGA","Tonga Islands","to"]},"coordinate":{"lat":-20.587778,"lon":-174.810278}}
+{"id":"Q683","labels":{"en":"Samoa"},"types":["country"],"aliases":{"en":["Independent State of Samoa","SAM","Western Samoa","ws"]},"coordinate":{"lat":-13.745,"lon":-172.2175}}
+{"id":"Q685","labels":{"en":"Solomon Islands"},"types":["country"],"aliases":{"en":["SOL","sb","the Solomon Islands"]},"coordinate":{"lat":-9.4666666666667,"lon":159.81666666667}}
+{"id":"Q686","labels":{"en":"Vanuatu"},"types":["country"],"aliases":{"en":["Republic of Vanuatu","VAN","van","vu","vut"]},"coordinate":{"lat":-16.633330555556,"lon":168.01666944444}}
+{"id":"Q691","labels":{"en":"Papua New Guinea"},"types":["country"],"aliases":{"en":["Independent State of Papua New Guinea","PNG","pg"]},"coordinate":{"lat":-6.3,"lon":147}}
+{"id":"Q695","labels":{"en":"Palau"},"types":["country"],"aliases":{"en":["Belau","Peeloo","Pelew","Pelew islands","Pellew","Republic of Belau","Republic of Palau","pw"]},"coordinate":{"lat":7.466667,"lon":134.55}}
+{"id":"Q697","labels":{"en":"Nauru"},"types":["country"],"aliases":{"en":["Naoero","Pleasant Island","Republic of Nauru","nr"]},"coordinate":{"lat":-0.5275,"lon":166.935}}
+{"id":"Q702","labels":{"en":"Federated States of Micronesia"},"types":["country"],"aliases":{"en":["FSM","Fed. Sts. Micronesia","Fed. Sts. of Micronesia","Federated States of Micronesia, FSM","Micronesia","fm"]},"coordinate":{"lat":6.9166666666667,"lon":158.18333333333}}
+{"id":"Q709","labels":{"en":"Marshall Islands"},"types":["country"],"aliases":{"en":["Republic of the Marshall Islands","mh"]},"coordinate":{"lat":9.82,"lon":169.29}}
+{"id":"Q710","labels":{"en":"Kiribati"},"types":["country"],"aliases":{"en":["Republic of Kiribati","ki"]},"coordinate":{"lat":1.4666666666667,"lon":173.03333333333}}
+{"id":"Q711","labels":{"en":"Mongolia"},"types":["country"],"aliases":{"en":["Mongol State","State of Mongolia"]},"coordinate":{"lat":46,"lon":105}}
+{"id":"Q712","labels":{"en":"Fiji"},"types":["country"],"aliases":{"en":["Fijī","Fijī Gaṇarājya","Matanitu Tugalala o Viti","Republic of Fiji","Republic of the Fiji Islands","Viti","fj"]},"coordinate":{"lat":-18,"lon":178}}
+{"id":"Q717","labels":{"en":"Venezuela"},"types":["country"],"aliases":{"en":["BR Venezuela","Bolivarian Republic of Venezuela","Republic of Venezuela"]},"coordinate":{"lat":8,"lon":-67}}
+{"id":"Q730","labels":{"en":"Suriname"},"types":["country"],"aliases":{"en":["Dutch Guiana","Republic of Surinam","Republic of Suriname","Surinam","Surrinam","sr"]},"coordinate":{"lat":4,"lon":-56}}
+{"id":"Q733","labels":{"en":"Paraguay"},"types":["country"],"aliases":{"en":["Heart of South America","Republic of Paraguay"]},"coordinate":{"lat":-23.5,"lon":-58}}
+{"id":"Q734","labels":{"en":"Guyana"},"types":["country"],"aliases":{"en":["Co-operative Republic of Guyana","Republic of Guyana","gy"]},"coordinate":{"lat":5.733333,"lon":-59.316667}}
+{"id":"Q736","labels":{"en":"Ecuador"},"types":["country"],"aliases":{"en":["Republic of Ecuador","Republic of Equator","Republic of the Equator","The Ecuadorian State"]},"coordinate":{"lat":-1,"lon":-78}}
+{"id":"Q739","labels":{"en":"Colombia"},"types":["country"],"aliases":{"en":["Colombiá","Republic of Colombia","The Republic of Colombia"]},"coordinate":{"lat":4,"lon":-73.25}}
+{"id":"Q750","labels":{"en":"Bolivia"},"types":["country"],"aliases":{"en":["Bolivia (Plurinational State of)","Plurinational State of Bolivia","Republic of Bolivia"]},"coordinate":{"lat":-17.056869611111,"lon":-64.991228611111}}
+{"id":"Q754","labels":{"en":"Trinidad and Tobago"},"types":["country"],"aliases":{"en":["Republic of Trinidad and Tobago","Trinidad & Tobago","tt"]},"coordinate":{"lat":10.666666666667,"lon":-61.516666666667}}
+{"id":"Q757","labels":{"en":"Saint Vincent and the Grenadines"},"types":["country"],"aliases":{"en":["Saint Vincent","St Vincent","St Vincent and the Grenadines","St. Vincent","St. Vincent and the Grenadines","vc","vct"]},"coordinate":{"lat":13.0139,"lon":-61.2296}}
+{"id":"Q760","labels":{"en":"Saint Lucia"},"types":["country"],"aliases":{"en":["Hewanorra","Iyonola","St Lucia","St. Lucia","lc","lca"]},"coordinate":{"lat":13.883333333333333,"lon":-60.96666666666667}}
+{"id":"Q763","labels":{"en":"Saint Kitts and Nevis"},"types":["country"],"aliases":{"en":["Federation of Saint Christopher and Nevis","Federation of Saint Kitts and Nevis","Kitts & Nevis","Kitts and Nevis","SKN","Saint Christopher and Nevis","St Kitts & Nevis","St Kitts and Nevis","St. Kitts & Nevis","St. Kitts and Nevis"]},"coordinate":{"lat":17.27166666666667,"lon":-62.666669444444445}}
+{"id":"Q766","labels":{"en":"Jamaica"},"types":["country"],"aliases":{"en":["Commonwealth of Jamaica","JA"]},"coordinate":{"lat":18.18,"lon":-77.4}}
+{"id":"Q769","labels":{"en":"Grenada"},"types":["country"],"aliases":{"en":["GRN","gd"]},"coordinate":{"lat":12.1,"lon":-61.7}}
+{"id":"Q774","labels":{"en":"Guatemala"},"types":["country"],"aliases":{"en":["GT","GTM","Republic of Guatemala","gt"]},"coordinate":{"lat":15.5,"lon":-90.25}}
+{"id":"Q778","labels":{"en":"The Bahamas"},"types":["country"],"aliases":{"en":["Bahama Islands","Bahamas","Bahamas, The","Commonwealth of The Bahamas","Commonwealth of the Bahamas","bs"]},"coordinate":{"lat":25,"lon":-77.4}}
+{"id":"Q781","labels":{"en":"Antigua and Barbuda"},"types":["country"],"aliases":{"en":["Antigua & Barbuda","Antigua-Barbuda","Antigua–Barbuda"]},"coordinate":{"lat":17.116666666667,"lon":-61.85}}
+{"id":"Q783","labels":{"en":"Honduras"},"types":["country"],"aliases":{"en":["HON","Honduran Republic","Republic of Honduras","hn"]},"coordinate":{"lat":14.633333,"lon":-86.816667}}
+{"id":"Q784","labels":{"en":"Dominica"},"types":["country"],"aliases":{"en":["Commonwealth of Dominica","DOM","Island of Dominica","The Commonwealth of Dominica","Wai'tu kubuli","Wai‘tu kubuli","dm"]},"coordinate":{"lat":15.416667,"lon":-61.333333}}
+{"id":"Q786","labels":{"en":"Dominican Republic"},"types":["country"],"aliases":{"en":["DomRep","Dominicana","RD","Republica Dominicana","República Dominicana"]},"coordinate":{"lat":18.8,"lon":-70.2}}
+{"id":"Q790","labels":{"en":"Haiti"},"types":["country"],"aliases":{"en":["Ayiti","HAI","Haitian Republic","Hayti","Republic of Haiti","ht"]},"coordinate":{"lat":19,"lon":-72.8}}
+{"id":"Q792","labels":{"en":"El Salvador"},"types":["country"],"aliases":{"en":["ESA","Republic of El Salvador","Salvador","sv"]},"coordinate":{"lat":13.668889,"lon":-88.866111}}
+{"id":"Q794","labels":{"en":"Iran"},"types":["country"],"aliases":{"en":["IRI","Islamic Rep. Iran","Islamic Republic of Iran","ir"]},"coordinate":{"lat":32,"lon":53}}
+{"id":"Q796","labels":{"en":"Iraq"},"types":["country"],"aliases":{"en":["Republic of Iraq","iq"]},"coordinate":{"lat":33,"lon":43}}
+{"id":"Q800","labels":{"en":"Costa Rica"},"types":["country"],"aliases":{"en":["Republic of Costa Rica","cr"]},"coordinate":{"lat":10,"lon":-84}}
+{"id":"Q801","labels":{"en":"Israel"},"types":["country"],"aliases":{"en":["ISR","State of Israel","Yisrael","il"]},"coordinate":{"lat":31,"lon":35}}
+{"id":"Q804","labels":{"en":"Panama"},"types":["country"],"aliases":{"en":["Republic of Panama","pa"]},"coordinate":{"lat":8.616667,"lon":-80.366667}}
+{"id":"Q805","labels":{"en":"Yemen"},"types":["country"],"aliases":{"en":["Rep. Yemen","Republic of Yemen","ye"]},"coordinate":{"lat":15.5,"lon":48}}
+{"id":"Q810","labels":{"en":"Jordan"},"types":["country"],"aliases":{"en":["Giordania","HKJ","Hashemite Kingdom of Jordan","ISO 3166-1:JO","Kingdom of Jordan","State of Jordan","Yarden"]},"coordinate":{"lat":31.2,"lon":36.5}}
+{"id":"Q811","labels":{"en":"Nicaragua"},"types":["country"],"aliases":{"en":["NCA","NI","NIC","Republic of Nicaragua","ni"]},"coordinate":{"lat":13,"lon":-85}}
+{"id":"Q813","labels":{"en":"Kyrgyzstan"},"types":["country"],"aliases":{"en":["Kyrgyz Republic","kg"]},"coordinate":{"lat":41,"lon":75}}
+{"id":"Q817","labels":{"en":"Kuwait"},"types":["country"],"aliases":{"en":["State of Kuwait","kw"]},"coordinate":{"lat":29.166667,"lon":47.6}}
+{"id":"Q819","labels":{"en":"Laos"},"types":["country"],"aliases":{"en":["Lao PDR","Lao People's Democratic Republic","la"]},"coordinate":{"lat":18.2,"lon":104.1}}
+{"id":"Q822","labels":{"en":"Lebanon"},"types":["country"],"aliases":{"en":["Lebanese Republic","Lubnan","Republic of Lebanon","State of Lebanon","lb"]},"coordinate":{"lat":33.833333,"lon":35.766667}}
+{"id":"Q826","labels":{"en":"Maldives"},"types":["country"],"aliases":{"en":["MDV","Republic of Maldives","mv"]},"coordinate":{"lat":4.18,"lon":73.51}}
+{"id":"Q833","labels":{"en":"Malaysia"},"types":["country"],"aliases":{"en":["Federation of Malaysia","Malaysia Federation"]},"coordinate":{"lat":3.7805111,"lon":102.31436166666667}}
+{"id":"Q836","labels":{"en":"Myanmar"},"types":["country"],"aliases":{"en":["Republic of the Union of Myanmar","Union of Burma"]},"coordinate":{"lat":22,"lon":96}}
+{"id":"Q837","labels":{"en":"Nepal"},"types":["country"],"aliases":{"en":["Bal-bo","Bal-po'i yul","Bal-yul","Balbo","Balpo","Balpo-yul","Federal Democratic Republic of Nepal","Naipala","Naipál","Naipála","Ne-pel","Necbal","Nehpal","Nei-pal","Nekbal","Nekpal","Nepall","Nepaul","Nepál","Nercerri","Ni-po-lo","Ni-po-louo","Niepal","Nipal","Népaal","Népál","Pa-eul-pou","Pa-le-pou","Pa-lo-pou","Pai-pou","Palpa","Palpou","Paï-pou"]},"coordinate":{"lat":28,"lon":84}}
+{"id":"Q842","labels":{"en":"Oman"},"types":["country"],"aliases":{"en":["Sultanate of Oman","Uman","om","omn"]},"coordinate":{"lat":21,"lon":57}}
+{"id":"Q843","labels":{"en":"Pakistan"},"types":["country"],"aliases":{"en":["Hồi Quốc","Islamic Republic of Pakistan","Republic of Pakistan","Tây Hồi","pk"]},"coordinate":{"lat":30,"lon":71}}
+{"id":"Q846","labels":{"en":"Qatar"},"types":["country"],"aliases":{"en":["State of Qatar","qa","qat"]},"coordinate":{"lat":25.269535,"lon":51.212767}}
+{"id":"Q851","labels":{"en":"Saudi Arabia"},"types":["country"],"aliases":{"en":["Kingdom of Saudi Arabia","Saudi"]},"coordinate":{"lat":23.716667,"lon":44.116667}}
+{"id":"Q854","labels":{"en":"Sri Lanka"},"types":["country"],"aliases":{"en":["Ceylan","Democratic Socialist Republic of Sri Lanka","Lanka, Sri","SRI","Serendib","Srilanka","Taprobane","ce","lk","lke","sri"]},"coordinate":{"lat":7,"lon":81}}
+{"id":"Q858","labels":{"en":"Syria"},"types":["country"],"aliases":{"en":["Surya","Syrian Arab Republic"]},"coordinate":{"lat":35.216667,"lon":38.583333}}
+{"id":"Q863","labels":{"en":"Tajikistan"},"types":["country"],"aliases":{"en":["Republic of Tajikistan","tj"]},"coordinate":{"lat":38.583333,"lon":71.366667}}
+{"id":"Q869","labels":{"en":"Thailand"},"types":["country"],"aliases":{"en":["Kingdom of Siam","Kingdom of Thailand","Prathet Thai","Ratcha-anachak Thai","Thai","The Kingdom of Siam","The Kingdom of Thailand","th"]},"coordinate":{"lat":14,"lon":101}}
+{"id":"Q874","labels":{"en":"Turkmenistan"},"types":["country"],"aliases":{"en":["TKM","Turkmenia","tm"]},"coordinate":{"lat":39,"lon":60}}
+{"id":"Q878","labels":{"en":"United Arab Emirates"},"types":["country"],"aliases":{"en":["Emirates","U.A.E.","ae","the Emirates","the U.A.E.","the UAE","the United Arab Emirates"]},"coordinate":{"lat":24.4,"lon":54.3}}
+{"id":"Q881","labels":{"en":"Vietnam"},"types":["country"],"aliases":{"en":["SRV","Socialist Republic of Viet Nam","Socialist Republic of Vietnam","VIE","VN","VNM","Viet Nam","Việt Nam"]},"coordinate":{"lat":16,"lon":108}}
+{"id":"Q884","labels":{"en":"South Korea"},"types":["country"],"aliases":{"en":["Choson","Daehan Minguk","Daehanminguk","Hanguk","Korea (South)","Korea Republic","Rep. Korea","Republic of Korea","S. Korea","Silla"]},"coordinate":{"lat":36,"lon":128}}
+{"id":"Q889","labels":{"en":"Afghanistan"},"types":["country"],"aliases":{"en":["Affghanistan","Affghanisthan","Affghaunistan","Afghania","Afghanisthan","Afghaunistan","Afghaunistaun"]},"coordinate":{"lat":33,"lon":66}}
+{"id":"Q902","labels":{"en":"Bangladesh"},"types":["country"],"aliases":{"en":["Bangla Desh","Country of Bengal","Land of Bengal","People's Republic of Bangladesh","bd"]},"coordinate":{"lat":24.016666666666666,"lon":89.86666666666666}}
+{"id":"Q912","labels":{"en":"Mali"},"types":["country"],"aliases":{"en":["Republic of Mali","ml"]},"coordinate":{"lat":17,"lon":-4}}
+{"id":"Q916","labels":{"en":"Angola"},"types":["country"],"aliases":{"en":["Ngola","Republic of Angola","ao"]},"coordinate":{"lat":-12.35,"lon":17.35}}
+{"id":"Q917","labels":{"en":"Bhutan"},"types":["country"],"aliases":{"en":["BHU","Kingdom of Bhutan","bt"]},"coordinate":{"lat":27.45,"lon":90.5}}
+{"id":"Q921","labels":{"en":"Brunei"},"types":["country"],"aliases":{"en":["BRN","BRU","Brunei Darussalam","Nation of Brunei, the Abode of Peace","Negara Brunei Darussalam","bn"]},"coordinate":{"lat":4.4,"lon":114.566667}}
+{"id":"Q924","labels":{"en":"Tanzania"},"types":["country"],"aliases":{"en":["Tanzania, United Republic of","United Republic of Tanganyika and Zanzibar","United Republic of Tanzania","tz","tza"]},"coordinate":{"lat":-6.3069444444444445,"lon":34.85388888888889}}
+{"id":"Q928","labels":{"en":"Philippines"},"types":["country"],"aliases":{"en":["Philippine Islands","RP","Republic of the Philippines","The Philippines"]},"coordinate":{"lat":12,"lon":123}}
+{"id":"Q929","labels":{"en":"Central African Republic"},"types":["country"],"aliases":{"en":["Central Africa","cf"]},"coordinate":{"lat":6.7,"lon":20.9}}
+{"id":"Q945","labels":{"en":"Togo"},"types":["country"],"aliases":{"en":["Togolese Republic","tg"]},"coordinate":{"lat":8.25,"lon":1.183333}}
+{"id":"Q948","labels":{"en":"Tunisia"},"types":["country"],"aliases":{"en":["Republic of Tunisia","Tunisian Republic","tn"]},"coordinate":{"lat":34,"lon":10}}
+{"id":"Q953","labels":{"en":"Zambia"},"types":["country"],"aliases":{"en":["Republic of Zambia","Zed"]},"coordinate":{"lat":-14,"lon":28}}
+{"id":"Q954","labels":{"en":"Zimbabwe"},"types":["country"],"aliases":{"en":["Republic of Zimbabwe","Rhodesia","Southern Rhodesia","Zimbabwe Rhodesia"]},"coordinate":{"lat":-19,"lon":30}}
+{"id":"Q958","labels":{"en":"South Sudan"},"types":["country"],"aliases":{"en":["Republic of South Sudan","SSD","Southern Sudan","ss"]},"coordinate":{"lat":7,"lon":30}}
+{"id":"Q962","labels":{"en":"Benin"},"types":["country"],"aliases":{"en":["Republic of Benin"]},"coordinate":{"lat":8.8333333333333,"lon":2.1833333333333}}
+{"id":"Q963","labels":{"en":"Botswana"},"types":["country"],"aliases":{"en":["Lefatshe la Botswana","Republic of Botswana","bw"]},"coordinate":{"lat":-22.2,"lon":23.7}}
+{"id":"Q965","labels":{"en":"Burkina Faso"},"types":["country"],"aliases":{"en":["Republic of Burkina Faso","Republic of Upper Volta (-1984)","bf"]},"coordinate":{"lat":12.266667,"lon":-2.066667}}
+{"id":"Q967","labels":{"en":"Burundi"},"types":["country"],"aliases":{"en":["Gouvernement du Burundi","Republic of Burundi","Republika y'Uburundi","bi"]},"coordinate":{"lat":-3.666667,"lon":29.816667}}
+{"id":"Q970","labels":{"en":"Comoros"},"types":["country"],"aliases":{"en":["Juzur al-Qamar","Juzur al-Qumur","Massiwa ya komori","Udzima wa Komori","Union des Comores","Union of the Comoros","al-Ittiḥād al-Qumurī","km","ouvoimoja wakomori","the Comoros"]},"coordinate":{"lat":-12.3,"lon":43.7}}
+{"id":"Q971","labels":{"en":"Republic of the Congo"},"types":["country"],"aliases":{"en":["CGO","Congo","Congo (Brazzaville)","Congo Republic","Congo-Brazzaville","Rep. Congo","Republic of Congo","Republique du Congo","République du Congo","cg"]},"coordinate":{"lat":-0.75,"lon":15.383330555556}}
+{"id":"Q974","labels":{"en":"Democratic Republic of the Congo"},"types":["country"],"aliases":{"en":["COD","Congo (Kinshasa)","D.R.C.","DR Congo","DRC","Dem. Rep. Congo","Dem. Republic of Congo","Dem. Republic of the Congo","Democratic Republic of Congo","cd"]},"coordinate":{"lat":-2.88,"lon":23.656111111111112}}
+{"id":"Q977","labels":{"en":"Djibouti"},"types":["country"],"aliases":{"en":["Gabuuti","Jabuuti","Jībūtī","Republic of Djibouti","dj"]},"coordinate":{"lat":11.8,"lon":42.433333}}
+{"id":"Q983","labels":{"en":"Equatorial Guinea"},"types":["country"],"aliases":{"en":["GEQ","Republic of Equatorial Guinea","gq"]},"coordinate":{"lat":1.5,"lon":10}}
+{"id":"Q986","labels":{"en":"Eritrea"},"types":["country"],"aliases":{"en":["Ertrā","Iritriyā","State of Eritrea","er"]},"coordinate":{"lat":15.483333,"lon":38.25}}
+{"id":"Q1000","labels":{"en":"Gabon"},"types":["country"],"aliases":{"en":["GAB","Gabonese Republic","Republique Gabonaise","République Gabonaise","ga"]},"coordinate":{"lat":-0.68333055555556,"lon":11.5}}
+{"id":"Q1005","labels":{"en":"The Gambia"},"types":["country"],"aliases":{"en":["Gambia","Islamic Republic of the Gambia","Republic of the Gambia"]},"coordinate":{"lat":13.5,"lon":-15.5}}
+{"id":"Q1006","labels":{"en":"Guinea"},"types":["country"],"aliases":{"en":["GUI","Guinea-Conakry","Republic of Guinea","gn"]},"coordinate":{"lat":10,"lon":-11}}
+{"id":"Q1007","labels":{"en":"Guinea-Bissau"},"types":["country"],"aliases":{"en":["GBS","Republic of Guinea-Bissau","gw"]},"coordinate":{"lat":12,"lon":-15}}
+{"id":"Q1008","labels":{"en":"Ivory Coast"},"types":["country"],"aliases":{"en":["Cote Ivoire","Cote d'Ivoire","Cote d'lvoire","Cote-d'Ivoire","Côte-d'Ivoire","Republic of Cote d'Ivoire","Republic of Côte d'Ivoire","Republic of Ivory Coast","Republic of the Ivory Coast","The Ivory Coast","ci"]},"coordinate":{"lat":8,"lon":-6}}
+{"id":"Q1009","labels":{"en":"Cameroon"},"types":["country"],"aliases":{"en":["Republic of Cameroon"]},"coordinate":{"lat":5.133333333333334,"lon":12.65}}
+{"id":"Q1011","labels":{"en":"Cape Verde"},"types":["country"],"aliases":{"en":["Cape Verde Islands","Republic of Cabo Verde","Republic of Cape Verde"]},"coordinate":{"lat":15.3,"lon":-23.7}}
+{"id":"Q1013","labels":{"en":"Lesotho"},"types":["country"],"aliases":{"en":["Kingdom of Lesotho","LES","The Mountain Kingdom","ls"]},"coordinate":{"lat":-29.55,"lon":28.25}}
+{"id":"Q1014","labels":{"en":"Liberia"},"types":["country"],"aliases":{"en":["Liber","Republic of Liberia","lr"]},"coordinate":{"lat":6.533333,"lon":-9.75}}
+{"id":"Q1016","labels":{"en":"Libya"},"types":["country"],"aliases":{"en":["LBA","State of Libya","ly"]},"coordinate":{"lat":27,"lon":17}}
+{"id":"Q1019","labels":{"en":"Madagascar"},"types":["country"],"aliases":{"en":["Malagascar","Malagaskar","Republic of Madagascar","mg"]},"coordinate":{"lat":-20,"lon":47}}
+{"id":"Q1020","labels":{"en":"Malawi"},"types":["country"],"aliases":{"en":["MAW","Republic of Malawi","mw"]},"coordinate":{"lat":-13,"lon":34}}
+{"id":"Q1025","labels":{"en":"Mauritania"},"types":["country"],"aliases":{"en":["Agawej","Gannaar","Gànnaar","Islamic Republic of Mauritania","Mauretania","Moritani","Muritanya","Murutaane","mr"]},"coordinate":{"lat":21,"lon":-11}}
+{"id":"Q1027","labels":{"en":"Mauritius"},"types":["country"],"aliases":{"en":["MRI","MU","Maurice","Moris","Republic of Mauritius"]},"coordinate":{"lat":-20.2,"lon":57.5}}
+{"id":"Q1028","labels":{"en":"Morocco"},"types":["country"],"aliases":{"en":["Kingdom of Morocco","Lmaġrib","Maroc","Marocco","al-Maġrib"]},"coordinate":{"lat":32,"lon":-6}}
+{"id":"Q1029","labels":{"en":"Mozambique"},"types":["country"],"aliases":{"en":["Moçambique","Republic of Mozambique","República de Moçambique","mz"]},"coordinate":{"lat":-19,"lon":35}}
+{"id":"Q1030","labels":{"en":"Namibia"},"types":["country"],"aliases":{"en":["Republic of Namibia","na"]},"coordinate":{"lat":-23,"lon":17}}
+{"id":"Q1032","labels":{"en":"Niger"},"types":["country"],"aliases":{"en":["Republic Niger","Republic of Niger","Republic of the Niger","The Niger","ne"]},"coordinate":{"lat":17,"lon":10}}
+{"id":"Q1033","labels":{"en":"Nigeria"},"types":["country"],"aliases":{"en":["Federal Republic of Nigeria","Naija"]},"coordinate":{"lat":9,"lon":8}}
+{"id":"Q1036","labels":{"en":"Uganda"},"types":["country"],"aliases":{"en":["+256","Ouganda","Pearl of Africa","Republic of Uganda","The Republic of Uganda","Ugandah","ug"]},"coordinate":{"lat":1.28,"lon":32.39}}
+{"id":"Q1037","labels":{"en":"Rwanda"},"types":["country"],"aliases":{"en":["Republic of Rwanda","The Land of a Thousand Hills"]},"coordinate":{"lat":-2,"lon":30}}
+{"id":"Q1039","labels":{"en":"São Tomé and Príncipe"},"types":["country"],"aliases":{"en":["Democratic Republic of São Tomé and Príncipe","Sao Tome & Principe","Sao Tome and Principe","São Tomé og Príncipe","st"]},"coordinate":{"lat":0.316667,"lon":6.6}}
+{"id":"Q1041","labels":{"en":"Senegal"},"types":["country"],"aliases":{"en":["Republic of Senegal"]},"coordinate":{"lat":14.366667,"lon":-14.283333}}
+{"id":"Q1042","labels":{"en":"Seychelles"},"types":["country"],"aliases":{"en":["Republic of Seychelles","SEY","sc"]},"coordinate":{"lat":-7.1,"lon":52.766667}}
+{"id":"Q1044","labels":{"en":"Sierra Leone"},"types":["country"],"aliases":{"en":["Republic of Sierra Leone","SLE","sl"]},"coordinate":{"lat":8.5,"lon":-12.1}}
+{"id":"Q1045","labels":{"en":"Somalia"},"types":["country"],"aliases":{"en":["Federal Republic of Somalia"]},"coordinate":{"lat":6,"lon":47}}
+{"id":"Q1049","labels":{"en":"Sudan"},"types":["country"],"aliases":{"en":["North Sudan","Republic of Sudan","Republic of the Sudan","SUD","Soudan","al-Sudan","as-Sudan","as-Sūdān","sd","the Sudan"]},"coordinate":{"lat":15,"lon":32}}
+{"id":"Q1050","labels":{"en":"Eswatini"},"types":["country"],"aliases":{"en":["Kingdom of Eswatini","Kingdom of Swaziland","Swaziland","Umbuso weSwatini","eSwatini","sz"]},"coordinate":{"lat":-26.483333,"lon":31.433333}}
+{"id":"Q29999","labels":{"en":"Kingdom of the Netherlands"},"types":["country"],"aliases":{"en":["Kingdom of Netherlands","Nederlanden","Netherlands","the Netherlands"]},"coordinate":{"lat":52.366666666667,"lon":4.8833333333333}}
+{"id":"Q756617","labels":{"en":"Kingdom of Denmark"},"types":["country"],"aliases":{"en":["Danish Commonwealth","Danish Realm","Danmarkar Ríki","Danmarkip Naalagaaffik","Danmarks Rige","Denmark","Kongeriget Danmark","Kongsríki Danmarkar","Kunngeqarfik Danmarki","Realm of Denmark"]},"coordinate":{"lat":56,"lon":10}}
+{"id":"Q60","labels":{"en":"New York City"},"types":["city"],"aliases":{"en":["Capital of the World","Center of the Universe","City of New York","Empire City","N. Y., N. Y.","NY City","NY, NY","New York (NY)","New York (city)","New York City (NYC)","New York City, NY","New York City, New York","New York City, New York, United States","New York City, USA","New York City, United States","New York City, United States of America","New York, N.Y.","New York, NY","New York, New York, USA","city of New York","the five boroughs"]},"coordinate":{"lat":40.71277777777778,"lon":-74.00611111111111}}
+{"id":"Q61","labels":{"en":"Washington, D.C."},"types":["city"],"aliases":{"en":["City of Washington, D.C.","D.C. Washington","District of Columbia","Federal City (D.C.)","Nation's Capital (D.C.)","The District","Washington City, D.C.","Washington, District of Columbia"]},"coordinate":{"lat":38.895,"lon":-77.036666666667}}
+{"id":"Q64","labels":{"en":"Berlin"},"types":["city"],"aliases":{"en":["Berlin, Germany","DE-BE"]},"coordinate":{"lat":52.516666666667,"lon":13.383333333333}}
+{"id":"Q70","labels":{"en":"Bern"},"types":["city"],"aliases":{"en":["Berna","Berne","city of Bern"]},"coordinate":{"lat":46.94798,"lon":7.44743}}
+{"id":"Q84","labels":{"en":"London"},"types":["city"],"aliases":{"en":["Augusta","Big Smoke","Kaerlud","Karelundein","LDN","Llan Dian","Llyn Dain","Lon.","Lond.","Londini","Londiniensium","Londinio","Londinion","Londinium","London U.K.","London UK","London, England","London, UK","London, United Kingdom","Loniniensi","Loñ","Loñ.","Lunden","Lundenburgh","Lundenburh","Lundenwic","Trinovantum","the Big Smoke"]},"coordinate":{"lat":51.507222222222,"lon":-0.1275}}
+{"id":"Q85","labels":{"en":"Cairo"},"types":["city"],"aliases":{"en":["Cairo, Egypt","Qahira","ghahere"]},"coordinate":{"lat":30.044444444444444,"lon":31.235833333333332}}
+{"id":"Q90","labels":{"en":"Paris"},"types":["city"],"aliases":{"en":["City of Light","City of Love","Lutetia"]},"coordinate":{"lat":48.85666666666667,"lon":2.352222222222222}}
+{"id":"Q174","labels":{"en":"São Paulo"},"types":["city"],"aliases":{"en":["City of São Paulo","Saint Paul","Sao Paulo","St. Paul"]},"coordinate":{"lat":-23.550394444444,"lon":-46.633947222222}}
+{"id":"Q216","labels":{"en":"Vilnius"},"types":["city"],"aliases":{"en":["Vilna","Vilnia","Vilno","Vilnyus","Vilnė","Viĺnia","Viļņa","Wilna","Wilno"]},"coordinate":{"lat":54.687222222222225,"lon":25.28}}
+{"id":"Q220","labels":{"en":"Rome"},"types":["city"],"aliases":{"en":["Capital of the World","City of Marble","City of Seven Hills","Eternal City","Rome, Italy","The Capital of the World","The City of Marble","The Eternal City"]},"coordinate":{"lat":41.893055555556,"lon":12.482777777778}}
+{"id":"Q239","labels":{"en":"Brussels"},"types":["city"],"aliases":{"en":["Brussels (municipality)","Brussels City","City of Brussels"]},"coordinate":{"lat":50.846666666666664,"lon":4.351666666666667}}
+{"id":"Q269","labels":{"en":"Tashkent"},"types":["city"],"aliases":{"en":["Binkath","Chach","Choch","Shash","Shosh","Tashkand","Toshkent"]},"coordinate":{"lat":41.31111111111111,"lon":69.27972222222222}}
+{"id":"Q270","labels":{"en":"Warsaw"},"types":["city"],"coordinate":{"lat":52.23,"lon":21.011111111111113}}
+{"id":"Q384","labels":{"en":"Skopje"},"types":["city"],"aliases":{"en":["Escópia","Shkup","Shkupi","Skoplje","Üsküb"]},"coordinate":{"lat":41.99611111111111,"lon":21.431666666666665}}
+{"id":"Q437","labels":{"en":"Ljubljana"},"types":["city"],"aliases":{"en":["Labacum","Ljubljana, Slovenia","Lublana"]},"coordinate":{"lat":46.05138888888889,"lon":14.50611111111111}}
+{"id":"Q472","labels":{"en":"Sofia"},"types":["city"],"aliases":{"en":["Serdica","Sofija","Sredets","Sredez"]},"coordinate":{"lat":42.697886,"lon":23.321726}}
+{"id":"Q585","labels":{"en":"Oslo"},"types":["city"],"aliases":{"en":["NOOSL","Oslo, Norway"]},"coordinate":{"lat":59.913333333333334,"lon":10.738888888888889}}
+{"id":"Q597","labels":{"en":"Lisbon"},"types":["city"],"coordinate":{"lat":38.708042,"lon":-9.139016}}
+{"id":"Q649","labels":{"en":"Moscow"},"types":["city"],"aliases":{"en":["City of Moscow","Moscow, Russia","Moscow, Russian Federation","Moscow, Russian SFSR","Moscow, Soviet Union","Moscow, USSR","Moskovĭ","Moskva Federal City, Russia","Moskva, Rossiya","Moskva, Russia","Moskve","Moskvi","Moskvë","Mosky","Москва"]},"coordinate":{"lat":55.75055555555556,"lon":37.6175}}
+{"id":"Q727","labels":{"en":"Amsterdam"},"types":["city"],"aliases":{"en":["A'dam","Amsterdam, NL","Amsterdam, Netherlands","Amsterdam, North Holland","Mokum"]},"coordinate":{"lat":52.36666666666667,"lon":4.883333333333333}}
+{"id":"Q956","labels":{"en":"Beijing"},"types":["city"],"aliases":{"en":["BJ","Beeijing","Bei Jing Shi","Beijing Shi","Beiping","Bākgīng","Chi","Chi-ch'eng","Chi-cheng","Chi-ch’êng","Chung-tu","Chungtu","Ji","Jicheng","Khanbalik","Khanbaliq","Pak-kiann","Pe-king","Pei-ching","Pei-p'ing","Pei-ping","Peip'ing","Peiping","Pekin","Peking Shi","Poh-cin","Shun-t'ien","Shun-tien","Shuntian","Shuntian Fu","Shuntianfu","Yan-ching","Yanjing","Yanking","Zhongdu"]},"coordinate":{"lat":39.90403,"lon":116.407526}}
+{"id":"Q987","labels":{"en":"New Delhi"},"types":["city"],"aliases":{"en":["NDMC area","Nai Dilli","Nayi Dilli","New Delhi Municipal Council Area"]},"coordinate":{"lat":28.613888888888887,"lon":77.2088888888889}}
+{"id":"Q994","labels":{"en":"Tbilisi"},"types":["city"],"aliases":{"en":["Tbilisi, Georgia","Tbilissi","Tiflis","Tpilisi","Tpilissi"]},"coordinate":{"lat":41.7225,"lon":44.7925}}
+{"id":"Q1085","labels":{"en":"Prague"},"types":["city"],"aliases":{"en":["City of Prague","Hlavní město Praha"]},"coordinate":{"lat":50.0875,"lon":14.421388888888888}}
+{"id":"Q1218","labels":{"en":"Jerusalem"},"types":["city"],"aliases":{"en":["Aelia Capitolina","J'lem","Mint of Aelia Capitolina"]},"coordinate":{"lat":31.776679,"lon":35.234156}}
+{"id":"Q1297","labels":{"en":"Chicago"},"types":["city"],"aliases":{"en":["Chi-Raq","Chi-Town","Chicago, IL","Chicago, Illinois","Chitown","City by the Lake","City of Broad Shoulders","City of Chicago","The Queen of the West","The Second City","The Windy City"]},"coordinate":{"lat":41.88194444444444,"lon":-87.62777777777778}}
+{"id":"Q1335","labels":{"en":"Montevideo"},"types":["city"],"coordinate":{"lat":-34.90591666666667,"lon":-56.19131111111111}}
+{"id":"Q1354","labels":{"en":"Dhaka"},"types":["city"],"aliases":{"en":["Dacca","Dhaka City"]},"coordinate":{"lat":23.72888888888889,"lon":90.39444444444445}}
+{"id":"Q1362","labels":{"en":"Islamabad"},"types":["city"],"coordinate":{"lat":33.698888888889,"lon":73.036944444444}}
+{"id":"Q1435","labels":{"en":"Zagreb"},"types":["city"],"coordinate":{"lat":45.81305555555556,"lon":15.977222222222222}}
+{"id":"Q1461","labels":{"en":"Manila"},"types":["city"],"aliases":{"en":["City of Manila","Pearl of the Orient","Queen City of the Pacific and others"]},"coordinate":{"lat":14.595833333333333,"lon":120.97722222222222}}
+{"id":"Q1486","labels":{"en":"Buenos Aires"},"types":["city"],"aliases":{"en":["Ciudad Autonoma de Buenos Aires","Ciudad de Buenos Aires"]},"coordinate":{"lat":-34.599722222222,"lon":-58.381944444444}}
+{"id":"Q1489","labels":{"en":"Mexico City"},"types":["city"],"aliases":{"en":["City of Mexico","Mexico","Mexico City, Mexico","Mexico D.F."]},"coordinate":{"lat":19.353773,"lon":-99.13589}}
+{"id":"Q1490","labels":{"en":"Tokyo"},"types":["city"],"aliases":{"en":["Edo","Jedo","Tokei","Tokio","Tokyo (Japan)","Tokyo Metropolis","Tokyo Metropolitan prefecture","Tokyo Prefecture","Tokyo, Japan","Tokyo-to","Tôkyô","Tôkyô-to","Tōkyō-to","Yedo"]},"coordinate":{"lat":35.68944444444445,"lon":139.69166666666666}}
+{"id":"Q1491","labels":{"en":"La Paz"},"types":["city"],"aliases":{"en":["Chuqi Yapu","Chuqiyapu","Nuestra Señora de La Paz"]},"coordinate":{"lat":-16.495833333333334,"lon":-68.13333333333334}}
+{"id":"Q1519","labels":{"en":"Abu Dhabi"},"types":["city"],"aliases":{"en":["Abudhabi","Abū Dhabi"]},"coordinate":{"lat":24.45111111111111,"lon":54.39694444444444}}
+{"id":"Q1520","labels":{"en":"Astana"},"types":["city"],"aliases":{"en":["Akmola","Akmolinsk","Aqmola","Nur-Sultan","Tselinograd"]},"coordinate":{"lat":51.133333333333,"lon":71.433333333333}}
+{"id":"Q1524","labels":{"en":"Athens"},"types":["city"],"aliases":{"en":["Athenae","Athens city"]},"coordinate":{"lat":37.98416666666667,"lon":23.728055555555557}}
+{"id":"Q1530","labels":{"en":"Baghdad"},"types":["city"],"aliases":{"en":["Bagdat","Baghdād"]},"coordinate":{"lat":33.31527777777778,"lon":44.36611111111111}}
+{"id":"Q1533","labels":{"en":"Caracas"},"types":["city"],"aliases":{"en":["CCS","Carracas","Santiago de León de Caracas"]},"coordinate":{"lat":10.50611111111111,"lon":-66.91444444444444}}
+{"id":"Q1555","labels":{"en":"Guatemala City"},"types":["city"],"aliases":{"en":["City of Guatemala","Ciudad de Guatemala","Guate","Guatemala","Guatemala (Guatemala)","New Guatemala of Assumption","Nueva Guatemala de la Asunción"]},"coordinate":{"lat":14.641666666666667,"lon":-90.51333333333334}}
+{"id":"Q1563","labels":{"en":"Havana"},"types":["city"],"aliases":{"en":["Habana","Havana, Cuba","La Habana"]},"coordinate":{"lat":23.136666666667,"lon":-82.358888888889}}
+{"id":"Q1741","labels":{"en":"Vienna"},"types":["city"],"aliases":{"en":["Vienna, Austria"]},"coordinate":{"lat":48.208333333333336,"lon":16.3725}}
+{"id":"Q1748","labels":{"en":"Copenhagen"},"types":["city"],"aliases":{"en":["CPH","Copenhagen, Denmark","Hafn","KBH","Kbh.","Kobenhavn","Kopenhagen","Köbenhavn"]},"coordinate":{"lat":55.676111111111,"lon":12.568888888889}}
+{"id":"Q1754","labels":{"en":"Stockholm"},"types":["city"],"aliases":{"en":["STHLM","Sthlm"]},"coordinate":{"lat":59.329444444444,"lon":18.068611111111}}
+{"id":"Q1757","labels":{"en":"Helsinki"},"types":["city"],"aliases":{"en":["Helsingia","Helsingin kaupunki","Hesa","Stadi"]},"coordinate":{"lat":60.170833333333334,"lon":24.9375}}
+{"id":"Q1761","labels":{"en":"Dublin"},"types":["city"],"aliases":{"en":["City of Dublin","Dublin city","Dublin, Ireland"]},"coordinate":{"lat":53.34972222222222,"lon":-6.260277777777778}}
+{"id":"Q1764","labels":{"en":"Reykjavík"},"types":["city"],"aliases":{"en":["Reykjavik","Reykjavikurborg","Reykjavíkurborg"]},"coordinate":{"lat":64.1475,"lon":-21.935}}
+{"id":"Q1770","labels":{"en":"Tallinn"},"types":["city"],"aliases":{"en":["Kolywan","Lindanäs","Lyndanisse","Reuel","Reval","Revel","Rewel","Tallinn, Estonia"]},"coordinate":{"lat":59.437222222222,"lon":24.745}}
+{"id":"Q1773","labels":{"en":"Riga"},"types":["city"],"aliases":{"en":["Rige","Riia","Rija","Rīgõ"]},"coordinate":{"lat":56.9475,"lon":24.106944444444}}
+{"id":"Q1780","labels":{"en":"Bratislava"},"types":["city"],"coordinate":{"lat":48.1516988,"lon":17.1093063}}
+{"id":"Q1781","labels":{"en":"Budapest"},"types":["city"],"aliases":{"en":["Alt-Ofen","Buda","Buda Pest","Buda-Pest","Buda-Pesth","Budapest, Hungary","Budapesta","Budapeszt","Budapešť","Budim","Budon","Budín","Ofen","Pest","Pešta","Pešť"]},"coordinate":{"lat":47.498333333333,"lon":19.040833333333}}
+{"id":"Q1842","labels":{"en":"Luxembourg"},"types":["city"],"aliases":{"en":["City of Luxembourg","Luxembourg City","Luxemburg"]},"coordinate":{"lat":49.61138888888889,"lon":6.13}}
+{"id":"Q1844","labels":{"en":"Vaduz"},"types":["city"],"aliases":{"en":["Vaduz, Liechtenstein"]},"coordinate":{"lat":47.14055555555556,"lon":9.522222222222222}}
+{"id":"Q1848","labels":{"en":"San Marino"},"types":["city"],"aliases":{"en":["City of San Marino"]},"coordinate":{"lat":43.932011111111,"lon":12.44845}}
+{"id":"Q1850","labels":{"en":"Phnom Penh"},"types":["city"],"coordinate":{"lat":11.569583333333,"lon":104.92102777778}}
+{"id":"Q1858","labels":{"en":"Hanoi"},"types":["city"],"aliases":{"en":["Dong Do","Ha Noi","Hà Nội","Thang Long","Tonkin","Đại La"]},"coordinate":{"lat":21.0245,"lon":105.84117}}
+{"id":"Q1861","labels":{"en":"Bangkok"},"types":["city"],"aliases":{"en":["Bangkok, Thailand","Krung Thep","Krung Thep Maha Nakhon","Krungthepmahanakhon Amonrattanakosin Mahintharayutthaya Mahadilokphop Noppharatratchathaniburirom Udomratchaniwetmahasathan Amonphimanawatansathit Sakkathattiyawitsanukamprasit","Sia-Yut'hia"]},"coordinate":{"lat":13.75,"lon":100.51666666667}}
+{"id":"Q1863","labels":{"en":"Andorra la Vella"},"types":["city"],"coordinate":{"lat":42.507222222222225,"lon":1.5222222222222221}}
+{"id":"Q1865","labels":{"en":"Kuala Lumpur"},"types":["city"],"aliases":{"en":["Federal Territory of Kuala Lumpur","K.L.","KL"]},"coordinate":{"lat":3.1477777777778,"lon":101.69527777778}}
+{"id":"Q1899","labels":{"en":"Kyiv"},"types":["city"],"aliases":{"en":["Kief","Kieff","Kiew","Kiof","Kioff","Kiou","Kiovia","Kiow","Kiowia","Kiyev","Kyiw","Kyjiw","Kyïv","Kyїv"]},"coordinate":{"lat":50.45,"lon":30.523611111111}}
+{"id":"Q1930","labels":{"en":"Ottawa"},"types":["city"],"aliases":{"en":["City of Ottawa","Ottawa, ON","Ottawa, Ontario"]},"coordinate":{"lat":45.424722222222,"lon":-75.695}}
+{"id":"Q1947","labels":{"en":"Juba"},"types":["city"],"coordinate":{"lat":4.853888888888889,"lon":31.5825}}
+{"id":"Q1953","labels":{"en":"Yerevan"},"types":["city"],"aliases":{"en":["Erivan","Iravan","Irevan","The Pink City"]},"coordinate":{"lat":40.181388888889,"lon":44.514444444444}}
+{"id":"Q1963","labels":{"en":"Khartoum"},"types":["city"],"aliases":{"en":["Khartum"]},"coordinate":{"lat":15.60308,"lon":32.52654}}
+{"id":"Q2280","labels":{"en":"Minsk"},"types":["city"],"aliases":{"en":["Mensk","Miensk","Minskas","Mińsk","Менск","Минск","Мінск"]},"coordinate":{"lat":53.902246,"lon":27.561837}}
+{"id":"Q2449","labels":{"en":"Mogadishu"},"types":["city"],"aliases":{"en":["Hamar","Maqadīshū","Mogadishu, Somalia","The Seat of the Shah","Xamar"]},"coordinate":{"lat":2.0391666666666666,"lon":45.341944444444444}}
+{"id":"Q2467","labels":{"en":"Nassau"},"types":["city"],"aliases":{"en":["City of Nassau"]},"coordinate":{"lat":25.078055555555554,"lon":-77.3386111111111}}
+{"id":"Q2471","labels":{"en":"Sanaa"},"types":["city"],"aliases":{"en":["San'a'","Sana","Sana'a","Ṣanʻāʼ","Ṣanʿāʾ"]},"coordinate":{"lat":15.35,"lon":44.2}}
+{"id":"Q2807","labels":{"en":"Madrid"},"types":["city"],"coordinate":{"lat":40.41694444444445,"lon":-3.703333333333333}}
+{"id":"Q2841","labels":{"en":"Bogotá"},"types":["city"],"aliases":{"en":["Bogota, Colombia","Bogotá, D.C.","Santafé de Bogotá"]},"coordinate":{"lat":4.60971,"lon":-74.08175}}
+{"id":"Q2844","labels":{"en":"Brasília"},"types":["city"],"coordinate":{"lat":-15.793888888889,"lon":-47.882777777778}}
+{"id":"Q2868","labels":{"en":"Lima"},"types":["city"],"aliases":{"en":["City of the Kings"]},"coordinate":{"lat":-12.06,"lon":-77.0375}}
+{"id":"Q2887","labels":{"en":"Santiago"},"types":["city"],"aliases":{"en":["Greater Santiago","Santiago, Chile"]},"coordinate":{"lat":-33.4375,"lon":-70.65}}
+{"id":"Q2900","labels":{"en":"Quito"},"types":["city"],"aliases":{"en":["Kitu","Quito, Ecuador"]},"coordinate":{"lat":-0.22,"lon":-78.5125}}
+{"id":"Q2907","labels":{"en":"Sucre"},"types":["city"],"aliases":{"en":["Charcas","Chuquisaca","La Plata","The Illustrious and Heroic Sucre"]},"coordinate":{"lat":-19.0475,"lon":-65.26}}
+{"id":"Q2933","labels":{"en":"Asunción"},"types":["city"],"aliases":{"en":["Assumption","Asu","Asuncion"]},"coordinate":{"lat":-25.28,"lon":-57.63444444444445}}
+{"id":"Q3001","labels":{"en":"Paramaribo"},"types":["city"],"aliases":{"en":["Parbo"]},"coordinate":{"lat":5.8666666666667,"lon":-55.166666666667}}
+{"id":"Q3037","labels":{"en":"Kathmandu"},"types":["city"],"aliases":{"en":["Cadmendu","Catmandir","Catmeduour","City of Temples","Kadmendu","Kantipur","Kasthamandap","Kathmandu Metropolitan City","Kathmandu Valley","Katmandir","Katmandou","Katmandu","Khatmandu","Káthmándú","Yambu","Yen"]},"coordinate":{"lat":27.71,"lon":85.32}}
+{"id":"Q3043","labels":{"en":"Belmopan"},"types":["city"],"aliases":{"en":["City of Promise","The Garden City","The Planned City"]},"coordinate":{"lat":17.25,"lon":-88.7675}}
+{"id":"Q3070","labels":{"en":"San José"},"types":["city"],"aliases":{"en":["San Jose","San José, Costa Rica"]},"coordinate":{"lat":9.932738888888888,"lon":-84.07961388888889}}
+{"id":"Q3110","labels":{"en":"San Salvador"},"types":["city"],"coordinate":{"lat":13.697597222222223,"lon":-89.19115555555555}}
+{"id":"Q3114","labels":{"en":"Canberra"},"types":["city"],"aliases":{"en":["Canberra, Australia","Canberra, Australian Capital Territory"]},"coordinate":{"lat":-35.293055555556,"lon":149.12694444444}}
+{"id":"Q3238","labels":{"en":"Tegucigalpa"},"types":["city"],"coordinate":{"lat":14.105783333333333,"lon":-87.20470555555555}}
+{"id":"Q3274","labels":{"en":"Managua"},"types":["city"],"aliases":{"en":["Managua Municipality","Managua, Nicaragua","Municipality of Managua"]},"coordinate":{"lat":12.154680555555556,"lon":-86.273725}}
+{"id":"Q3306","labels":{"en":"Panama City"},"types":["city"],"aliases":{"en":["Ciudad de Panama","Ciudad de Panamá","Panama","Panamá"]},"coordinate":{"lat":8.971111111111112,"lon":-79.53472222222223}}
+{"id":"Q3551","labels":{"en":"Rabat"},"types":["city"],"aliases":{"en":["Rabbat"]},"coordinate":{"lat":34.02111111111111,"lon":-6.841388888888889}}
+{"id":"Q3561","labels":{"en":"Algiers"},"types":["city"],"coordinate":{"lat":36.776388888889,"lon":3.0586111111111}}
+{"id":"Q3572","labels":{"en":"Tunis"},"types":["city"],"coordinate":{"lat":36.800833333333,"lon":10.18}}
+{"id":"Q3579","labels":{"en":"Tripoli"},"types":["city"],"aliases":{"en":["Tarabulus"]},"coordinate":{"lat":32.8875,"lon":13.1875}}
+{"id":"Q3604","labels":{"en":"Djibouti"},"types":["city"],"aliases":{"en":["Djibouti (city)","Djibouti City"]},"coordinate":{"lat":11.595,"lon":43.148055555556}}
+{"id":"Q3616","labels":{"en":"Tehran"},"types":["city"],"aliases":{"en":["Ṭihrán"]},"coordinate":{"lat":35.68888888888889,"lon":51.389722222222225}}
+{"id":"Q3624","labels":{"en":"Addis Ababa"},"types":["city"],"aliases":{"en":["Addis Abäba","Finfinne"]},"coordinate":{"lat":9.035833333333333,"lon":38.7525}}
+{"id":"Q3630","labels":{"en":"Jakarta"},"types":["city"],"aliases":{"en":["DKI Jakarta","Djakarta","Jakarta Province","Jakarta Specific Region","Jakarta, Indonesia","Specific Capital Region of Jakarta","Specific Region of Jakarta"]},"coordinate":{"lat":-6.175277777777778,"lon":106.82694444444445}}
+{"id":"Q3640","labels":{"en":"Ankara"},"types":["city"],"coordinate":{"lat":39.93576,"lon":32.83869}}
+{"id":"Q3642","labels":{"en":"Asmara"},"types":["city"],"aliases":{"en":["Asmera"]},"coordinate":{"lat":15.333333333333,"lon":38.916666666667}}
+{"id":"Q3659","labels":{"en":"N'Djamena"},"types":["city"],"aliases":{"en":["N'Djaména","NDjamena"]},"coordinate":{"lat":12.11,"lon":15.05}}
+{"id":"Q3674","labels":{"en":"Niamey"},"types":["city"],"coordinate":{"lat":13.515,"lon":2.1175}}
+{"id":"Q3688","labels":{"en":"Nouakchott"},"types":["city"],"aliases":{"en":["Capital of Mauritania","Nawakshut","Nawākshūṭ","Nouakchot","Nouakchott, Mauritania","Noukchott","Nuwākshūṭ"]},"coordinate":{"lat":18.08581,"lon":-15.9785}}
+{"id":"Q3692","labels":{"en":"Riyadh"},"types":["city"],"aliases":{"en":["Al Riyadh","Al-Riyadh","AlRiyadh","Ar-Riyadh","Reyadh"]},"coordinate":{"lat":24.65,"lon":46.71}}
+{"id":"Q3703","labels":{"en":"Bamako"},"types":["city"],"coordinate":{"lat":12.645833333333,"lon":-7.9922222222222}}
+{"id":"Q3711","labels":{"en":"Belgrade"},"types":["city"],"aliases":{"en":["Belgrade, Serbia","City of Belgrade"]},"coordinate":{"lat":44.81777777777778,"lon":20.456944444444446}}
+{"id":"Q3718","labels":{"en":"Dakar"},"types":["city"],"coordinate":{"lat":14.672555555555556,"lon":-17.432}}
+{"id":"Q3726","labels":{"en":"Banjul"},"types":["city"],"aliases":{"en":["Bathurst","City of Banjul"]},"coordinate":{"lat":13.453055555556,"lon":-16.5775}}
+{"id":"Q3733","labels":{"en":"Conakry"},"types":["city"],"coordinate":{"lat":9.5091666666667,"lon":-13.712222222222}}
+{"id":"Q3739","labels":{"en":"Bissau"},"types":["city"],"coordinate":{"lat":11.86,"lon":-15.583333333333334}}
+{"id":"Q3748","labels":{"en":"Monrovia"},"types":["city"],"coordinate":{"lat":6.3105555555556,"lon":-10.804722222222}}
+{"id":"Q3751","labels":{"en":"Praia"},"types":["city"],"coordinate":{"lat":14.917719444444,"lon":-23.509155555556}}
+{"id":"Q3761","labels":{"en":"Accra"},"types":["city"],"coordinate":{"lat":5.55602,"lon":-0.1969}}
+{"id":"Q3766","labels":{"en":"Damascus"},"types":["city"],"aliases":{"en":["Jasmine city","Mint of Damascus","Sham city"]},"coordinate":{"lat":33.513055555556,"lon":36.291944444444}}
+{"id":"Q3768","labels":{"en":"Yamoussoukro"},"types":["city"],"coordinate":{"lat":6.816111111111111,"lon":-5.274166666666667}}
+{"id":"Q3777","labels":{"en":"Ouagadougou"},"types":["city"],"aliases":{"en":["Kumbee-Tenga","Ouaga","Wagadugu"]},"coordinate":{"lat":12.368611111111111,"lon":-1.5274999999999999}}
+{"id":"Q3780","labels":{"en":"Freetown"},"types":["city"],"coordinate":{"lat":8.487222222222222,"lon":-13.235555555555555}}
+{"id":"Q3787","labels":{"en":"Abuja"},"types":["city"],"coordinate":{"lat":9.0555555555556,"lon":7.4913888888889}}
+{"id":"Q3792","labels":{"en":"Lomé"},"types":["city"],"aliases":{"en":["Lome","Lome, Togo","Lomé, Togo"]},"coordinate":{"lat":6.13,"lon":1.2158333333333333}}
+{"id":"Q3799","labels":{"en":"Porto-Novo"},"types":["city"],"aliases":{"en":["Ajashe","Hogbonu"]},"coordinate":{"lat":6.4833333333333,"lon":2.6166666666667}}
+{"id":"Q3805","labels":{"en":"Amman"},"types":["city"],"aliases":{"en":["Aman","Amman, Jordan","Ammon","Mint of Philadelphia","Philadelphia","ʿAmmān"]},"coordinate":{"lat":31.95,"lon":35.933333333333}}
+{"id":"Q3808","labels":{"en":"Yaoundé"},"types":["city"],"aliases":{"en":["Ongola","Yaounde","Yaounde, Cameroon","Yaoundé, Cameroon"]},"coordinate":{"lat":3.8577777777778,"lon":11.518055555556}}
+{"id":"Q3820","labels":{"en":"Beirut"},"types":["city"],"aliases":{"en":["Beyrout"]},"coordinate":{"lat":33.886944444444,"lon":35.513055555556}}
+{"id":"Q3825","labels":{"en":"Libreville"},"types":["city"],"coordinate":{"lat":0.40777777777777774,"lon":9.440277777777778}}
+{"id":"Q3826","labels":{"en":"Muscat"},"types":["city"],"aliases":{"en":["Maskat","Muskat"]},"coordinate":{"lat":23.613888888889,"lon":58.592222222222}}
+{"id":"Q3832","labels":{"en":"Bangui"},"types":["city"],"coordinate":{"lat":4.37325,"lon":18.562833333333}}
+{"id":"Q3838","labels":{"en":"Kinshasa"},"types":["city"],"aliases":{"en":["Leopoldstad","Leopoldville","Léopoldville"]},"coordinate":{"lat":-4.321944444444444,"lon":15.311944444444444}}
+{"id":"Q3844","labels":{"en":"Brazzaville"},"types":["city"],"coordinate":{"lat":-4.269444444444445,"lon":15.27111111111111}}
+{"id":"Q3856","labels":{"en":"Nicosia"},"types":["city"],"aliases":{"en":["Ledra","Ledrae","Ledroi","Ledron","Lefkosa","Lefkosia","Leucopolis","Leucosia","Leucotheon","Leukoi Theoi","Leuteon","Nicosie"]},"coordinate":{"lat":35.1725,"lon":33.365}}
+{"id":"Q3859","labels":{"en":"Kigali"},"types":["city"],"aliases":{"en":["City of Kigali","Kigali City","Kigali Province"]},"coordinate":{"lat":-1.9525000000000001,"lon":30.115}}
+{"id":"Q3861","labels":{"en":"Doha"},"types":["city"],"coordinate":{"lat":25.28611111111111,"lon":51.529444444444444}}
+{"id":"Q3866","labels":{"en":"Dodoma"},"types":["city"],"aliases":{"en":["Dodoma City"]},"coordinate":{"lat":-6.1835,"lon":35.746}}
+{"id":"Q3870","labels":{"en":"Nairobi"},"types":["city"],"aliases":{"en":["Kenya capital","Kenya capital city","Kenya's capital","Kenyan capital","Nairobi, Kenya"]},"coordinate":{"lat":-1.2863888888889,"lon":36.817222222222}}
+{"id":"Q3876","labels":{"en":"Lilongwe"},"types":["city"],"coordinate":{"lat":-13.98638888888889,"lon":33.768055555555556}}
+{"id":"Q3881","labels":{"en":"Lusaka"},"types":["city"],"coordinate":{"lat":-15.416666666667,"lon":28.283333333333}}
+{"id":"Q3882","labels":{"en":"Manama"},"types":["city"],"aliases":{"en":["al-Manāmah"]},"coordinate":{"lat":26.216666666666665,"lon":50.583333333333336}}
+{"id":"Q3889","labels":{"en":"Maputo"},"types":["city"],"aliases":{"en":["Cam Phumo","Lourenço Marques"]},"coordinate":{"lat":-25.968888888888888,"lon":32.57333333333333}}
+{"id":"Q3894","labels":{"en":"Kampala"},"types":["city"],"coordinate":{"lat":0.31361111111111,"lon":32.581111111111}}
+{"id":"Q3897","labels":{"en":"Luanda"},"types":["city"],"aliases":{"en":["Loanda","Loanda, Angola","Luanda, Angola","Saint Paul of Loanda","Saint Paul of Luanda","Sao Paulo de Loanda","Sao Paulo, Angola","St Paul of Loanda","St Paul of Luanda","St. Paul of Loanda","St. Paul of Luanda","São Paulo da Assunção de Loanda","São Paulo de Loanda","São Paulo, Angola"]},"coordinate":{"lat":-8.838333333333333,"lon":13.234444444444444}}
+{"id":"Q3901","labels":{"en":"Moroni"},"types":["city"],"aliases":{"en":["Moroni, Comoros"]},"coordinate":{"lat":-11.703611111111,"lon":43.253611111111}}
+{"id":"Q3904","labels":{"en":"Mbabane"},"types":["city"],"aliases":{"en":["Mbabané"]},"coordinate":{"lat":-26.316666666666666,"lon":31.133333333333333}}
+{"id":"Q3909","labels":{"en":"Maseru"},"types":["city"],"coordinate":{"lat":-29.31,"lon":27.48}}
+{"id":"Q3915","labels":{"en":"Antananarivo"},"types":["city"],"aliases":{"en":["Analamanga","Iarivo","Tananarive"]},"coordinate":{"lat":-18.91,"lon":47.525}}
+{"id":"Q3919","labels":{"en":"Gaborone"},"types":["city"],"aliases":{"en":["Gaberones","Gabs","Motse-Mshate"]},"coordinate":{"lat":-24.656944444444,"lon":25.908611111111}}
+{"id":"Q3921","labels":{"en":"Harare"},"types":["city"],"aliases":{"en":["Fort Salisbury","Salisbury, Rhodesia","Salisbury, Zimbabwe"]},"coordinate":{"lat":-17.829166666667,"lon":31.052222222222}}
+{"id":"Q3926","labels":{"en":"Pretoria"},"types":["city"],"aliases":{"en":["Pretoria, Gauteng","Pretoria, Gauteng, South Africa","Pretoria, S Africa","Pretoria, S. Africa","Pretoria, South Africa"]},"coordinate":{"lat":-25.746388888889,"lon":28.188055555556}}
+{"id":"Q3929","labels":{"en":"Port Louis"},"types":["city"],"aliases":{"en":["Polwi","Porlwi","Port-Louis"]},"coordinate":{"lat":-20.161944444444,"lon":57.498888888889}}
+{"id":"Q3932","labels":{"en":"São Tomé"},"types":["city"],"coordinate":{"lat":0.3375,"lon":6.7283333333333335}}
+{"id":"Q3935","labels":{"en":"Windhoek"},"types":["city"],"aliases":{"en":["Otjomuise","Windhuk","Windhök","ǀAi-ǁGams"]},"coordinate":{"lat":-22.57,"lon":17.083611111111}}
+{"id":"Q3940","labels":{"en":"Victoria"},"types":["city"],"aliases":{"en":["Port Victoria","Victoria, Seychelles"]},"coordinate":{"lat":-4.6236111111111,"lon":55.454444444444}}
+{"id":"Q5465","labels":{"en":"Cape Town"},"types":["city"],"aliases":{"en":["Cape","Cape Town, South Africa","Kaap","Mother City","Tavern of the Seas","West side","iKapa"]},"coordinate":{"lat":-33.92527777777778,"lon":18.42388888888889}}
+{"id":"Q5838","labels":{"en":"Kabul"},"types":["city"],"aliases":{"en":["Cabool","Cabul","Caubul","Kabol","Kaboul"]},"coordinate":{"lat":34.532777777778,"lon":69.165833333333}}
+{"id":"Q8684","labels":{"en":"Seoul"},"types":["city"],"aliases":{"en":["Gyeongseong","Hanseong","Hanyang","Keijou","Keijō","Namgyeong","Seoul Special City","Sŏul T'ŭkpyŏlsi","Wiryeseong"]},"coordinate":{"lat":37.56,"lon":126.99}}
+{"id":"Q9248","labels":{"en":"Baku"},"types":["city"],"aliases":{"en":["Baki","Baky","City of Winds"]},"coordinate":{"lat":40.366655555556,"lon":49.835183333333}}
+{"id":"Q9270","labels":{"en":"Thimphu"},"types":["city"],"aliases":{"en":["Thimpu","ཐིམ་ཕུ་"]},"coordinate":{"lat":27.47135,"lon":89.63367}}
+{"id":"Q9279","labels":{"en":"Bandar Seri Begawan"},"types":["city"],"aliases":{"en":["BSB","Bandar","Bandar Brunei","Brunei Town","Seri Begawan"]},"coordinate":{"lat":4.9166666666667,"lon":114.91666666667}}
+{"id":"Q9310","labels":{"en":"Dili"},"types":["city"],"aliases":{"en":["City of Dili"]},"coordinate":{"lat":-8.553611111111111,"lon":125.57833333333333}}
+{"id":"Q9326","labels":{"en":"Vientiane"},"types":["city"],"aliases":{"en":["Bientani","Nakhon Viangchan","Viang chan","Viangchan","Vien Chang","Vienchan","Vieng-Cæn","Viengchan","Vientane","Vieṅ Čan","Vieṅg-Čăn","Vyentyan","Wei-t'ien","Wiangcan","Wīangčhan","urban Vientiane"]},"coordinate":{"lat":17.98,"lon":102.63}}
+{"id":"Q9347","labels":{"en":"Malé"},"types":["city"],"aliases":{"en":["Malé City"]},"coordinate":{"lat":4.175,"lon":73.508333333333}}
+{"id":"Q9361","labels":{"en":"Bishkek"},"types":["city"],"aliases":{"en":["Frunze","Pishpek"]},"coordinate":{"lat":42.866666666667,"lon":74.566666666667}}
+{"id":"Q9365","labels":{"en":"Dushanbe"},"types":["city"],"aliases":{"en":["Dyushambe","Stalinabad"]},"coordinate":{"lat":38.573055555556,"lon":68.786388888889}}
+{"id":"Q10717","labels":{"en":"Georgetown"},"types":["city"],"aliases":{"en":["Garden City of the Caribbean","Georgetown, British Guiana"]},"coordinate":{"lat":6.805833333333333,"lon":-58.15083333333333}}
+{"id":"Q11194","labels":{"en":"Sarajevo"},"types":["city"],"aliases":{"en":["Bosna-Serai","City of Sarajevo"]},"coordinate":{"lat":43.85638888888889,"lon":18.413055555555555}}
+{"id":"Q12919","labels":{"en":"Majuro"},"types":["city"],"aliases":{"en":["Majuro, Marshall Islands","Mājro"]},"coordinate":{"lat":7.0918,"lon":171.3802}}
+{"id":"Q18808","labels":{"en":"Pyongyang"},"types":["city"],"aliases":{"en":["Capital of Revolution","Pyeongyang","P’yŏng-yang","Ryugyong"]},"coordinate":{"lat":39.016666666666666,"lon":125.7475}}
+{"id":"Q19660","labels":{"en":"Bucharest"},"types":["city"],"aliases":{"en":["Bucharest, Romania","Bucuresti","Bucureşti","București","Little Paris","Paris of the East"]},"coordinate":{"lat":44.41336111111111,"lon":26.09777777777778}}
+{"id":"Q19689","labels":{"en":"Tirana"},"types":["city"],"aliases":{"en":["Tiranë"]},"coordinate":{"lat":41.32833333333333,"lon":19.818055555555556}}
+{"id":"Q21197","labels":{"en":"Chișinău"},"types":["city"],"aliases":{"en":["Chisinau","Chisnau","Chişinău","Keshenev","Keshinov","Khisinau","Kischinew","Kischiniov","Kiscinev","Kishinef","Kishinev","Kishinëv","Kiszyniów","Kişinev","Kišinìv","Kyshyniv"]},"coordinate":{"lat":47.022777777777776,"lon":28.835277777777776}}
+{"id":"Q23430","labels":{"en":"Ulaanbaatar"},"types":["city"],"aliases":{"en":["East Hüree","Hüree","Ih Huree","Ikh Khüree","Khan of Urga","Khüree","Kulun","Niislel Hüree","Wulan Batuo","Örgöö"]},"coordinate":{"lat":47.921357,"lon":106.905515}}
+{"id":"Q23438","labels":{"en":"Ashgabat"},"types":["city"],"aliases":{"en":["'Ishqabad","Ak-Gaudan","Aschchabad","Asgabat","Ashabad","Ashgabad","Ashkabad","Ashkabat","Ashkhabad","Ashqabad","Askabad","Askhabad","Aşgabat","Ašgabat","Ishqabad","Ishqabat","Konjikala","Poltoratsk","`Ishqabad","`Ishqábád"]},"coordinate":{"lat":37.95,"lon":58.383333333333}}
+{"id":"Q23564","labels":{"en":"Podgorica"},"types":["city"],"aliases":{"en":["Burguriçe","Capital of Montenegro","Podgoritsa","Podgoritza","Titograd"]},"coordinate":{"lat":42.44138888888889,"lon":19.262777777777778}}
+{"id":"Q23661","labels":{"en":"Wellington"},"types":["city"],"aliases":{"en":["Port Nicholson","Port Nick","Pōneke","Te Whanga-nui-a-Tara","Te Whanganui-a-Tara","Wellington metropolitan area","Wellington, NZ","Wellington, New Zealand"]},"coordinate":{"lat":-41.288888888889,"lon":174.77722222222}}
+{"id":"Q23800","labels":{"en":"Valletta"},"types":["city"],"aliases":{"en":["Capital of Malta","Citta Umilissima","Città Umilissima","Il-Belt Valletta","La Valleta"]},"coordinate":{"lat":35.897777777778,"lon":14.5125}}
+{"id":"Q31026","labels":{"en":"Yaren District"},"types":["city"],"aliases":{"en":["Makwa","Moqua","Yaren"]},"coordinate":{"lat":-0.5477,"lon":166.920867}}
+{"id":"Q34126","labels":{"en":"Funafuti"},"types":["city"],"aliases":{"en":["Funafuti Island"]},"coordinate":{"lat":-8.504777777777777,"lon":179.1173611111111}}
+{"id":"Q34261","labels":{"en":"Port-au-Prince"},"types":["city"],"aliases":{"en":["Port au Prince"]},"coordinate":{"lat":18.546944444444446,"lon":-72.34027777777777}}
+{"id":"Q34692","labels":{"en":"Kingston"},"types":["city"],"aliases":{"en":["Kingston, Jamaica","Kingston, Surrey"]},"coordinate":{"lat":17.971388888889,"lon":-76.793055555556}}
+{"id":"Q34820","labels":{"en":"Santo Domingo"},"types":["city"],"aliases":{"en":["San Domingo","Santo Domingo de Guzman","Santo Domingo, Dominican Republic"]},"coordinate":{"lat":18.4625,"lon":-69.93611111111112}}
+{"id":"Q35178","labels":{"en":"Kuwait City"},"types":["city"],"aliases":{"en":["Al Kuwait","Kuwait","al-Kuwait"]},"coordinate":{"lat":29.375,"lon":47.98}}
+{"id":"Q35381","labels":{"en":"Colombo"},"types":["city"],"coordinate":{"lat":6.926666666666667,"lon":79.86055555555555}}
+{"id":"Q36168","labels":{"en":"Bridgetown"},"types":["city"],"coordinate":{"lat":13.0975,"lon":-59.616666666667}}
+{"id":"Q36260","labels":{"en":"Apia"},"types":["city"],"coordinate":{"lat":-13.833333333333,"lon":-171.83333333333}}
+{"id":"Q36262","labels":{"en":"St. John's"},"types":["city"],"aliases":{"en":["Saint John's, Antigua and Barbuda","St John's","St. John's City"]},"coordinate":{"lat":17.121111111111,"lon":-61.844722222222}}
+{"id":"Q36281","labels":{"en":"Roseau"},"types":["city"],"coordinate":{"lat":15.3,"lon":-61.383333333333}}
+{"id":"Q36526","labels":{"en":"Port Moresby"},"types":["city"],"coordinate":{"lat":-9.4788888888889,"lon":147.14944444444}}
+{"id":"Q37400","labels":{"en":"Naypyidaw"},"types":["city"],"aliases":{"en":["Nay Pyi Taw","Naypyitaw"]},"coordinate":{"lat":19.7475,"lon":96.115}}
+{"id":"Q37701","labels":{"en":"Bloemfontein"},"types":["city"],"coordinate":{"lat":-29.1,"lon":26.216666666667}}
+{"id":"Q37806","labels":{"en":"Port Vila"},"types":["city"],"coordinate":{"lat":-17.73333,"lon":168.316667}}
+{"id":"Q38807","labels":{"en":"Suva"},"types":["city"],"coordinate":{"lat":-18.133333333333,"lon":178.43333333333}}
+{"id":"Q38834","labels":{"en":"Nukuʻalofa"},"types":["city"],"aliases":{"en":["Nuku'alofa"]},"coordinate":{"lat":-21.1343401,"lon":-175.201808}}
+{"id":"Q39178","labels":{"en":"Port of Spain"},"types":["city"],"aliases":{"en":["Cumucurapo","Port-of-Spain","Puerto España"]},"coordinate":{"lat":10.666666666667,"lon":-61.516666666667}}
+{"id":"Q40921","labels":{"en":"Honiara"},"types":["city"],"coordinate":{"lat":-9.433333,"lon":159.95}}
+{"id":"Q41295","labels":{"en":"Basseterre"},"types":["city"],"coordinate":{"lat":17.298333333333,"lon":-62.734166666667}}
+{"id":"Q41474","labels":{"en":"Kingstown"},"types":["city"],"coordinate":{"lat":13.15527,"lon":-61.22742}}
+{"id":"Q41547","labels":{"en":"St. George's"},"types":["city"],"aliases":{"en":["Saint George's","Saint George's, Grenada","Saint Georges","Saint Georges, Granada","St Georges, Granada","St. George's, Grenada"]},"coordinate":{"lat":12.0525,"lon":-61.753055555555555}}
+{"id":"Q41699","labels":{"en":"Castries"},"types":["city"],"coordinate":{"lat":14.010833333333334,"lon":-60.989444444444445}}
+{"id":"Q41963","labels":{"en":"Sri Jayawardenepura Kotte"},"types":["city"],"aliases":{"en":["Kotte"]},"coordinate":{"lat":6.9,"lon":79.916388888889}}
+{"id":"Q42751","labels":{"en":"Palikir"},"types":["city"],"coordinate":{"lat":6.9177777777778,"lon":158.185}}
+{"id":"Q101418","labels":{"en":"Lobamba"},"types":["city"],"coordinate":{"lat":-26.44648,"lon":31.206411}}
+{"id":"Q131233","labels":{"en":"South Tarawa"},"types":["city"],"coordinate":{"lat":1.3333333333333333,"lon":172.96666666666667}}
+{"id":"Q131694","labels":{"en":"Aden"},"types":["city"],"coordinate":{"lat":12.8,"lon":45.033333333333}}
+{"id":"Q167551","labels":{"en":"Gitega"},"types":["city"],"aliases":{"en":["Kitega"]},"coordinate":{"lat":-3.4283333333333332,"lon":29.925}}
+{"id":"Q515229","labels":{"en":"Ngerulmud"},"types":["city"],"coordinate":{"lat":7.500556,"lon":134.624167}}
+{"id":"Q1140136","labels":{"en":"Ciudad de la Paz"},"types":["city"],"aliases":{"en":["Oyala"]},"coordinate":{"lat":1.5916666666666668,"lon":10.822222222222223}}

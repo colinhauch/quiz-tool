@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "bundle-packs": "tsx scripts/bundle-packs.ts",
+    "packs:import-coordinates": "tsx scripts/import-wikidata-coordinates.ts",
     "pretest": "tsx scripts/bundle-packs.ts",
     "test": "vitest run",
     "deploy": "wrangler deploy",

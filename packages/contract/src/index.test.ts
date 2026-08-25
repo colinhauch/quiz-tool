@@ -5,6 +5,7 @@ import {
   answerResponseSchema,
   healthSchema,
   questionResponseSchema,
+  visualAidSchema,
 } from "./index.js";
 
 describe("contract", () => {
@@ -94,6 +95,69 @@ describe("answerResponseSchema", () => {
     expect(
       answerResponseSchema.safeParse({ correct: true, acceptedAnswer: "Japan", debug: 1 }).success,
     ).toBe(false);
+  });
+
+  it("validates a response carrying a map revealVisual", () => {
+    const res = {
+      correct: true,
+      acceptedAnswer: "Tokyo",
+      revealVisual: { renderer: "map", entityId: "Q1490", lat: 35.6897, lon: 139.6922, label: "Tokyo" },
+    };
+    expect(answerResponseSchema.parse(res)).toEqual(res);
+  });
+
+  it("rejects a malformed revealVisual", () => {
+    const res = {
+      correct: true,
+      acceptedAnswer: "Tokyo",
+      revealVisual: { renderer: "map", entityId: "Q1490", lat: "north", lon: 139.6922, label: "Tokyo" },
+    };
+    expect(answerResponseSchema.safeParse(res).success).toBe(false);
+  });
+});
+
+describe("visualAidSchema", () => {
+  const map = { renderer: "map", entityId: "Q1490", lat: 35.6897, lon: 139.6922, label: "Tokyo" };
+
+  it("validates a well-formed map descriptor", () => {
+    expect(visualAidSchema.parse(map)).toEqual(map);
+  });
+
+  it("rejects an unknown renderer", () => {
+    expect(visualAidSchema.safeParse({ ...map, renderer: "flag" }).success).toBe(false);
+  });
+
+  it("rejects a missing field", () => {
+    const { label: _label, ...withoutLabel } = map;
+    expect(visualAidSchema.safeParse(withoutLabel).success).toBe(false);
+  });
+});
+
+describe("questionResponseSchema, promptVisual", () => {
+  const question = {
+    cardId: "S1:object",
+    prompt: "What country is Tokyo in?",
+    input: "text" as const,
+    packId: "core-cities",
+    packLabel: "Cities & Countries",
+    answerTypes: ["country"],
+  };
+
+  it("validates without a promptVisual", () => {
+    expect(questionResponseSchema.parse(question)).toEqual(question);
+  });
+
+  it("validates with a well-formed promptVisual", () => {
+    const withVisual = {
+      ...question,
+      promptVisual: { renderer: "map", entityId: "Q1490", lat: 35.6897, lon: 139.6922, label: "Tokyo" },
+    };
+    expect(questionResponseSchema.parse(withVisual)).toEqual(withVisual);
+  });
+
+  it("rejects a malformed promptVisual", () => {
+    const withBadVisual = { ...question, promptVisual: { renderer: "map" } };
+    expect(questionResponseSchema.safeParse(withBadVisual).success).toBe(false);
   });
 });
 
