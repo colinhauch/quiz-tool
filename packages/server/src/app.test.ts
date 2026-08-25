@@ -195,6 +195,7 @@ describe("POST /answer", () => {
     expect(answerResponseSchema.parse(await res.json())).toEqual({
       correct: true,
       acceptedAnswer: "Japan",
+      acceptedAnswers: ["Japan"],
     });
   });
 
@@ -203,6 +204,7 @@ describe("POST /answer", () => {
     expect(answerResponseSchema.parse(await res.json())).toEqual({
       correct: false,
       acceptedAnswer: "Japan",
+      acceptedAnswers: ["Japan"],
     });
   });
 
@@ -364,6 +366,7 @@ describe("full loop over the real fixture pack and a temp-file database", () => 
     expect(result).toEqual({
       correct: true,
       acceptedAnswer: "Japan",
+      acceptedAnswers: ["Japan"],
       // The map pins the card's most locatable entity: Tokyo (city) over Japan
       // (country), even though the answer is Japan — the specific place is the
       // memory hook. Tokyo (Q1490) carries a real P625 coordinate (#110).

@@ -104,6 +104,7 @@ describe("checkAnswer", () => {
     expect(checkAnswer(makePack(), "cc:tokyo-japan:object", "japan")).toEqual({
       correct: true,
       acceptedAnswer: "Japan",
+      acceptedAnswers: ["Japan"],
     });
   });
 
@@ -111,6 +112,7 @@ describe("checkAnswer", () => {
     expect(checkAnswer(makePack(), "cc:nyc-usa:object", "USA")).toEqual({
       correct: true,
       acceptedAnswer: "United States",
+      acceptedAnswers: ["United States"],
     });
   });
 
@@ -118,6 +120,7 @@ describe("checkAnswer", () => {
     expect(checkAnswer(makePack(), "cc:tokyo-japan:object", "China")).toEqual({
       correct: false,
       acceptedAnswer: "Japan",
+      acceptedAnswers: ["Japan"],
     });
   });
 
@@ -280,10 +283,14 @@ function makeLanguagePack(): Pack {
 }
 
 describe("checkAnswer, object-hidden multi-valued (any-of)", () => {
+  // Every true answer for Switzerland's official languages, listed for the reveal.
+  const allLanguages = ["French", "German", "Italian"];
+
   it("accepts the card's own object", () => {
     expect(checkAnswer(makeLanguagePack(), "lang:switzerland-german:object", "German")).toEqual({
       correct: true,
       acceptedAnswer: "German",
+      acceptedAnswers: allLanguages,
     });
   });
 
@@ -292,6 +299,7 @@ describe("checkAnswer, object-hidden multi-valued (any-of)", () => {
     expect(checkAnswer(makeLanguagePack(), "lang:switzerland-german:object", "French")).toEqual({
       correct: true,
       acceptedAnswer: "French",
+      acceptedAnswers: allLanguages,
     });
   });
 
@@ -299,14 +307,42 @@ describe("checkAnswer, object-hidden multi-valued (any-of)", () => {
     expect(checkAnswer(makeLanguagePack(), "lang:switzerland-italian:object", "Français")).toEqual({
       correct: true,
       acceptedAnswer: "French",
+      acceptedAnswers: allLanguages,
     });
   });
 
-  it("rejects a language that is not official, revealing the card's own object", () => {
+  it("rejects a language that is not official, revealing every accepted answer", () => {
     expect(checkAnswer(makeLanguagePack(), "lang:switzerland-french:object", "Spanish")).toEqual({
       correct: false,
       acceptedAnswer: "French",
+      acceptedAnswers: allLanguages,
     });
+  });
+});
+
+describe("checkAnswer, transcontinental (accepts and lists every continent)", () => {
+  const kazakhstan: Entity = { id: "Q232", labels: { en: "Kazakhstan" }, types: ["country"], coordinate: { lat: 48, lon: 68 } };
+  const asia: Entity = { id: "Q48", labels: { en: "Asia" }, types: ["continent"] };
+  const europe: Entity = { id: "Q46", labels: { en: "Europe" }, types: ["continent"] };
+
+  function makeTranscontinentalPack(): Pack {
+    return {
+      entities: new Map([kazakhstan, asia, europe].map((e) => [e.id, e])),
+      statements: [
+        { id: "cc:kazakhstan-asia", subject: "Q232", relation: "located_in_continent", object: { kind: "entity", id: "Q48" }, pack: "test-pack" },
+        { id: "cc:kazakhstan-europe", subject: "Q232", relation: "located_in_continent", object: { kind: "entity", id: "Q46" }, pack: "test-pack" },
+      ],
+      generators: {},
+      packs,
+    };
+  }
+
+  it("accepts either continent and lists both, mapping the country", () => {
+    const result = checkAnswer(makeTranscontinentalPack(), "cc:kazakhstan-europe:object", "Asia");
+    expect(result.correct).toBe(true);
+    expect(result.acceptedAnswers).toEqual(["Asia", "Europe"]);
+    // The map pins Kazakhstan (the country), not either continent.
+    expect(result.revealVisual).toEqual({ renderer: "map", entityId: "Q232", lat: 48, lon: 68, label: "Kazakhstan" });
   });
 });
 
@@ -315,6 +351,7 @@ describe("checkAnswer, subject-hidden", () => {
     expect(checkAnswer(makeCapitalPack(), "cap:switzerland-bern:subject", "Switzerland")).toEqual({
       correct: true,
       acceptedAnswer: "Switzerland",
+      acceptedAnswers: ["Switzerland"],
     });
   });
 
@@ -322,6 +359,7 @@ describe("checkAnswer, subject-hidden", () => {
     expect(checkAnswer(makeCapitalPack(), "cap:switzerland-bern:subject", "France")).toEqual({
       correct: false,
       acceptedAnswer: "Switzerland",
+      acceptedAnswers: ["Switzerland"],
     });
   });
 
@@ -329,6 +367,7 @@ describe("checkAnswer, subject-hidden", () => {
     expect(checkAnswer(makeCapitalPack(), "cap:switzerland-bern:object", "Bern")).toEqual({
       correct: true,
       acceptedAnswer: "Bern",
+      acceptedAnswers: ["Bern"],
     });
   });
 });
