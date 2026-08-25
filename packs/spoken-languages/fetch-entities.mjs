@@ -25,6 +25,32 @@ const UA = "geo-quiz-tool/0.1 spoken-languages (colin.hauch@gmail.com)";
 // label for names spelled identically across languages.
 const LABEL_LANGS = ["en", "mul"];
 
+// Languages whose short autocomplete form the last-word rule gets wrong.
+// `null` = no short form (the label is a proper name that must stay whole).
+// Keyed by Q-id. Kept small; the last-word default is right for most.
+const SHORT_FORM_OVERRIDES = {
+  Q34159: null, // Tok Pisin — "Pisin" alone is not the name
+  Q33617: null, // Hiri Motu — "Motu" is a different, related thing
+};
+
+/**
+ * The short common name for a language's autocomplete: the last word of a
+ * multi-word label ("Jamaican Patois" → "patois"), with two corrections:
+ * anything ending in "Sign Language" collapses to "Sign Language" (the country
+ * prefix would otherwise leak, and the last word alone is the useless
+ * "language"); and a few proper names are pinned via SHORT_FORM_OVERRIDES.
+ * Returns null for a single-word label (already the short answer) or a pinned
+ * skip. Case is preserved from the label — language names are proper nouns
+ * ("Jamaican Patois" → "Patois", not "patois").
+ */
+function shortForm(id, label) {
+  if (id in SHORT_FORM_OVERRIDES) return SHORT_FORM_OVERRIDES[id];
+  if (/\bsign language$/i.test(label)) return "Sign Language";
+  const words = label.trim().split(/\s+/);
+  if (words.length < 2) return null;
+  return words[words.length - 1];
+}
+
 /** Read core-geo's entities.jsonl into a { qid → entity } map. */
 function readCoreGeoEntities() {
   const text = readFileSync(new URL("../core-geo/entities.jsonl", import.meta.url), "utf8");
@@ -134,8 +160,20 @@ async function main() {
     const label = LABEL_LANGS.map((lang) => byLang[lang]).find(Boolean);
     if (!label) throw new Error(`no en/mul label for ${id}`);
     const entity = { id, labels: { en: label }, types: ["language"] };
-    const alias = aliases.get(id);
-    if (alias && alias.size > 0) entity.aliases = { en: [...alias].sort() };
+    const names = new Set(aliases.get(id) ?? []);
+
+    // The autocomplete short form: the bare language name a learner types, for a
+    // label that carries the country/nationality ("Jamaican Patois" → "Patois",
+    // "British English" → "English") — showing that leaks less than the full
+    // label. Unlike currencies, languages aren't pluralized, so only the
+    // singular is added to the accepted aliases (the box fills what it shows).
+    const short = shortForm(id, label);
+    if (short && short.toLowerCase() !== label.toLowerCase()) {
+      entity.autocomplete = short;
+      names.add(short);
+    }
+
+    if (names.size > 0) entity.aliases = { en: [...names].filter((a) => a !== label).sort() };
     return JSON.stringify(entity);
   });
 

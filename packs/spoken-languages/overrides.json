@@ -5,10 +5,14 @@
     "Q77": ["Q1321"]
   },
   "remove": {
-    "Q30": ["Q28427", "Q33262", "Q33569", "Q34011"]
+    "Q30": ["Q28427", "Q33262", "Q33569", "Q34011"],
+    "Q423": ["Q18784"],
+    "Q1006": ["Q1339026"]
   },
   "_notes": {
     "Q30": "United States: P37 lists only territorially-official languages (Carolinian, Chamorro, Hawaiian, Samoan) and Spanish, omitting English — the federal US designates none. Add English; keep Spanish (widely spoken); drop the four territorial-only entries that make 'a language spoken in the US' read as Carolinian.",
-    "Q77": "Uruguay: no P37 value at all (Spanish is de facto, not de jure). Add Spanish."
+    "Q77": "Uruguay: no P37 value at all (Spanish is de facto, not de jure). Add Spanish.",
+    "Q423": "North Korea: drop 'North Korean standard language' (Q18784), a bad Wikidata entity — it is just Korean (Q9176), which is already asserted.",
+    "Q1006": "Guinea: drop 'languages of Guinea' (Q1339026), not a language at all — French (Q150) is already asserted."
   }
 }
