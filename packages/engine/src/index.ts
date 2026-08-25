@@ -43,3 +43,11 @@ export {
   type RatingEvent,
   type RatingSnapshot,
 } from "./rating.js";
+export {
+  DEFAULT_TIERS,
+  buildScheduler,
+  drawNext as drawNextScheduled,
+  applySelection as applySchedulerSelection,
+  type Scheduler,
+  type Tier,
+} from "./scheduler.js";
