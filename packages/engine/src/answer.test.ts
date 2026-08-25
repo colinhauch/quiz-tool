@@ -127,48 +127,101 @@ describe("checkAnswer", () => {
 });
 
 describe("checkAnswer, revealVisual", () => {
-  const tokyoWithCoordinate: Entity = {
+  const tokyo: Entity = {
     id: "Q1490",
     labels: { en: "Tokyo" },
     types: ["city"],
     coordinate: { lat: 35.6897, lon: 139.6922 },
   };
+  const japanWithCoordinate: Entity = {
+    ...japan,
+    coordinate: { lat: 36, lon: 138 },
+  };
+  const andorra: Entity = {
+    id: "Q228",
+    labels: { en: "Andorra" },
+    types: ["country"],
+    coordinate: { lat: 42.5, lon: 1.5 },
+  };
+  const europe: Entity = {
+    id: "Q46",
+    labels: { en: "Europe" },
+    types: ["continent"],
+    coordinate: { lat: 48.69, lon: 9.14 },
+  };
+  const tokyoMap = { renderer: "map", entityId: "Q1490", lat: 35.6897, lon: 139.6922, label: "Tokyo" };
 
-  const visualStatements: Statement[] = [
-    {
-      id: "cc:tokyo-japan",
-      subject: "Q1490",
-      relation: "located_in",
-      object: { kind: "entity", id: "Q17" },
-      pack: "test-pack",
-    },
-  ];
-
-  function makeVisualPack(subject: Entity): Pack {
+  // A city→country statement, quizzable both ways.
+  function makeCityCountryPack(subject: Entity, object: Entity): Pack {
     return {
-      entities: new Map([subject, japan].map((e) => [e.id, e])),
-      statements: visualStatements,
+      entities: new Map([subject, object].map((e) => [e.id, e])),
+      statements: [
+        { id: "cc:tokyo-japan", subject: subject.id, relation: "located_in", object: { kind: "entity", id: object.id }, pack: "test-pack" },
+      ],
       generators: {},
-      hiddenSlots: { located_in: ["subject"] },
+      hiddenSlots: { located_in: ["subject", "object"] },
       packs,
     };
   }
 
-  it("includes a map descriptor when the target entity has a coordinate", () => {
-    const result = checkAnswer(makeVisualPack(tokyoWithCoordinate), "cc:tokyo-japan:subject", "Tokyo");
-    expect(result.revealVisual).toEqual({
-      renderer: "map",
-      entityId: "Q1490",
-      lat: 35.6897,
-      lon: 139.6922,
-      label: "Tokyo",
-    });
-    expect(result.revealVisual?.label).toBe(result.acceptedAnswer);
+  it("maps the most point-like entity: the city, not the answer country (object-hidden)", () => {
+    // "What country is Tokyo in?" → answer Japan, but the map pins Tokyo.
+    const result = checkAnswer(makeCityCountryPack(tokyo, japanWithCoordinate), "cc:tokyo-japan:object", "Japan");
+    expect(result.acceptedAnswer).toBe("Japan");
+    expect(result.revealVisual).toEqual(tokyoMap);
   });
 
-  it("omits revealVisual when the target entity has no coordinate", () => {
-    const tokyoWithoutCoordinate: Entity = { id: "Q1490", labels: { en: "Tokyo" }, types: ["city"] };
-    const result = checkAnswer(makeVisualPack(tokyoWithoutCoordinate), "cc:tokyo-japan:subject", "Tokyo");
+  it("maps the city even when the country is the answer (capital, subject-hidden)", () => {
+    // "Moscow is the capital of what country?" → answer Russia, but the map pins
+    // Moscow (city), not Russia's centroid.
+    const russia: Entity = { id: "Q159", labels: { en: "Russia" }, types: ["country"], coordinate: { lat: 60, lon: 100 } };
+    const moscow: Entity = { id: "Q649", labels: { en: "Moscow" }, types: ["city"], coordinate: { lat: 55.75, lon: 37.62 } };
+    const pack: Pack = {
+      entities: new Map([russia, moscow].map((e) => [e.id, e])),
+      statements: [
+        { id: "cap:russia", subject: "Q159", relation: "capital", object: { kind: "entity", id: "Q649" }, pack: "test-pack" },
+      ],
+      generators: {},
+      hiddenSlots: { capital: ["object", "subject"] },
+      packs,
+    };
+    const result = checkAnswer(pack, "cap:russia:subject", "Russia");
+    expect(result.acceptedAnswer).toBe("Russia");
+    expect(result.revealVisual).toEqual({ renderer: "map", entityId: "Q649", lat: 55.75, lon: 37.62, label: "Moscow" });
+  });
+
+  it("maps the country, not the continent, for a continent card", () => {
+    // "What continent is Andorra in?" → answer Europe, but the map pins Andorra.
+    const pack: Pack = {
+      entities: new Map([andorra, europe].map((e) => [e.id, e])),
+      statements: [
+        { id: "cont:andorra", subject: "Q228", relation: "located_in_continent", object: { kind: "entity", id: "Q46" }, pack: "test-pack" },
+      ],
+      generators: {},
+      packs,
+    };
+    const result = checkAnswer(pack, "cont:andorra:object", "Asia");
+    expect(result).toMatchObject({ correct: false, acceptedAnswer: "Europe" });
+    expect(result.revealVisual).toEqual({ renderer: "map", entityId: "Q228", lat: 42.5, lon: 1.5, label: "Andorra" });
+  });
+
+  it("falls back to the country when the object has no coordinate (e.g. a currency)", () => {
+    const euro: Entity = { id: "Q4916", labels: { en: "Euro" }, types: ["currency"] };
+    const pack: Pack = {
+      entities: new Map([andorra, euro].map((e) => [e.id, e])),
+      statements: [
+        { id: "cur:andorra", subject: "Q228", relation: "uses_currency", object: { kind: "entity", id: "Q4916" }, pack: "test-pack" },
+      ],
+      generators: {},
+      packs,
+    };
+    const result = checkAnswer(pack, "cur:andorra:object", "Euro");
+    expect(result.revealVisual).toEqual({ renderer: "map", entityId: "Q228", lat: 42.5, lon: 1.5, label: "Andorra" });
+  });
+
+  it("omits revealVisual when neither end has a coordinate", () => {
+    const tokyoNoCoord: Entity = { id: "Q1490", labels: { en: "Tokyo" }, types: ["city"] };
+    const result = checkAnswer(makeCityCountryPack(tokyoNoCoord, japan), "cc:tokyo-japan:object", "Japan");
     expect(result).not.toHaveProperty("revealVisual");
   });
 });
