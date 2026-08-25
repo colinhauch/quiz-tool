@@ -104,7 +104,7 @@ function dedupeObjectHidden(cards: Card[]): Card[] {
  * collapsed. Comparison cards have no `(statement, hidden-slot)` coordinate and
  * are not enumerated, so they are excluded for free (spec: comparisons are v2).
  */
-function eligiblePool(graph: Pack, included: readonly string[]): Card[] {
+export function eligibleCards(graph: Pack, included: readonly string[]): Card[] {
   const packs = new Set(included);
   const drawable = enumerateCards(graph).filter(
     (card) => card.statement.relation in graph.generators && packs.has(card.statement.pack),
@@ -149,7 +149,7 @@ function binPool(
   tiers: readonly Tier[],
 ): Record<string, string[]> {
   const bins: Record<string, string[]> = Object.fromEntries(tiers.map((t) => [t.name, []]));
-  for (const card of eligiblePool(graph, included)) {
+  for (const card of eligibleCards(graph, included)) {
     const tier = tierOf(tiers, successProbability(ratings, learnerId, card));
     if (tier) bins[tier.name]?.push(makeCardId(card.statement.id, card.hiddenSlot));
   }
@@ -170,8 +170,8 @@ function fillTopBag(tiers: readonly Tier[], rng: Rng): string[] {
  * bag shuffled, the top bag filled to the ratio and shuffled.
  *
  * Throws on a selection that yields no eligible cards — an empty pack list, or
- * packs shipping nothing quizzable. Like `buildQueue`, this is the backstop that
- * keeps "the learner is being quizzed on nothing" from ever being a silent state.
+ * packs shipping nothing quizzable. This is the backstop that keeps "the learner
+ * is being quizzed on nothing" from ever being a silent state.
  */
 export function buildScheduler(
   graph: Pack,
@@ -182,7 +182,7 @@ export function buildScheduler(
   tiers: readonly Tier[] = DEFAULT_TIERS,
 ): Scheduler {
   const bins = binPool(graph, ratings, learnerId, included, tiers);
-  if (eligiblePool(graph, included).length === 0) {
+  if (eligibleCards(graph, included).length === 0) {
     throw new Error(`no eligible cards in packs: ${included.join(", ") || "(none)"}`);
   }
   const bags: Record<string, readonly string[]> = {};
@@ -216,10 +216,14 @@ export function drawNext(
   const bags: Record<string, string[]> = {};
   for (const name of Object.keys(scheduler.bags)) bags[name] = [...(scheduler.bags[name] ?? [])];
 
-  // At most this many marble draws before we conclude the pool is empty: a full
-  // fresh cycle's worth. Each iteration either returns a card or discards a
-  // marble from a genuinely (even after re-bin) empty tier.
-  let budget = tiers.reduce((n, t) => n + t.marbles, 0);
+  // Marble draws allowed before we conclude the pool is truly empty: enough to
+  // drain the carried-over top bag *and* then examine a full fresh cycle — in
+  // which every tier appears at least once, so any tier holding cards is found.
+  // Only when even that turns up nothing (every tier re-bins to empty) is the
+  // pool genuinely empty. A fixed one-cycle budget is not enough: a carried bag
+  // of only empty-tier marbles can be followed by a fresh cycle whose yielding
+  // marble sits last (seen when every card bins to one tier, e.g. all-medium).
+  let budget = topBag.length + tiers.reduce((n, t) => n + t.marbles, 0);
   while (budget-- > 0) {
     if (topBag.length === 0) topBag.push(...fillTopBag(tiers, rng));
     const tierName = topBag.pop() as string;

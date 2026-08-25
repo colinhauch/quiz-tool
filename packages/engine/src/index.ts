@@ -11,12 +11,15 @@ export { createGraph } from "./graph.js";
 export { makeCardId, findCard, enumerateCards, supportedSlots, targetEntityId, type Card } from "./card.js";
 export { generateQuestion } from "./question.js";
 export {
-  buildQueue,
+  DEFAULT_TIERS,
+  buildScheduler,
   drawNext,
   applySelection,
-  type Queue,
+  eligibleCards,
+  type Scheduler,
+  type Tier,
   type Rng,
-} from "./queue.js";
+} from "./scheduler.js";
 export {
   normalizeAnswer,
   acceptedAnswers,
@@ -43,11 +46,3 @@ export {
   type RatingEvent,
   type RatingSnapshot,
 } from "./rating.js";
-export {
-  DEFAULT_TIERS,
-  buildScheduler,
-  drawNext as drawNextScheduled,
-  applySelection as applySchedulerSelection,
-  type Scheduler,
-  type Tier,
-} from "./scheduler.js";

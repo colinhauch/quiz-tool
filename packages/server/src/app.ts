@@ -13,17 +13,19 @@ import {
   abilityOf,
   applyAnswer,
   applySelection,
-  buildQueue,
+  buildScheduler,
   checkAnswer,
   difficultyOf,
   drawNext,
+  eligibleCards,
+  emptyRatings,
   enumerateCards,
   findCard,
   generateQuestion,
   ownerPackId,
   type Pack,
-  type Queue,
   type Ratings,
+  type Scheduler,
   type RatingSnapshot,
 } from "@geo/engine";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -157,30 +159,39 @@ export function createApp({
   // it just never reaches the picker, the queue, or a stored selection.
   const selectable = selectablePacks(pack).filter((id) => !catalog?.get(id)?.hidden);
 
-  // The live queues, one per learner (keyed as `resolve` decides — a single
+  // The live schedulers, one per learner (keyed as `resolve` decides — a single
   // shared key in single-user mode, the user id in multi-user mode). Each is
-  // held in memory and rebuilt from that learner's persisted selection on their
-  // first request: the *selection* is the durable thing, the order it happens to
-  // produce is not (#20). Entries are replaced rather than mutated, because every
-  // engine queue operation returns a new queue.
+  // held in memory and rebuilt from that learner's persisted selection and the
+  // current ratings on their first request: the *selection* is the durable
+  // thing, the bag state it produces is not. Entries are replaced rather than
+  // mutated, because every engine scheduler operation returns a new scheduler.
   //
-  // Built lazily rather than at construction because the selection read is async
-  // (Postgres over the network — see storage.ts), and `createApp` stays
-  // synchronous so its many callers need no `await`. The map memoises per key,
-  // so the read runs once per learner and every later handler reuses the queue.
-  const queues = new Map<string, Queue>();
-  async function ensureQueue(
+  // Built lazily rather than at construction because the selection and rating
+  // reads are async (Postgres over the network — see storage.ts), and `createApp`
+  // stays synchronous so its many callers need no `await`. The map memoises per
+  // key, so the reads run once per learner and every later handler reuses the
+  // scheduler.
+  const schedulers = new Map<string, Scheduler>();
+  async function ensureScheduler(
     c: Context<AuthEnv>,
-  ): Promise<{ queue: Queue; key: string; store: AnswerStore; selection?: SelectionStore }> {
+  ): Promise<{
+    scheduler: Scheduler;
+    key: string;
+    store: AnswerStore;
+    selection?: SelectionStore;
+    rating?: RatingStore;
+  }> {
     const resolved = resolve(c);
-    let queue = queues.get(resolved.key);
-    if (!queue) {
+    let scheduler = schedulers.get(resolved.key);
+    if (!scheduler) {
       const stored = (await resolved.selection?.read()) ?? null;
       const initial = stored ? stored.filter((id) => selectable.includes(id)) : selectable;
-      queue = buildQueue(pack, initial.length > 0 ? initial : selectable, rng);
-      queues.set(resolved.key, queue);
+      const included = initial.length > 0 ? initial : selectable;
+      const ratings = await loadRatings(resolved.rating, resolved.key, included);
+      scheduler = buildScheduler(pack, ratings, resolved.key, included, rng);
+      schedulers.set(resolved.key, scheduler);
     }
-    return { queue, ...resolved };
+    return { scheduler, ...resolved };
   }
 
   // Registered before the auth middleware so it stays public; every route below
@@ -190,14 +201,19 @@ export function createApp({
     app.use("*", createAuthMiddleware(auth));
   }
 
-  // The next question from the queue. Drawing advances it, so a card is not
-  // handed out twice in a pass. The response is parsed through the shared
-  // schema so the server cannot drift from the contract the browser trusts —
-  // and so an accidental answer leak fails here, at the seam.
+  // The next question, drawn by the bag-of-bags scheduler over the current
+  // ratings. Ratings are re-read per draw because they drift as answers arrive
+  // (every answer nudges a card's difficulty and the learner's ability), and an
+  // emptied inner bag re-bins against the fresh numbers. Drawing advances the
+  // scheduler state, so a card is not handed out twice within a cycle. The
+  // response is parsed through the shared schema so the server cannot drift from
+  // the contract the browser trusts — and so an accidental answer leak fails
+  // here, at the seam.
   app.get("/question", async (c) => {
-    const { queue, key } = await ensureQueue(c);
-    const drawn = drawNext(pack, queue, rng);
-    queues.set(key, drawn.queue);
+    const { scheduler, key, rating } = await ensureScheduler(c);
+    const ratings = await loadRatings(rating, key, scheduler.included);
+    const drawn = drawNext(pack, ratings, key, scheduler, rng);
+    schedulers.set(key, drawn.scheduler);
     return c.json(
       questionResponseSchema.parse(
         generateQuestion(pack, drawn.card.statement, drawn.card.hiddenSlot),
@@ -229,7 +245,7 @@ export function createApp({
   // *committed* selection — the checkbox's pending state lives in the browser
   // until saved.
   app.get("/packs", async (c) => {
-    const { queue: live } = await ensureQueue(c);
+    const { scheduler: live } = await ensureScheduler(c);
     const counts = cardCounts(pack);
     const statements = new Map<string, number>();
     for (const statement of pack.statements) {
@@ -252,15 +268,20 @@ export function createApp({
             included: live.included.includes(id),
           };
         }),
-        queued: live.upcoming.length,
+        // How many distinct cards the current selection is quizzing on — the
+        // eligible pool size. With no within-session exclusion (re-draws are
+        // allowed) this is a property of the selection, not of how far a pass
+        // has progressed, so it is stable across draws and only moves when the
+        // selection does.
+        queued: eligibleCards(pack, live.included).length,
       }),
     );
   });
 
-  // Commit a new selection. Cards from dropped packs leave the queue and cards
-  // from newly included packs fold into it, so the learner keeps their place in
-  // the current pass. Nothing here touches the answer log: selection governs
-  // what will be asked, never what was.
+  // Commit a new selection. Cards from dropped packs leave the scheduler's bags
+  // immediately; a newly included pack's cards are picked up on the next re-bin.
+  // Nothing here touches the answer log: selection governs what will be asked,
+  // never what was.
   app.put("/packs", async (c) => {
     let packIds: string[];
     try {
@@ -274,8 +295,8 @@ export function createApp({
       throw new HTTPException(400, { message: `not a selectable pack: ${unknown.join(", ")}` });
     }
 
-    const { queue, key, selection: sel } = await ensureQueue(c);
-    queues.set(key, applySelection(pack, queue, packIds, rng));
+    const { scheduler, key, selection: sel } = await ensureScheduler(c);
+    schedulers.set(key, applySelection(pack, scheduler, packIds));
     await sel?.write(packIds);
     return c.json({ ok: true });
   });
@@ -303,8 +324,9 @@ export function createApp({
 
     const { store: s, rating: r, key } = resolve(c);
     // Move the card's global difficulty and this learner's pack ability, and
-    // snapshot what the scheduler believed at ask time. The queue still selects
-    // (#119) — this only calibrates. Without a rating store, log as before.
+    // snapshot what the scheduler believed at ask time. The next draw re-reads
+    // these ratings, so the answer feeds back into selection (#120). Without a
+    // rating store, log as before.
     //
     // Compute the update (pure) first, then append the log row — the source of
     // truth — and only then persist the rating caches. That order keeps the
@@ -346,6 +368,33 @@ export function createApp({
   });
 
   return app;
+}
+
+/**
+ * Loads a learner's ratings into the engine's {@link Ratings} shape for the
+ * scheduler to bin the pool: every rated card's difficulty in one read, plus
+ * this learner's ability for each included pack. Unrated cards and unseen packs
+ * are simply absent — the engine defaults them to the seed, so a brand-new card
+ * computes `P = 0.5` and lands medium. With no rating store (single-user mode
+ * run without ratings) every card reads back at the seed, so the mix is uniform
+ * over the medium tier — correct, just not yet adaptive.
+ */
+async function loadRatings(
+  rating: RatingStore | undefined,
+  learnerId: string,
+  included: readonly string[],
+): Promise<Ratings> {
+  if (!rating) return emptyRatings();
+  const cards = await rating.readAllCards();
+  const difficulty = new Map<string, number>();
+  const answerCount = new Map<string, number>();
+  for (const [id, v] of cards) {
+    difficulty.set(id, v.difficulty);
+    answerCount.set(id, v.answerCount);
+  }
+  const ability = new Map<string, number>();
+  for (const packId of included) ability.set(abilityKey(learnerId, packId), await rating.readAbility(packId));
+  return { difficulty, answerCount, ability };
 }
 
 /**

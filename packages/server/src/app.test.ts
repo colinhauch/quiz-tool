@@ -488,11 +488,14 @@ describe("GET /packs", () => {
     expect(list.packs.map((p) => p.id)).not.toContain("core-geo");
   });
 
-  it("reports how many questions are queued", async () => {
+  it("reports the eligible-pool size, stable across draws", async () => {
+    // The scheduler allows re-draws (no within-session exclusion), so `queued`
+    // is a property of the selection — how many distinct cards it quizzes on —
+    // not of how far a pass has run. Drawing does not shrink it.
     const app = createApp({ pack: pickerGraph(), store: memoryStore() });
     expect((await packList(app)).queued).toBe(3);
     await app.request("/question");
-    expect((await packList(app)).queued).toBe(2);
+    expect((await packList(app)).queued).toBe(3);
   });
 
   // First run selects everything, so adding the picker regresses nothing.
@@ -537,7 +540,7 @@ describe("PUT /packs", () => {
     expect(list.packs.find((p) => p.id === "continents")?.included).toBe(true);
   });
 
-  it("folds a re-included pack back into the queue", async () => {
+  it("draws a re-included pack's cards again (eligible pool restored)", async () => {
     const app = createApp({ pack: pickerGraph(), store: memoryStore() });
     await putPacks(app, ["continents"]);
     await putPacks(app, ["cities", "continents"]);
@@ -803,19 +806,27 @@ describe("POST /answer — Elo ratings computed live (#119)", () => {
     expect(abilityOf(rebuilt, "single", TEST_PACK.id)).toBeCloseTo(await rating.readAbility(TEST_PACK.id), 6);
   });
 
-  it("leaves selection unchanged — the queue still drives which card is asked", async () => {
-    // Same seed, one app with ratings and one without: identical draw order.
-    const draws = async (rating?: RatingStore) => {
-      const app = createApp({ pack: bidiPack(), store: memoryStore(), rating, rng: () => 0 });
+  it("selection responds to the live ratings — re-tiering a card shifts the mix (#120)", async () => {
+    // The bag-of-bags scheduler draws over the ratings, so changing a card's
+    // difficulty changes which bag it sits in and thus the drawn sequence. Both
+    // runs use an identical seeded rng, so any difference is the ratings' doing,
+    // not the randomness. A fixed cycling rng is deterministic and shared.
+    const seq = async (seed?: (r: RatingStore) => Promise<void>) => {
+      const rating = createRatingStore(openDatabase(":memory:"));
+      if (seed) await seed(rating);
+      let i = 0;
+      const values = [0.17, 0.83, 0.41, 0.62, 0.29, 0.94, 0.08, 0.55, 0.36, 0.71];
+      const rng = () => values[i++ % values.length] as number;
+      const app = createApp({ pack: pickerGraph(), store: memoryStore(), rating, rng });
       const out: string[] = [];
-      for (let i = 0; i < 3; i++) {
-        const q = questionResponseSchema.parse(await (await app.request("/question")).json());
-        out.push(q.cardId);
+      for (let n = 0; n < 20; n++) {
+        out.push(questionResponseSchema.parse(await (await app.request("/question")).json()).cardId);
       }
       return out;
     };
-    const withRatings = await draws(createRatingStore(openDatabase(":memory:")));
-    const withoutRatings = await draws();
-    expect(withRatings).toEqual(withoutRatings);
+    const baseline = await seq();
+    // Drive the first-drawn card deep into the hard tier; the mix must respond.
+    const shifted = await seq(async (r) => r.writeCard(baseline[0] as string, 2600, 20));
+    expect(shifted).not.toEqual(baseline);
   });
 });

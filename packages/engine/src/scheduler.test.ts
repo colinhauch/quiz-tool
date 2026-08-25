@@ -160,7 +160,7 @@ describe("drawNext", () => {
     // rng chosen so the first two marbles are both easy is impossible (ratio has
     // one easy marble/cycle); instead assert the mechanism directly on state.
     let s = buildScheduler(g, ratings, "u", ["geo"], () => 0);
-    const mediumBefore = [...s.bags.medium];
+    const mediumBefore = [...(s.bags.medium ?? [])];
     // Force an easy draw by handing a scheduler whose top bag is a lone "easy".
     s = { ...s, topBag: ["easy"] };
     const first = drawNext(g, ratings, "u", s, () => 0);

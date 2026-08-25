@@ -101,6 +101,19 @@ export function createSupabaseRatingStore(client: SupabaseClient): RatingStore {
       return { difficulty: data.difficulty as number, answerCount: data.answer_count as number };
     },
 
+    async readAllCards() {
+      // Difficulty is global (every learner's answers move it), so no RLS scope
+      // to apply — the scheduler needs the whole cache to bin the pool.
+      const { data, error } = await client.from("card_difficulty").select("card_id, difficulty, answer_count");
+      if (error) throw new Error(`card_difficulty.select-all failed: ${error.message}`);
+      return new Map(
+        (data ?? []).map((row) => [
+          row.card_id as string,
+          { difficulty: row.difficulty as number, answerCount: row.answer_count as number },
+        ]),
+      );
+    },
+
     async readAbility(packId: string) {
       const { data, error } = await client
         .from("pack_ability")
