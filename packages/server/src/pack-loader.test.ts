@@ -535,5 +535,20 @@ describe("loadAllPacks over the packs actually shipped", () => {
 
     // Uruguay had no P37 value at all; the override adds Spanish.
     expect(p.statements.find((s) => s.id === "lang:uruguay:spanish")).toBeDefined();
+
+    // A label carrying the country ("Jamaican Patois") gets a short autocomplete
+    // form ("Patois") the box shows/fills, while the full label stays canonical;
+    // the short form grades correct.
+    const patois = p.entities.get("Q35939");
+    expect(patois?.labels.en).toBe("Jamaican Patois");
+    expect(patois?.autocomplete).toBe("Patois"); // proper-noun case preserved
+    const jamaica = makeCardId("lang:jamaica:jamaican-patois", "object");
+    expect(checkAnswer(p, jamaica, "Patois").correct).toBe(true);
+    expect(checkAnswer(p, jamaica, "Jamaican Patois").correct).toBe(true); // full name still accepted
+
+    // Junk Wikidata entities are curated out via overrides.json.
+    expect([...p.entities.values()].some((e) => e.labels.en === "languages of Guinea")).toBe(false);
+    expect(p.statements.find((s) => s.id === "lang:north-korea:north-korean-standard-language")).toBeUndefined();
+    expect(p.statements.find((s) => s.id === "lang:north-korea:korean")).toBeDefined();
   });
 });
