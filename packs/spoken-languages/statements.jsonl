@@ -110,7 +110,6 @@
 {"id":"lang:guatemala:spanish","subject":"Q774","relation":"spoken_language","object":{"kind":"entity","id":"Q1321"}}
 {"id":"lang:guinea-bissau:portuguese","subject":"Q1007","relation":"spoken_language","object":{"kind":"entity","id":"Q5146"}}
 {"id":"lang:guinea:french","subject":"Q1006","relation":"spoken_language","object":{"kind":"entity","id":"Q150"}}
-{"id":"lang:guinea:languages-of-guinea","subject":"Q1006","relation":"spoken_language","object":{"kind":"entity","id":"Q1339026"}}
 {"id":"lang:guyana:english","subject":"Q734","relation":"spoken_language","object":{"kind":"entity","id":"Q1860"}}
 {"id":"lang:haiti:french","subject":"Q790","relation":"spoken_language","object":{"kind":"entity","id":"Q150"}}
 {"id":"lang:haiti:haitian-creole","subject":"Q790","relation":"spoken_language","object":{"kind":"entity","id":"Q33491"}}
@@ -205,7 +204,6 @@
 {"id":"lang:niger:hausa","subject":"Q1032","relation":"spoken_language","object":{"kind":"entity","id":"Q56475"}}
 {"id":"lang:nigeria:english","subject":"Q1033","relation":"spoken_language","object":{"kind":"entity","id":"Q1860"}}
 {"id":"lang:north-korea:korean","subject":"Q423","relation":"spoken_language","object":{"kind":"entity","id":"Q9176"}}
-{"id":"lang:north-korea:north-korean-standard-language","subject":"Q423","relation":"spoken_language","object":{"kind":"entity","id":"Q18784"}}
 {"id":"lang:north-macedonia:albanian","subject":"Q221","relation":"spoken_language","object":{"kind":"entity","id":"Q8748"}}
 {"id":"lang:north-macedonia:macedonian","subject":"Q221","relation":"spoken_language","object":{"kind":"entity","id":"Q9296"}}
 {"id":"lang:norway:bokml","subject":"Q20","relation":"spoken_language","object":{"kind":"entity","id":"Q25167"}}
