@@ -33,6 +33,8 @@ One outcome per answer, binary (`1` correct, `0` incorrect). Both the card's `D`
 new = old + K · (actual − P(success))
 ```
 
+The two ratings move by the **same magnitude in opposite directions**: `θ += K·(actual − P)` and `D −= K·(actual − P)`. A correct answer makes the learner look abler (`θ` up) and the card look easier (`D` down) by an equal step — standard pairwise Elo, with the card as the opponent whose rating is its difficulty. The shorthand `new = old + K·(actual − P)` above names the shared *magnitude*; taken literally for `D` it would make a card everyone answers correctly climb in difficulty, which is backwards, so difficulty carries the opposite sign. (Resolved while implementing #119; the `[UNREVIEWED]` marker still stands.)
+
 **One K per answer event, taken from the card's answer count** — not the learner's. K is `40` while the card is *provisional* (its first ~10 answers) and `20` once *settled*. This means a brand-new card moves both its own `D` and the learner's `θ` at the high provisional rate. The accepted wrinkle: a fresh card can swing a veteran's θ by the full 40 — high K justified by *card* uncertainty is being used to move the *learner's* rating. The reverse cost (a settled card converging a new learner slowly) is smaller. Both are re-tunable by replay if alpha shows θ cold-start is sluggish or veteran θ is jumpy. K, the scale, and the seed are calibration dials, not architecture.
 
 ### Correctness is binary and comes from answer-resolution
