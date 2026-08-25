@@ -1,6 +1,6 @@
 import { findCard, targetEntityId } from "./card.js";
 import { createGraph } from "./graph.js";
-import type { Entity, Pack, VisualAid } from "./types.js";
+import type { Entity, GraphQuery, Pack, Statement, VisualAid } from "./types.js";
 
 /**
  * Folds a typed answer to its comparison form so surface differences a learner
@@ -43,17 +43,17 @@ export interface AnswerResult {
   correct: boolean;
   /** The canonical label of the correct answer, for feedback. */
   acceptedAnswer: string;
-  /** A map of the answer entity, when it carries a coordinate. Omitted otherwise. */
+  /**
+   * A map of the card's most locatable entity, when one carries a coordinate.
+   * Its `label` names the *mapped* place, which is not always `acceptedAnswer`:
+   * for "What continent is Andorra in?" the map pins Andorra, not Europe.
+   */
   revealVisual?: VisualAid;
 }
 
-/**
- * The reveal's visual aid for the entity whose label the reveal shows: a map of
- * that entity when it carries a coordinate, omitted otherwise. Its `label`
- * equals `acceptedAnswer` by construction, since both come from the same entity.
- */
-function revealVisualFor(entity: Entity): VisualAid | undefined {
-  if (!entity.coordinate) return undefined;
+/** A map descriptor for `entity` when it has a coordinate, omitted otherwise. */
+function revealVisualFor(entity: Entity | undefined): VisualAid | undefined {
+  if (!entity?.coordinate) return undefined;
   return {
     renderer: "map",
     entityId: entity.id,
@@ -63,12 +63,46 @@ function revealVisualFor(entity: Entity): VisualAid | undefined {
   };
 }
 
-/** Grades against `entity` as the shown answer, attaching its map when it has one. */
-function gradeAgainst(correct: boolean, entity: Entity): AnswerResult {
-  const result: AnswerResult = { correct, acceptedAnswer: entity.labels.en };
-  const visual = revealVisualFor(entity);
-  if (visual) result.revealVisual = visual;
-  return result;
+/**
+ * How point-like a type is, for picking which of a card's entities the reveal
+ * map depicts. A city pins a spot, a country a region, a continent barely a
+ * place at all — so we prefer the most specific. Unknown types rank last.
+ */
+const LOCATABILITY: readonly string[] = ["city", "country", "continent"];
+function locatabilityRank(entity: Entity): number {
+  return Math.min(
+    ...entity.types.map((t) => {
+      const i = LOCATABILITY.indexOf(t);
+      return i < 0 ? LOCATABILITY.length : i;
+    }),
+  );
+}
+
+/**
+ * The entity the reveal map should show for a card: the most point-like of the
+ * statement's subject and object that carries a coordinate — the specific place
+ * is the memory hook, whichever slot the question hides. So "What continent is
+ * Andorra in?" pins Andorra (not Europe), and "Moscow is the capital of what
+ * country?" pins Moscow (not Russia's centroid). Undefined when neither end has
+ * a coordinate (e.g. a currency or language object).
+ */
+function mapEntityFor(statement: Statement, graph: GraphQuery): Entity | undefined {
+  const ids = [statement.subject];
+  if (statement.object.kind === "entity") ids.push(statement.object.id);
+  const located: Entity[] = [];
+  for (const id of ids) {
+    // Map only entities the graph actually holds; an id we can't resolve simply
+    // can't be plotted, so it drops out rather than failing the answer.
+    let entity: Entity;
+    try {
+      entity = graph.getEntity(id);
+    } catch {
+      continue;
+    }
+    if (entity.coordinate) located.push(entity);
+  }
+  if (located.length === 0) return undefined;
+  return located.reduce((best, e) => (locatabilityRank(e) < locatabilityRank(best) ? e : best));
 }
 
 /**
@@ -78,7 +112,8 @@ function gradeAgainst(correct: boolean, entity: Entity): AnswerResult {
  * against the object (the country in "what country is Tokyo in?"). Correct means
  * the input matches one of the target's names; the canonical label comes back
  * either way, so a wrong answer can still be shown what was expected. The reveal
- * also carries a map of the shown answer entity when it has a coordinate.
+ * carries a map of the card's most locatable entity (see `mapEntityFor`) — the
+ * place, not necessarily the answer.
  *
  * Object-hidden grading is *any-of*: a fact can have several true answers — a
  * country with several official languages, each modeled as its own statement —
@@ -91,11 +126,19 @@ export function checkAnswer(pack: Pack, cardId: string, input: string): AnswerRe
   const { statement, hiddenSlot } = findCard(pack, cardId);
   const graph = createGraph(pack.entities);
 
+  // The map depicts the card's place, independent of which slot is graded.
+  const revealVisual = revealVisualFor(mapEntityFor(statement, graph));
+  const finish = (correct: boolean, accepted: Entity): AnswerResult => {
+    const result: AnswerResult = { correct, acceptedAnswer: accepted.labels.en };
+    if (revealVisual) result.revealVisual = revealVisual;
+    return result;
+  };
+
   // Subject-hidden stays single-target; targetEntityId also enforces the
   // literal-object and unsupported-slot guards shared with object grading.
   if (hiddenSlot !== "object") {
     const target = graph.getEntity(targetEntityId(statement, hiddenSlot));
-    return gradeAgainst(matchesEntity(input, target), target);
+    return finish(matchesEntity(input, target), target);
   }
 
   if (statement.object.kind !== "entity") {
@@ -111,10 +154,10 @@ export function checkAnswer(pack: Pack, cardId: string, input: string): AnswerRe
     if (sibling.object.kind !== "entity") continue;
     const candidate = graph.getEntity(sibling.object.id);
     if (matchesEntity(input, candidate)) {
-      return gradeAgainst(true, candidate);
+      return finish(true, candidate);
     }
   }
 
   // Wrong: reveal the card's own object as the expected answer.
-  return gradeAgainst(false, graph.getEntity(statement.object.id));
+  return finish(false, graph.getEntity(statement.object.id));
 }

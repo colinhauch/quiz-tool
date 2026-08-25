@@ -364,8 +364,16 @@ describe("full loop over the real fixture pack and a temp-file database", () => 
     expect(result).toEqual({
       correct: true,
       acceptedAnswer: "Japan",
-      // Japan (Q17) carries a real P625-backed coordinate (#110's Wikidata import).
-      revealVisual: { renderer: "map", entityId: "Q17", lat: 35, lon: 136, label: "Japan" },
+      // The map pins the card's most locatable entity: Tokyo (city) over Japan
+      // (country), even though the answer is Japan — the specific place is the
+      // memory hook. Tokyo (Q1490) carries a real P625 coordinate (#110).
+      revealVisual: {
+        renderer: "map",
+        entityId: "Q1490",
+        lat: 35.68944444444445,
+        lon: 139.69166666666666,
+        label: "Tokyo",
+      },
     });
 
     const recorded = await store.all();
