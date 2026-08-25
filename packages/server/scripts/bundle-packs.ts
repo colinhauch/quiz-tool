@@ -14,9 +14,15 @@
  */
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { discoverPacks, loadPack } from "../src/pack-loader.js";
+import { defaultPacksDir, discoverPacks, loadPack } from "../src/pack-loader.js";
 
 const OUT = new URL("../src/packs.generated.ts", import.meta.url);
+
+/** The raw catalog object (packId → policy), or `{}` when there is no file. */
+function readCatalog(): unknown {
+  const url = new URL("catalog.json", defaultPacksDir());
+  return existsSync(url) ? JSON.parse(readFileSync(url, "utf8")) : {};
+}
 
 /** A pack dir name to a valid JS identifier for its generator import. */
 function ident(dirName: string): string {
@@ -62,6 +68,11 @@ async function renderBundle(): Promise<string> {
     "export const loadedPacks: LoadedPack[] = [",
     rows.join(",\n"),
     "] as LoadedPack[];",
+    "",
+    "// The pack visibility/tier catalog (packs/catalog.json), bundled so the",
+    "// Worker applies the same product policy the fs server does — without it a",
+    "// hidden pack (e.g. core-cities) would show in every deployed environment.",
+    `export const loadedCatalog: unknown = ${JSON.stringify(readCatalog())};`,
     "",
   ].join("\n")}`;
 }

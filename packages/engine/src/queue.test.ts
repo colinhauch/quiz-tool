@@ -17,8 +17,11 @@ const entities: Entity[] = [
 
 const noop: Generator = ({ statement }) => ({ prompt: `${statement.id}?`, input: "text" });
 
-function statement(id: string, pack: string, relation: string): Statement {
-  return { id, subject: "Q1490", relation, object: { kind: "entity", id: "Q17" }, pack };
+// Distinct subjects, so each statement is a genuinely different question: the
+// queue de-dups object-hidden cards that share a (subject, relation), and the
+// base fixture must not trip that — every card here is meant to survive.
+function statement(id: string, pack: string, relation: string, subject = "Q1490"): Statement {
+  return { id, subject, relation, object: { kind: "entity", id: "Q17" }, pack };
 }
 
 const info = (id: string): PackInfo => ({ id, labels: { en: id }, version: "0.0.1" });
@@ -27,11 +30,11 @@ function graph(): Pack {
   return {
     entities: new Map(entities.map((e) => [e.id, e])),
     statements: [
-      statement("c:1", "cities", "located_in"),
-      statement("c:2", "cities", "located_in"),
-      statement("c:3", "cities", "located_in"),
-      statement("k:1", "continents", "on_continent"),
-      statement("k:2", "continents", "on_continent"),
+      statement("c:1", "cities", "located_in", "Q1490"),
+      statement("c:2", "cities", "located_in", "Q90"),
+      statement("c:3", "cities", "located_in", "Q60"),
+      statement("k:1", "continents", "on_continent", "Q1490"),
+      statement("k:2", "continents", "on_continent", "Q90"),
     ],
     generators: { located_in: noop, on_continent: noop },
     packs: new Map([info("cities"), info("continents")].map((p) => [p.id, p])),
@@ -71,6 +74,46 @@ describe("buildQueue", () => {
   it("refuses a selection that yields no cards", () => {
     expect(() => buildQueue(graph(), [], () => 0)).toThrow(/no quizzable cards/);
     expect(() => buildQueue(graph(), ["core-geo"], () => 0)).toThrow(/no quizzable cards/);
+  });
+});
+
+describe("buildQueue, object-hidden de-duplication", () => {
+  // A country with several official languages is modeled as one statement each
+  // (spec #97). Object-hidden, they render the identical prompt, so a pass must
+  // ask the question once — not once per language. Any-of grading accepts any
+  // true answer, so the dropped statements need not be asked as duplicates.
+  function multiValued(): Pack {
+    return {
+      entities: new Map(entities.map((e) => [e.id, e])),
+      statements: [
+        // One subject (Q1490), one relation, three objects → three statements.
+        { id: "l:1", subject: "Q1490", relation: "official_language", object: { kind: "entity", id: "Q17" }, pack: "langs" },
+        { id: "l:2", subject: "Q1490", relation: "official_language", object: { kind: "entity", id: "Q48" }, pack: "langs" },
+        { id: "l:3", subject: "Q1490", relation: "official_language", object: { kind: "entity", id: "Q60" }, pack: "langs" },
+        // A different subject, same relation, stays its own card.
+        { id: "l:4", subject: "Q90", relation: "official_language", object: { kind: "entity", id: "Q17" }, pack: "langs" },
+      ],
+      generators: { official_language: noop },
+      packs: new Map([info("langs")].map((p) => [p.id, p])),
+    };
+  }
+
+  it("asks a multi-valued (subject, relation) once per pass", () => {
+    const queue = buildQueue(multiValued(), ["langs"], () => 0);
+    expect(queue.upcoming).toHaveLength(2);
+    expect(queue.upcoming.map((c) => c.statement.subject).sort()).toEqual(["Q1490", "Q90"]);
+  });
+
+  it("keeps every card of a single-valued relation (capital, continent)", () => {
+    // The base fixture has distinct subjects, so nothing collapses.
+    expect(buildQueue(graph(), ["cities", "continents"], () => 0).upcoming).toHaveLength(5);
+  });
+
+  it("does not de-dup subject-hidden cards sharing a (subject, relation)", () => {
+    const g = multiValued();
+    g.hiddenSlots = { official_language: ["subject"] };
+    // Four subject-hidden cards, none collapsed — de-dup is object-hidden only.
+    expect(buildQueue(g, ["langs"], () => 0).upcoming).toHaveLength(4);
   });
 });
 

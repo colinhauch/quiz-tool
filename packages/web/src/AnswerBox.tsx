@@ -1,6 +1,6 @@
 import type { EntitySummary } from "@geo/contract";
 import { type FormEvent, type KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
-import { filterSuggestions, loadSuggestionEntities } from "./suggestions.js";
+import { displayLabel, filterSuggestions, loadSuggestionEntities } from "./suggestions.js";
 
 interface AnswerBoxProps {
   value: string;
@@ -34,6 +34,7 @@ export function AnswerBox({
   const [dismissed, setDismissed] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
+  const submitRef = useRef<HTMLButtonElement>(null);
 
   // Load (and cache) the entities to suggest whenever the answer types change.
   // The current list is cleared first so a stale question's names can't flash
@@ -65,10 +66,12 @@ export function AnswerBox({
   }, [value]);
 
   function choose(entity: EntitySummary) {
-    onChange(entity.label);
+    onChange(displayLabel(entity));
     setDismissed(true);
     setActiveIndex(-1);
-    inputRef.current?.focus();
+    // Move to Submit so a keyboard learner's next Enter sends the answer, rather
+    // than re-opening suggestions in the input. One pick, one Enter, done.
+    submitRef.current?.focus();
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
@@ -149,21 +152,22 @@ export function AnswerBox({
                 <button
                   type="button"
                   className="answer-suggestion__button"
-                  // mousedown, not click: it fires before the input's blur, so a
-                  // tap still selects even as focus leaves the field.
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    choose(entity);
-                  }}
+                  // onClick (not onMouseDown) so a keyboard learner who Tabs onto
+                  // a suggestion and presses Enter selects it — Enter on a focused
+                  // button fires click, never mousedown. The list isn't focus-
+                  // gated, so a mouse blur can't hide it before the click lands.
+                  onClick={() => choose(entity)}
+                  // Keep the styled highlight tracking Tab focus, not just arrows.
+                  onFocus={() => setActiveIndex(i)}
                 >
-                  {entity.label}
+                  {displayLabel(entity)}
                 </button>
               </li>
             ))}
           </ul>
         )}
       </div>
-      <button className="btn-primary" type="submit">
+      <button ref={submitRef} className="btn-primary" type="submit">
         Submit
       </button>
     </form>
