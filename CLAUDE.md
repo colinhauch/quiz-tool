@@ -13,7 +13,7 @@ Shut down what you start, in the same session. Identify before killing — `ps -
 
 # Geography Learning Engine
 
-A quiz app that teaches world geography from a knowledge graph, tracks every answer, and surfaces knowledge gaps. TypeScript. Pre-implementation — the design exists, the code does not.
+A quiz app that teaches world geography from a knowledge graph, tracks every answer, and surfaces knowledge gaps. TypeScript. Built and deployed: the engine, server, web app, and packs live under `packages/` and `packs/`, backed by Supabase Postgres. The code is the source of truth; the specs carry the reasoning behind it.
 
 ## Three kinds of documentation
 
