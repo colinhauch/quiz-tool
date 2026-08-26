@@ -6,6 +6,7 @@ import {
   applySelection,
   buildScheduler,
   drawNext,
+  eligibleCards,
   type Scheduler,
   type Tier,
 } from "./scheduler.js";
@@ -72,7 +73,57 @@ const tierByProbability = (cardId: string, d: Record<string, number>): string =>
   return diff <= EASY_D ? "easy" : diff >= HARD_D ? "hard" : "medium";
 };
 
+describe("eligibleCards", () => {
+  // These behaviours were covered by queue.test.ts before the queue was retired;
+  // they now live in eligibleCards/dedupeObjectHidden, ported verbatim from the
+  // queue, so they keep their coverage here (#120 review).
+
+  it("omits statements whose relation has no generator", () => {
+    // graphOf only registers a `located_in` generator, so an `ungenerated`
+    // statement is enumerated but not eligible to be drawn.
+    const stmts: Statement[] = [
+      { id: "a:1", subject: "S1", relation: "located_in", object: { kind: "entity", id: "Q17" }, pack: "geo" },
+      { id: "a:2", subject: "S2", relation: "ungenerated", object: { kind: "entity", id: "Q17" }, pack: "geo" },
+    ];
+    const g = graphOf(stmts, ["geo"]);
+    expect(eligibleCards(g, ["geo"]).map((c) => c.statement.id)).toEqual(["a:1"]);
+  });
+
+  it("collapses a multi-valued (subject, relation) object-hidden card to one", () => {
+    // One subject with two objects renders the identical object-hidden prompt
+    // ("what is S located in?"), so a cycle asks it once; a different subject
+    // stays its own card.
+    const stmts: Statement[] = [
+      { id: "l:1", subject: "Q1490", relation: "located_in", object: { kind: "entity", id: "Q17" }, pack: "geo" },
+      { id: "l:2", subject: "Q1490", relation: "located_in", object: { kind: "entity", id: "Q48" }, pack: "geo" },
+      { id: "l:3", subject: "Q90", relation: "located_in", object: { kind: "entity", id: "Q17" }, pack: "geo" },
+    ];
+    const g = graphOf(stmts, ["geo"]);
+    expect(eligibleCards(g, ["geo"]).map((c) => c.statement.subject).sort()).toEqual(["Q1490", "Q90"]);
+  });
+
+  it("does not de-dup subject-hidden cards sharing a (subject, relation)", () => {
+    // De-dup is object-hidden only: two subject-hidden cards under one subject
+    // ask different prompts (each names its own object), so both survive.
+    const stmts: Statement[] = [
+      { id: "l:1", subject: "Q1490", relation: "located_in", object: { kind: "entity", id: "Q17" }, pack: "geo" },
+      { id: "l:2", subject: "Q1490", relation: "located_in", object: { kind: "entity", id: "Q48" }, pack: "geo" },
+    ];
+    const g: Pack = { ...graphOf(stmts, ["geo"]), hiddenSlots: { located_in: ["subject"] } };
+    expect(eligibleCards(g, ["geo"])).toHaveLength(2);
+  });
+});
+
 describe("buildScheduler", () => {
+  it("refuses tiers that don't partition [0, 1]", () => {
+    const g = graphOf(pool("geo", 3), ["geo"]);
+    const gappy: Tier[] = [
+      { name: "low", min: 0, max: 0.4, marbles: 1 },
+      { name: "high", min: 0.6, max: 1.01, marbles: 1 }, // gap 0.4–0.6: a card at P=0.5 bins nowhere
+    ];
+    expect(() => buildScheduler(g, emptyRatings(), "u", ["geo"], () => 0, gappy)).toThrow(/contiguous|cover/);
+  });
+
   it("bins the whole eligible pool by P(success)", () => {
     const stmts = pool("geo", 6);
     const g = graphOf(stmts, ["geo"]);

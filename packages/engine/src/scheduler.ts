@@ -127,6 +127,29 @@ function tierOf(tiers: readonly Tier[], p: number): Tier | undefined {
   return tiers.find((tier) => p >= tier.min && p < tier.max);
 }
 
+/**
+ * Rejects tiers that don't partition `[0, 1]` — a gap or overlap between bands
+ * would silently drop a card whose `P(success)` falls in it (binned nowhere, so
+ * never drawable, yet still counted as eligible/`queued`). Bands must be sorted,
+ * contiguous (`max === next.min`), start at or below 0, and reach past 1 so the
+ * half-open top band still contains `P = 1`. DEFAULT_TIERS satisfies this; the
+ * check turns a mis-tuned custom ratio into a loud error instead of a card that
+ * is quizzed-on-paper but unschedulable.
+ */
+function assertTiersPartition(tiers: readonly Tier[]): void {
+  const sorted = [...tiers].sort((a, b) => a.min - b.min);
+  const first = sorted[0];
+  const last = sorted[sorted.length - 1];
+  if (!first || !last || first.min > 0 || last.max <= 1) {
+    throw new Error(`tiers must cover [0, 1]: ${JSON.stringify(tiers)}`);
+  }
+  for (let i = 0; i < sorted.length - 1; i++) {
+    if (sorted[i]?.max !== sorted[i + 1]?.min) {
+      throw new Error(`tiers must be contiguous (no gap or overlap): ${JSON.stringify(tiers)}`);
+    }
+  }
+}
+
 /** `P(success)` for a card: its difficulty against the learner's ability for its owning pack. */
 function successProbability(ratings: Ratings, learnerId: string, card: Card): number {
   const cardId = makeCardId(card.statement.id, card.hiddenSlot);
@@ -136,20 +159,21 @@ function successProbability(ratings: Ratings, learnerId: string, card: Card): nu
 }
 
 /**
- * Bins the current eligible pool into one card-id list per tier by each card's
- * `P(success)`. Unrated cards read back at the seed, so they compute `P = 0.5`
- * and land in whichever tier owns 0.5 (medium, by default). Lists come back
- * unshuffled; callers shuffle the bags they build from these.
+ * Bins an already-enumerated eligible pool into one card-id list per tier by
+ * each card's `P(success)`. Unrated cards read back at the seed, so they compute
+ * `P = 0.5` and land in whichever tier owns 0.5 (medium, by default). Lists come
+ * back unshuffled; callers shuffle the bags they build from these. Takes the pool
+ * as an argument so a caller that already enumerated it (buildScheduler) does not
+ * pay for a second graph walk.
  */
 function binPool(
-  graph: Pack,
   ratings: Ratings,
   learnerId: string,
-  included: readonly string[],
+  pool: readonly Card[],
   tiers: readonly Tier[],
 ): Record<string, string[]> {
   const bins: Record<string, string[]> = Object.fromEntries(tiers.map((t) => [t.name, []]));
-  for (const card of eligibleCards(graph, included)) {
+  for (const card of pool) {
     const tier = tierOf(tiers, successProbability(ratings, learnerId, card));
     if (tier) bins[tier.name]?.push(makeCardId(card.statement.id, card.hiddenSlot));
   }
@@ -181,10 +205,12 @@ export function buildScheduler(
   rng: Rng = Math.random,
   tiers: readonly Tier[] = DEFAULT_TIERS,
 ): Scheduler {
-  const bins = binPool(graph, ratings, learnerId, included, tiers);
-  if (eligibleCards(graph, included).length === 0) {
+  assertTiersPartition(tiers);
+  const pool = eligibleCards(graph, included);
+  if (pool.length === 0) {
     throw new Error(`no eligible cards in packs: ${included.join(", ") || "(none)"}`);
   }
+  const bins = binPool(ratings, learnerId, pool, tiers);
   const bags: Record<string, readonly string[]> = {};
   for (const tier of tiers) bags[tier.name] = shuffle(bins[tier.name] ?? [], rng);
   return { included: [...included], tiers, topBag: fillTopBag(tiers, rng), bags };
@@ -230,7 +256,8 @@ export function drawNext(
 
     if ((bags[tierName]?.length ?? 0) === 0) {
       // Re-bin only this tier from the current pool and drifted ratings.
-      bags[tierName] = shuffle(binPool(graph, ratings, learnerId, included, tiers)[tierName] ?? [], rng);
+      const pool = eligibleCards(graph, included);
+      bags[tierName] = shuffle(binPool(ratings, learnerId, pool, tiers)[tierName] ?? [], rng);
     }
     const bag = bags[tierName] ?? [];
     if (bag.length === 0) continue; // Still empty — redraw a different marble.

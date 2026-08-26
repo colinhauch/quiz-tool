@@ -180,18 +180,21 @@ export function createApp({
     store: AnswerStore;
     selection?: SelectionStore;
     rating?: RatingStore;
+    /** The ratings just loaded to build the scheduler, when this call built it — so a first draw can reuse them instead of re-reading the whole cache. */
+    freshRatings?: Ratings;
   }> {
     const resolved = resolve(c);
     let scheduler = schedulers.get(resolved.key);
+    let freshRatings: Ratings | undefined;
     if (!scheduler) {
       const stored = (await resolved.selection?.read()) ?? null;
       const initial = stored ? stored.filter((id) => selectable.includes(id)) : selectable;
       const included = initial.length > 0 ? initial : selectable;
-      const ratings = await loadRatings(resolved.rating, resolved.key, included);
-      scheduler = buildScheduler(pack, ratings, resolved.key, included, rng);
+      freshRatings = await loadRatings(resolved.rating, resolved.key, included);
+      scheduler = buildScheduler(pack, freshRatings, resolved.key, included, rng);
       schedulers.set(resolved.key, scheduler);
     }
-    return { scheduler, ...resolved };
+    return { scheduler, freshRatings, ...resolved };
   }
 
   // Registered before the auth middleware so it stays public; every route below
@@ -210,8 +213,10 @@ export function createApp({
   // the contract the browser trusts — and so an accidental answer leak fails
   // here, at the seam.
   app.get("/question", async (c) => {
-    const { scheduler, key, rating } = await ensureScheduler(c);
-    const ratings = await loadRatings(rating, key, scheduler.included);
+    const { scheduler, key, rating, freshRatings } = await ensureScheduler(c);
+    // Reuse the ratings ensureScheduler just loaded on a learner's first draw;
+    // otherwise re-read, since they drift as answers arrive between draws.
+    const ratings = freshRatings ?? (await loadRatings(rating, key, scheduler.included));
     const drawn = drawNext(pack, ratings, key, scheduler, rng);
     schedulers.set(key, drawn.scheduler);
     return c.json(
@@ -392,8 +397,12 @@ async function loadRatings(
     difficulty.set(id, v.difficulty);
     answerCount.set(id, v.answerCount);
   }
+  // One round-trip per included pack, issued in parallel rather than awaited in
+  // series — a learner with several packs selected would otherwise pay each DB
+  // latency back to back on every draw.
   const ability = new Map<string, number>();
-  for (const packId of included) ability.set(abilityKey(learnerId, packId), await rating.readAbility(packId));
+  const abilities = await Promise.all(included.map((packId) => rating.readAbility(packId)));
+  included.forEach((packId, i) => ability.set(abilityKey(learnerId, packId), abilities[i] as number));
   return { difficulty, answerCount, ability };
 }
 

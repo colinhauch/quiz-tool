@@ -104,14 +104,29 @@ export function createSupabaseRatingStore(client: SupabaseClient): RatingStore {
     async readAllCards() {
       // Difficulty is global (every learner's answers move it), so no RLS scope
       // to apply — the scheduler needs the whole cache to bin the pool.
-      const { data, error } = await client.from("card_difficulty").select("card_id, difficulty, answer_count");
-      if (error) throw new Error(`card_difficulty.select-all failed: ${error.message}`);
-      return new Map(
-        (data ?? []).map((row) => [
-          row.card_id as string,
-          { difficulty: row.difficulty as number, answerCount: row.answer_count as number },
-        ]),
-      );
+      //
+      // Paginated with .range() because PostgREST caps a single response at ~1000
+      // rows by default: without this, past 1000 answered cards the tail would be
+      // silently dropped and those cards would mis-bin as medium (P=0.5) forever.
+      // Loop until a short page proves the end is reached.
+      const PAGE = 1000;
+      const out = new Map<string, { difficulty: number; answerCount: number }>();
+      for (let from = 0; ; from += PAGE) {
+        const { data, error } = await client
+          .from("card_difficulty")
+          .select("card_id, difficulty, answer_count")
+          .range(from, from + PAGE - 1);
+        if (error) throw new Error(`card_difficulty.select-all failed: ${error.message}`);
+        const rows = data ?? [];
+        for (const row of rows) {
+          out.set(row.card_id as string, {
+            difficulty: row.difficulty as number,
+            answerCount: row.answer_count as number,
+          });
+        }
+        if (rows.length < PAGE) break;
+      }
+      return out;
     },
 
     async readAbility(packId: string) {
