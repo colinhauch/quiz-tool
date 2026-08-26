@@ -16,7 +16,11 @@ import { supabaseJwks } from "./auth.js";
 import { parseCatalog } from "./catalog.js";
 import { assembleLoaded } from "./pack-loader.js";
 import { loadedCatalog, loadedPacks } from "./packs.generated.js";
-import { createSupabaseAnswerStore, createSupabaseSelectionStore } from "./supabase-storage.js";
+import {
+  createSupabaseAnswerStore,
+  createSupabaseRatingStore,
+  createSupabaseSelectionStore,
+} from "./supabase-storage.js";
 
 interface Env {
   /** Supabase project URL, e.g. https://<ref>.supabase.co (wrangler var). */
@@ -54,6 +58,7 @@ function getApp(env: Env) {
       storesForUser: (client) => ({
         store: createSupabaseAnswerStore(client),
         selection: createSupabaseSelectionStore(client),
+        rating: createSupabaseRatingStore(client),
       }),
     });
     builtFor = env;

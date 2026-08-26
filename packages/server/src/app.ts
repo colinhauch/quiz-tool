@@ -9,27 +9,35 @@ import {
   questionResponseSchema,
 } from "@geo/contract";
 import {
+  abilityKey,
+  abilityOf,
+  applyAnswer,
   applySelection,
   buildQueue,
   checkAnswer,
+  difficultyOf,
   drawNext,
   enumerateCards,
   findCard,
   generateQuestion,
+  ownerPackId,
   type Pack,
   type Queue,
+  type Ratings,
+  type RatingSnapshot,
 } from "@geo/engine";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { type Context, Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { type AuthEnv, type AuthOptions, createAuthMiddleware } from "./auth.js";
 import type { Catalog } from "./catalog.js";
-import type { AnswerStore, SelectionStore } from "./storage.js";
+import type { AnswerStore, RatingStore, SelectionStore } from "./storage.js";
 
-/** The pair of stores that serve one learner: their answer log and pack selection. */
+/** The stores that serve one learner: their answer log, pack selection, and Elo ratings. */
 export interface UserStores {
   store: AnswerStore;
   selection?: SelectionStore;
+  rating?: RatingStore;
 }
 
 export interface AppOptions {
@@ -43,6 +51,12 @@ export interface AppOptions {
   store?: AnswerStore;
   /** Single-user mode: where the learner's pack selection is persisted. Omit for a non-persisting app. */
   selection?: SelectionStore;
+  /**
+   * Single-user mode: the Elo rating cache. Omit to run without live ratings —
+   * answers are still logged, just with no snapshot and no difficulty/ability
+   * update (the pre-scheduler behaviour). Supply it to calibrate on every answer.
+   */
+  rating?: RatingStore;
   /**
    * Multi-user mode: verify each request's Supabase JWT. Given together with
    * {@link AppOptions.storesForUser}, the data routes are guarded (401 without a
@@ -98,6 +112,7 @@ export function createApp({
   pack,
   store,
   selection,
+  rating,
   auth,
   storesForUser,
   rng,
@@ -116,14 +131,19 @@ export function createApp({
   // JWT the middleware verified — a per-user client (RLS scopes it) and the
   // verified subject as the queue key. Cheap and synchronous: no queue built.
   const SINGLE_USER = "__single__";
-  function resolve(c: Context<AuthEnv>): { store: AnswerStore; selection?: SelectionStore; key: string } {
+  function resolve(c: Context<AuthEnv>): {
+    store: AnswerStore;
+    selection?: SelectionStore;
+    rating?: RatingStore;
+    key: string;
+  } {
     if (storesForUser) {
       const userId = c.get("userId");
       const built = storesForUser(c.get("supabase"), userId);
-      return { store: built.store, selection: built.selection, key: userId };
+      return { store: built.store, selection: built.selection, rating: built.rating, key: userId };
     }
     // Guarded in the constructor: single-user mode always has an injected store.
-    return { store: store as AnswerStore, selection, key: SINGLE_USER };
+    return { store: store as AnswerStore, selection, rating, key: SINGLE_USER };
   }
 
   // First run selects everything, so introducing the picker regresses nothing.
@@ -281,8 +301,24 @@ export function createApp({
       throw new HTTPException(404, { message: `unknown card: ${cardId}`, cause: err });
     }
 
-    const { store: s } = resolve(c);
-    await s.record({ cardId, input, correct: result.correct, askedAt: now().toISOString() });
+    const { store: s, rating: r, key } = resolve(c);
+    // Move the card's global difficulty and this learner's pack ability, and
+    // snapshot what the scheduler believed at ask time. The queue still selects
+    // (#119) — this only calibrates. Without a rating store, log as before.
+    //
+    // Compute the update (pure) first, then append the log row — the source of
+    // truth — and only then persist the rating caches. That order keeps the
+    // caches from ever leading the log: if the log append fails, the caches are
+    // untouched; if a cache write fails, replay rebuilds it from the row.
+    const update = r ? await computeRatingUpdate(r, pack, cardId, key, result.correct) : undefined;
+    await s.record({
+      cardId,
+      input,
+      correct: result.correct,
+      askedAt: now().toISOString(),
+      ...(update?.snapshot ? { snapshot: update.snapshot } : {}),
+    });
+    await update?.persist();
     return c.json(answerResponseSchema.parse(result));
   });
 
@@ -298,7 +334,9 @@ export function createApp({
       answerLogSchema.parse(
         [...(await s.all())]
           .reverse()
-          .map((record) => ({
+          // The rating snapshot is telemetry, not part of the review view — drop
+          // it here (the log entry schema is strict); `GET /answers` is unchanged.
+          .map(({ snapshot: _snapshot, ...record }) => ({
             ...record,
             question: questionText(pack, record.cardId),
             acceptedAnswer: acceptedAnswerFor(pack, record.cardId),
@@ -308,6 +346,50 @@ export function createApp({
   });
 
   return app;
+}
+
+/**
+ * Computes one answer's effect on the Elo cache: the ask-time snapshot to log,
+ * and a `persist` that writes the post-answer difficulty and ability. Splitting
+ * compute from persist lets the caller append the log row (the source of truth)
+ * *between* them, so the caches never lead the log. A card with no owning pack —
+ * an edge not in the graph — scores 0, moves no rating, and yields `undefined`.
+ *
+ * Reads only the one card and one ability the answer touches, hands the engine a
+ * one-entry `Ratings`, and writes back what changed — the online O(1) path the
+ * scheduler spec calls for, with the append-only log as the rebuildable truth.
+ */
+async function computeRatingUpdate(
+  rating: RatingStore,
+  pack: Pack,
+  cardId: string,
+  learnerId: string,
+  correct: boolean,
+): Promise<{ snapshot: RatingSnapshot; persist: () => Promise<void> } | undefined> {
+  const packId = ownerPackId(pack, cardId);
+  if (packId === undefined) return undefined;
+
+  const [{ difficulty, answerCount }, ability] = await Promise.all([
+    rating.readCard(cardId),
+    rating.readAbility(packId),
+  ]);
+  const current: Ratings = {
+    difficulty: new Map([[cardId, difficulty]]),
+    answerCount: new Map([[cardId, answerCount]]),
+    ability: new Map([[abilityKey(learnerId, packId), ability]]),
+  };
+
+  const { ratings: next, snapshot } = applyAnswer(current, { cardId, learnerId, correct }, packId);
+  // packId is defined, so applyAnswer always moved this card and pack.
+  if (!snapshot) throw new Error(`rating update produced no snapshot for card ${cardId}`);
+  return {
+    snapshot,
+    persist: () =>
+      Promise.all([
+        rating.writeCard(cardId, difficultyOf(next, cardId), next.answerCount.get(cardId) as number),
+        rating.writeAbility(packId, abilityOf(next, learnerId, packId)),
+      ]).then(() => undefined),
+  };
 }
 
 /**

@@ -8,7 +8,21 @@ import {
   packListSchema,
   questionResponseSchema,
 } from "@geo/contract";
-import { type Entity, enumerateCards, type Generator, type Pack, type Statement } from "@geo/engine";
+import {
+  abilityOf,
+  difficultyOf,
+  type Entity,
+  enumerateCards,
+  type Generator,
+  ownerPackId,
+  type Pack,
+  PROVISIONAL_K,
+  type RatingEvent,
+  replay,
+  SEED_RATING,
+  SETTLED_K,
+  type Statement,
+} from "@geo/engine";
 import { type CryptoKey, generateKeyPair, SignJWT } from "jose";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import { createApp } from "./app.js";
@@ -16,8 +30,10 @@ import { loadAllPacks } from "./pack-loader.js";
 import {
   type AnswerStore,
   createAnswerStore,
+  createRatingStore,
   createSelectionStore,
   openDatabase,
+  type RatingStore,
   type SelectionStore,
 } from "./storage.js";
 
@@ -699,5 +715,110 @@ describe("multi-user mode", () => {
     );
     expect(aLog).toHaveLength(1);
     expect(bLog).toEqual([]);
+  });
+});
+
+describe("POST /answer — Elo ratings computed live (#119)", () => {
+  const CARD = "S1:object"; // Tokyo located_in Japan, object-hidden
+  const at = "2026-07-19T12:00:00.000Z";
+
+  /** One app over a shared in-memory db, with both the answer log and the rating cache. */
+  function ratingApp() {
+    const db = openDatabase(":memory:");
+    const store = createAnswerStore(db);
+    const rating = createRatingStore(db);
+    const app = createApp({ pack: fixturePack(), store, rating, now: () => new Date(at) });
+    const answer = (input: string) =>
+      app.request("/answer", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ cardId: CARD, input }),
+      });
+    return { app, store, rating, answer };
+  }
+
+  it("a correct answer lowers the card's difficulty and raises the pack's ability", async () => {
+    const { rating, answer } = ratingApp();
+    await answer("japan");
+    // Seed vs seed => P=0.5, provisional K=40, step = 20.
+    expect((await rating.readCard(CARD)).difficulty).toBeCloseTo(SEED_RATING - 20, 6);
+    expect(await rating.readAbility(TEST_PACK.id)).toBeCloseTo(SEED_RATING + 20, 6);
+    expect((await rating.readCard(CARD)).answerCount).toBe(1);
+  });
+
+  it("a wrong answer raises the card's difficulty and lowers the pack's ability", async () => {
+    const { rating, answer } = ratingApp();
+    await answer("china");
+    expect((await rating.readCard(CARD)).difficulty).toBeCloseTo(SEED_RATING + 20, 6);
+    expect(await rating.readAbility(TEST_PACK.id)).toBeCloseTo(SEED_RATING - 20, 6);
+  });
+
+  it("records the ask-time snapshot on the answer row (pre-answer ratings, K, pack)", async () => {
+    const { store, answer } = ratingApp();
+    await answer("japan");
+    const [row] = await store.all();
+    expect(row?.snapshot).toEqual({
+      difficulty: SEED_RATING,
+      ability: SEED_RATING,
+      kApplied: PROVISIONAL_K,
+      packId: TEST_PACK.id,
+    });
+  });
+
+  it("applies provisional K for the card's first answers and settles it after", async () => {
+    const { store, answer } = ratingApp();
+    for (let i = 0; i < 11; i++) await answer("japan");
+    const rows = await store.all();
+    expect(rows.slice(0, 10).every((r) => r.snapshot?.kApplied === PROVISIONAL_K)).toBe(true);
+    expect(rows[10]?.snapshot?.kApplied).toBe(SETTLED_K);
+  });
+
+  it("persists ratings across app instances sharing a database", async () => {
+    const db = openDatabase(":memory:");
+    const first = createApp({
+      pack: fixturePack(),
+      store: createAnswerStore(db),
+      rating: createRatingStore(db),
+      now: () => new Date(at),
+    });
+    await first.request("/answer", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ cardId: CARD, input: "japan" }),
+    });
+    // A fresh store over the same db reads the ratings the first app wrote.
+    expect((await createRatingStore(db).readCard(CARD)).difficulty).toBeCloseTo(SEED_RATING - 20, 6);
+  });
+
+  it("replaying the answer log from empty reconstructs the online rating tables", async () => {
+    const { store, rating, answer } = ratingApp();
+    for (const input of ["japan", "china", "japan", "nippon", "japan"]) await answer(input);
+
+    const pack = fixturePack();
+    const events: RatingEvent[] = (await store.all()).map((r) => ({
+      cardId: r.cardId,
+      learnerId: "single",
+      correct: r.correct,
+    }));
+    const rebuilt = replay(events, (cardId) => ownerPackId(pack, cardId));
+
+    expect(difficultyOf(rebuilt, CARD)).toBeCloseTo((await rating.readCard(CARD)).difficulty, 6);
+    expect(abilityOf(rebuilt, "single", TEST_PACK.id)).toBeCloseTo(await rating.readAbility(TEST_PACK.id), 6);
+  });
+
+  it("leaves selection unchanged — the queue still drives which card is asked", async () => {
+    // Same seed, one app with ratings and one without: identical draw order.
+    const draws = async (rating?: RatingStore) => {
+      const app = createApp({ pack: bidiPack(), store: memoryStore(), rating, rng: () => 0 });
+      const out: string[] = [];
+      for (let i = 0; i < 3; i++) {
+        const q = questionResponseSchema.parse(await (await app.request("/question")).json());
+        out.push(q.cardId);
+      }
+      return out;
+    };
+    const withRatings = await draws(createRatingStore(openDatabase(":memory:")));
+    const withoutRatings = await draws();
+    expect(withRatings).toEqual(withoutRatings);
   });
 });

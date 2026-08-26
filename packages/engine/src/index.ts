@@ -24,3 +24,22 @@ export {
   checkAnswer,
   type AnswerResult,
 } from "./answer.js";
+export {
+  RATING_SCALE,
+  SEED_RATING,
+  PROVISIONAL_K,
+  SETTLED_K,
+  PROVISIONAL_ANSWERS,
+  probabilityOfSuccess,
+  kFactor,
+  abilityKey,
+  emptyRatings,
+  difficultyOf,
+  abilityOf,
+  applyAnswer,
+  replay,
+  ownerPackId,
+  type Ratings,
+  type RatingEvent,
+  type RatingSnapshot,
+} from "./rating.js";

@@ -156,6 +156,44 @@ describe.skipIf(!ready)("RLS: answers, pack_selection, pack_selection_state", ()
     expect(row).toEqual([{ user_id: a.id }]);
   });
 
+  it("user A cannot read or write user B's pack_ability", async () => {
+    const a = await signedInUser(admin);
+    const b = await signedInUser(admin);
+    createdUserIds.push(a.id, b.id);
+
+    await admin.from("pack_ability").insert({ user_id: b.id, pack_id: "capital-cities", ability: 1600 });
+
+    const { data: seen } = await a.client.from("pack_ability").select("*");
+    expect(seen).toEqual([]);
+
+    const { error: insertErr } = await a.client
+      .from("pack_ability")
+      .insert({ user_id: b.id, pack_id: "core-geo", ability: 1400 });
+    expect(insertErr?.code).toBe("42501");
+  });
+
+  it("card_difficulty is global: any authenticated user reads and upserts it", async () => {
+    const a = await signedInUser(admin);
+    const b = await signedInUser(admin);
+    createdUserIds.push(a.id, b.id);
+    const card = `cc:tokyo-japan:object-${crypto.randomUUID()}`;
+
+    const { error: insertErr } = await a.client
+      .from("card_difficulty")
+      .insert({ card_id: card, difficulty: 1480, answer_count: 2 });
+    expect(insertErr).toBeNull();
+
+    // B sees the same global row A wrote, and may update it.
+    const { data: seen } = await b.client.from("card_difficulty").select("*").eq("card_id", card);
+    expect(seen).toEqual([{ card_id: card, difficulty: 1480, answer_count: 2 }]);
+
+    const { error: updateErr } = await b.client
+      .from("card_difficulty")
+      .update({ difficulty: 1470, answer_count: 3 })
+      .eq("card_id", card);
+    expect(updateErr).toBeNull();
+  });
+
   it("an anonymous (unauthenticated) client sees no rows and cannot write", async () => {
     const anon = createClient(url, anonKey, { auth: { persistSession: false, autoRefreshToken: false } });
 
