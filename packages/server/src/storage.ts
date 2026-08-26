@@ -68,6 +68,14 @@ interface AnswerRow {
 export interface RatingStore {
   /** A card's difficulty and global answer count; seed (1500) and 0 if unseen. */
   readCard(cardId: string): Promise<{ difficulty: number; answerCount: number }>;
+  /**
+   * Every rated card, keyed by card id — the whole difficulty cache in one read.
+   * The scheduler bins the eligible pool by `P(success)`, so it needs every
+   * card's difficulty at once; unrated cards are simply absent (the reader
+   * defaults them to the seed). Bounded by the number of *answered* cards, not
+   * the graph, since the cache only holds cards an answer has moved.
+   */
+  readAllCards(): Promise<Map<string, { difficulty: number; answerCount: number }>>;
   /** The learner's ability for a pack; seed (1500) if unseen. */
   readAbility(packId: string): Promise<number>;
   /** Persist a card's post-answer difficulty and answer count. */
@@ -231,6 +239,9 @@ export function createRatingStore(db: Database.Database): RatingStore {
   const selectCard = db.prepare(
     "SELECT difficulty, answer_count AS answerCount FROM card_difficulty WHERE card_id = ?",
   );
+  const selectAllCards = db.prepare(
+    "SELECT card_id AS cardId, difficulty, answer_count AS answerCount FROM card_difficulty",
+  );
   const selectAbility = db.prepare("SELECT ability FROM pack_ability WHERE pack_id = ?");
   const upsertCard = db.prepare(
     `INSERT INTO card_difficulty (card_id, difficulty, answer_count) VALUES (@cardId, @difficulty, @answerCount)
@@ -245,6 +256,10 @@ export function createRatingStore(db: Database.Database): RatingStore {
     async readCard(cardId) {
       const row = selectCard.get(cardId) as { difficulty: number; answerCount: number } | undefined;
       return row ?? { difficulty: SEED_RATING, answerCount: 0 };
+    },
+    async readAllCards() {
+      const rows = selectAllCards.all() as { cardId: string; difficulty: number; answerCount: number }[];
+      return new Map(rows.map((r) => [r.cardId, { difficulty: r.difficulty, answerCount: r.answerCount }]));
     },
     async readAbility(packId) {
       const row = selectAbility.get(packId) as { ability: number } | undefined;
