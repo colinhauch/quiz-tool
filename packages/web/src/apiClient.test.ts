@@ -36,7 +36,7 @@ describe("apiClient", () => {
   });
 
   it("submitAnswer POSTs the card id and input as JSON and returns the parsed result", async () => {
-    const result: AnswerResponse = { correct: true, acceptedAnswer: "Japan" };
+    const result: AnswerResponse = { correct: true, acceptedAnswer: "Japan", acceptedAnswers: ["Japan"] };
     const fetchMock = vi.fn(() => Promise.resolve({ json: async () => result }));
     vi.stubGlobal("fetch", fetchMock);
 
