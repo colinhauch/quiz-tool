@@ -1,12 +1,35 @@
 import { useEffect, useState } from "react";
 import type { AdminPackDetail, AdminPackList, AdminRelationGroup } from "@geo/contract";
 import { getPackDetail, getPacks } from "./apiClient.js";
+import { EntityDetail } from "./EntityDetail.js";
+import { consumePacksFocus } from "./navigation.js";
 
-type View = { kind: "list" } | { kind: "pack"; packId: string };
+type View =
+  | { kind: "list" }
+  | { kind: "pack"; packId: string; highlightStatementId?: string }
+  | { kind: "entity"; entityId: string };
 
-/** Packs surface — pack list → pack detail (#136). */
+/** Turns a pending cross-surface focus request (`navigation.ts`) into a view. */
+function viewFromFocus(focus: ReturnType<typeof consumePacksFocus>): View | undefined {
+  if (!focus) return undefined;
+  if (focus.kind === "pack") return { kind: "pack", packId: focus.packId };
+  if (focus.kind === "entity") return { kind: "entity", entityId: focus.entityId };
+  return { kind: "pack", packId: focus.packId, highlightStatementId: focus.statementId };
+}
+
+/** Packs surface — pack list → pack detail → entity rich view (#136, #137). */
 export function Packs() {
   const [view, setView] = useState<View>({ kind: "list" });
+
+  // Consumed in an effect, not during render: `navigation.ts`'s store notifies
+  // subscribers (including `App`, which switched the shell to this surface)
+  // synchronously, and updating another component mid-render is exactly the
+  // anti-pattern React warns about. Running one tick later avoids it, at the
+  // cost of a one-frame flash of the pack list before the jump lands.
+  useEffect(() => {
+    const next = viewFromFocus(consumePacksFocus());
+    if (next) setView(next);
+  }, []);
 
   return (
     <section className="admin-surface" aria-labelledby="surface-Packs">
@@ -18,10 +41,24 @@ export function Packs() {
           All packs
         </button>
         {view.kind === "pack" && <span> / Pack: {view.packId}</span>}
+        {view.kind === "entity" && <span> / Entity: {view.entityId}</span>}
       </nav>
 
       {view.kind === "list" && <PackListView onSelectPack={(packId) => setView({ kind: "pack", packId })} />}
-      {view.kind === "pack" && <PackDetailView packId={view.packId} />}
+      {view.kind === "pack" && (
+        <PackDetailView
+          packId={view.packId}
+          highlightStatementId={view.highlightStatementId}
+          onSelectEntity={(entityId) => setView({ kind: "entity", entityId })}
+        />
+      )}
+      {view.kind === "entity" && (
+        <EntityDetail
+          entityId={view.entityId}
+          onSelectEntity={(entityId) => setView({ kind: "entity", entityId })}
+          onSelectPack={(packId) => setView({ kind: "pack", packId })}
+        />
+      )}
     </section>
   );
 }
@@ -67,7 +104,15 @@ function PackListView({ onSelectPack }: { onSelectPack: (packId: string) => void
   );
 }
 
-function RelationGroupView({ group }: { group: AdminRelationGroup }) {
+function RelationGroupView({
+  group,
+  highlightStatementId,
+  onSelectEntity,
+}: {
+  group: AdminRelationGroup;
+  highlightStatementId: string | undefined;
+  onSelectEntity: (entityId: string) => void;
+}) {
   return (
     <div className="admin-relation-group">
       <h3>
@@ -86,10 +131,27 @@ function RelationGroupView({ group }: { group: AdminRelationGroup }) {
         </thead>
         <tbody>
           {group.statements.map((statement) => (
-            <tr key={statement.id}>
+            <tr key={statement.id} className={statement.id === highlightStatementId ? "admin-highlight" : undefined}>
               <td>{statement.id}</td>
-              <td>{statement.subject.label}</td>
-              <td>{statement.object.kind === "entity" ? statement.object.entity.label : statement.object.literal}</td>
+              <td>
+                <button type="button" className="admin-link" onClick={() => onSelectEntity(statement.subject.id)}>
+                  {statement.subject.label}
+                </button>
+              </td>
+              <td>
+                {statement.object.kind === "entity" ? (
+                  (() => {
+                    const { entity } = statement.object;
+                    return (
+                      <button type="button" className="admin-link" onClick={() => onSelectEntity(entity.id)}>
+                        {entity.label}
+                      </button>
+                    );
+                  })()
+                ) : (
+                  statement.object.literal
+                )}
+              </td>
             </tr>
           ))}
         </tbody>
@@ -98,7 +160,15 @@ function RelationGroupView({ group }: { group: AdminRelationGroup }) {
   );
 }
 
-function PackDetailView({ packId }: { packId: string }) {
+function PackDetailView({
+  packId,
+  highlightStatementId,
+  onSelectEntity,
+}: {
+  packId: string;
+  highlightStatementId: string | undefined;
+  onSelectEntity: (entityId: string) => void;
+}) {
   const [detail, setDetail] = useState<AdminPackDetail | null | undefined>(undefined);
 
   useEffect(() => {
@@ -127,7 +197,10 @@ function PackDetailView({ packId }: { packId: string }) {
       <ul className="admin-entity-list">
         {detail.entities.map((entity) => (
           <li key={entity.id}>
-            {entity.label} <span className="admin-muted">({entity.types.join(", ") || "no type"})</span>
+            <button type="button" className="admin-link" onClick={() => onSelectEntity(entity.id)}>
+              {entity.label}
+            </button>{" "}
+            <span className="admin-muted">({entity.types.join(", ") || "no type"})</span>
           </li>
         ))}
       </ul>
@@ -135,7 +208,12 @@ function PackDetailView({ packId }: { packId: string }) {
       <h3>Statements</h3>
       {detail.relations.length === 0 && <p className="admin-surface__placeholder">No statements.</p>}
       {detail.relations.map((group) => (
-        <RelationGroupView key={group.relation} group={group} />
+        <RelationGroupView
+          key={group.relation}
+          group={group}
+          highlightStatementId={highlightStatementId}
+          onSelectEntity={onSelectEntity}
+        />
       ))}
     </div>
   );

@@ -1,4 +1,4 @@
-import type { AdminHealth, AdminPackDetail, AdminPackList } from "@geo/contract";
+import type { AdminEntityDetail, AdminHealth, AdminPackDetail, AdminPackList } from "@geo/contract";
 
 /**
  * The single choke point every admin SPA→BFF call passes through, mirroring the
@@ -43,4 +43,10 @@ export async function getPacks(): Promise<AdminPackList> {
 export async function getPackDetail(packId: string): Promise<AdminPackDetail | null> {
   const res = await adminFetchOptional(`/packs/${encodeURIComponent(packId)}`);
   return res ? ((await res.json()) as AdminPackDetail) : null;
+}
+
+/** One entity's rich view and graph traversal, or `null` if unknown (#137). */
+export async function getEntityDetail(entityId: string): Promise<AdminEntityDetail | null> {
+  const res = await adminFetchOptional(`/entities/${encodeURIComponent(entityId)}`);
+  return res ? ((await res.json()) as AdminEntityDetail) : null;
 }

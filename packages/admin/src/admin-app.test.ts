@@ -1,4 +1,4 @@
-import { adminHealthSchema, adminPackDetailSchema, adminPackListSchema } from "@geo/contract";
+import { adminEntityDetailSchema, adminHealthSchema, adminPackDetailSchema, adminPackListSchema } from "@geo/contract";
 import type { Entity, Pack, Statement } from "@geo/engine";
 import type { LoadedPack } from "@geo/server/pack-loader";
 import { describe, expect, it } from "vitest";
@@ -111,6 +111,22 @@ describe("admin app", () => {
   it("404s a pack detail request for an unknown pack", async () => {
     const app = createAdminApp({ pack: fixturePack(), packSources: fixturePackSources() });
     const res = await app.request("/packs/does-not-exist");
+    expect(res.status).toBe(404);
+  });
+
+  it("serves an entity's rich view with its statements and owner pack", async () => {
+    const app = createAdminApp({ pack: fixturePack(), packSources: fixturePackSources() });
+    const res = await app.request("/entities/Q1490");
+    expect(res.status).toBe(200);
+    const body = adminEntityDetailSchema.parse(await res.json());
+    expect(body.label).toBe("Tokyo");
+    expect(body.ownerPackId).toBe("test-pack");
+    expect(body.statements).toHaveLength(1);
+  });
+
+  it("404s an entity request for an unknown id", async () => {
+    const app = createAdminApp({ pack: fixturePack(), packSources: fixturePackSources() });
+    const res = await app.request("/entities/does-not-exist");
     expect(res.status).toBe(404);
   });
 });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { adminHealthSchema, adminPackDetailSchema, adminPackListSchema } from "./admin.js";
+import { adminEntityDetailSchema, adminHealthSchema, adminPackDetailSchema, adminPackListSchema } from "./admin.js";
 
 describe("adminHealthSchema", () => {
   it("accepts the read-only ok payload", () => {
@@ -95,3 +95,39 @@ describe("adminPackDetailSchema", () => {
   });
 });
 
+
+describe("adminEntityDetailSchema", () => {
+  it("accepts an entity with coordinate and statements it's subject/object of", () => {
+    const payload = {
+      id: "Q1490",
+      label: "Tokyo",
+      aliases: [],
+      types: ["city"],
+      ownerPackId: "core-geo",
+      ownerPackLabel: "Core Geography",
+      coordinate: { lat: 35.6, lon: 139.7 },
+      statements: [
+        {
+          id: "cc:tokyo-japan",
+          relation: "located_in",
+          role: "subject",
+          subject: { id: "Q1490", label: "Tokyo" },
+          object: { kind: "entity", entity: { id: "Q17", label: "Japan" } },
+          packId: "core-cities",
+        },
+      ],
+    };
+    expect(adminEntityDetailSchema.parse(payload)).toEqual(payload);
+  });
+
+  it("omits owner and coordinate when unknown", () => {
+    const payload = {
+      id: "Q1",
+      label: "One",
+      aliases: [],
+      types: [],
+      statements: [],
+    };
+    expect(adminEntityDetailSchema.parse(payload)).toEqual(payload);
+  });
+});

@@ -1,7 +1,8 @@
-import { adminHealthSchema, adminPackDetailSchema, adminPackListSchema } from "@geo/contract";
+import { adminEntityDetailSchema, adminHealthSchema, adminPackDetailSchema, adminPackListSchema } from "@geo/contract";
 import type { Pack } from "@geo/engine";
 import type { LoadedPack } from "@geo/server/pack-loader";
 import { Hono } from "hono";
+import { getEntityDetail } from "./entityProjection.js";
 import { computeOwnership, type Ownership } from "./ownership.js";
 import { getPackDetail, listPacks } from "./packProjection.js";
 
@@ -23,8 +24,8 @@ export interface AdminAppOptions {
    * The raw per-pack sources `pack` was assembled from — the shape
    * `@geo/server/pack-loader`'s `discoverPacks`/`loadPack` produce at boot,
    * before `assembleGraph` merges every pack's entities into one `Map` and
-   * loses which pack shipped which. The Packs surface needs that per-pack
-   * breakdown to attribute Entity Owners and Relation definitions
+   * loses which pack shipped which. The Packs and Entity surfaces need that
+   * per-pack breakdown to attribute Entity Owners and Relation definitions
    * (`ownership.ts`); the assembled graph alone can't answer it.
    *
    * Optional and test-only in practice: a test passes a small fixture so the
@@ -80,6 +81,15 @@ export function createAdminApp(options: AdminAppOptions) {
     if (!pack.packs.has(packId)) return c.json({ error: `unknown pack: ${packId}` }, 404);
     const ownership = await getOwnership();
     return c.json(adminPackDetailSchema.parse(getPackDetail(pack, packId, ownership)));
+  });
+
+  // Entity detail + graph traversal (#137).
+  app.get("/entities/:entityId", async (c) => {
+    const entityId = c.req.param("entityId");
+    const ownership = await getOwnership();
+    const detail = getEntityDetail(pack, entityId, ownership);
+    if (!detail) return c.json({ error: `unknown entity: ${entityId}` }, 404);
+    return c.json(adminEntityDetailSchema.parse(detail));
   });
 
   return app;

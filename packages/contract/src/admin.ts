@@ -135,3 +135,39 @@ export const adminPackDetailSchema = z
   .strict();
 
 export type AdminPackDetail = z.infer<typeof adminPackDetailSchema>;
+
+/** A statement from the viewpoint of one entity: which role it plays in it. */
+export const adminEntityStatementSchema = z
+  .object({
+    id: z.string().min(1),
+    relation: z.string().min(1),
+    role: z.enum(["subject", "object"]),
+    subject: adminEntityRefSchema,
+    object: adminObjectSlotSchema,
+    packId: z.string().min(1),
+  })
+  .strict();
+
+export type AdminEntityStatement = z.infer<typeof adminEntityStatementSchema>;
+
+/**
+ * `GET /admin/entities/:entityId` — the rich Entity view (#137): labels,
+ * aliases, types, its Owner pack, coordinate/visual-aid when present, and
+ * every statement it is subject or object of. `ownerPackId`/`ownerPackLabel`
+ * and `coordinate` are absent when unknown or unset — the entity still renders,
+ * just without that section.
+ */
+export const adminEntityDetailSchema = z
+  .object({
+    id: z.string().min(1),
+    label: z.string().min(1),
+    aliases: z.array(z.string()),
+    types: z.array(z.string()),
+    ownerPackId: z.string().min(1).optional(),
+    ownerPackLabel: z.string().min(1).optional(),
+    coordinate: z.object({ lat: z.number(), lon: z.number() }).strict().optional(),
+    statements: z.array(adminEntityStatementSchema),
+  })
+  .strict();
+
+export type AdminEntityDetail = z.infer<typeof adminEntityDetailSchema>;

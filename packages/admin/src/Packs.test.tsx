@@ -1,6 +1,7 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Packs } from "./Packs.js";
+import { focusPacksOn } from "./navigation.js";
 
 const PACKS_LIST = [
   { id: "core-geo", label: "Core Geography", version: "1.0.0", statementCount: 0, cardCount: 0 },
@@ -29,10 +30,21 @@ const PACK_DETAIL = {
   ],
 };
 
+const ENTITY_DETAIL = {
+  id: "Q1490",
+  label: "Tokyo",
+  aliases: [],
+  types: ["city"],
+  ownerPackId: "core-geo",
+  ownerPackLabel: "Core Geography",
+  statements: [],
+};
+
 function mockFetchSequence() {
   const responses = new Map<string, unknown>([
     ["/api/packs", PACKS_LIST],
     ["/api/packs/core-cities", PACK_DETAIL],
+    ["/api/entities/Q1490", ENTITY_DETAIL],
   ]);
   vi.stubGlobal(
     "fetch",
@@ -68,12 +80,28 @@ describe("Packs surface", () => {
     expect(screen.getByText("Japan")).toBeInTheDocument();
   });
 
-  it("returns to the list via the breadcrumb", async () => {
+  it("navigates to an entity's detail when its link is clicked, and back via breadcrumb", async () => {
     render(<Packs />);
     fireEvent.click(await screen.findByText("Core Cities"));
-    await screen.findByText("located_in");
+    fireEvent.click(await screen.findByText("Tokyo"));
+
+    expect(await screen.findByText(/Core Geography/)).toBeInTheDocument();
+    expect(screen.getByText("city")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "All packs" }));
     expect(await screen.findByText("Core Geography")).toBeInTheDocument();
+  });
+
+  it("jumps straight to a pack when a cross-surface focus request is pending on mount", async () => {
+    focusPacksOn({ kind: "pack", packId: "core-cities" });
+    render(<Packs />);
+    expect(await screen.findByText("located_in")).toBeInTheDocument();
+  });
+
+  it("jumps straight to an entity when a cross-surface focus request names one", async () => {
+    focusPacksOn({ kind: "entity", entityId: "Q1490" });
+    render(<Packs />);
+    await waitFor(() => expect(screen.getByText("Tokyo")).toBeInTheDocument());
+    expect(screen.getByText("city")).toBeInTheDocument();
   });
 });
