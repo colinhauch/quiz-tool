@@ -8,7 +8,8 @@
     "node": ">=24"
   },
   "scripts": {
-    "dev": "pnpm -r --parallel run dev",
+    "dev": "pnpm --filter '!@geo/admin' -r --parallel run dev",
+    "admin": "pnpm --filter @geo/admin dev",
     "build": "tsc -b",
     "typecheck": "tsc -b",
     "test": "vitest run",
