@@ -5,6 +5,7 @@ import type {
   AdminHealth,
   AdminPackDetail,
   AdminPackList,
+  AdminUserDetail,
   AdminUserList,
 } from "@geo/contract";
 
@@ -75,4 +76,10 @@ export async function getGeneratorPreview(statementId: string): Promise<AdminGen
 export async function getUsers(): Promise<AdminUserList> {
   const res = await adminFetch("/users");
   return (await res.json()) as AdminUserList;
+}
+
+/** One user's detail: ability per pack, rollups, recent answers, ability trajectory (#141), or `null` if unknown. */
+export async function getUserDetail(userId: string): Promise<AdminUserDetail | null> {
+  const res = await adminFetchOptional(`/users/${encodeURIComponent(userId)}`);
+  return res ? ((await res.json()) as AdminUserDetail) : null;
 }

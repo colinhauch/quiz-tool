@@ -5,6 +5,7 @@ import {
   adminHealthSchema,
   adminPackDetailSchema,
   adminPackListSchema,
+  adminUserDetailSchema,
   adminUserListSchema,
 } from "@geo/contract";
 import type { Pack } from "@geo/engine";
@@ -16,6 +17,7 @@ import { computeGraphHealth } from "./healthChecks.js";
 import { computeOwnership, type Ownership } from "./ownership.js";
 import { getPackDetail, listPacks } from "./packProjection.js";
 import type { AdminReadStore } from "./read-store.js";
+import { buildUserDetail } from "./userDetailProjection.js";
 
 /**
  * The admin BFF's dependencies, passed in rather than reached for — the same
@@ -138,6 +140,22 @@ export function createAdminApp(options: AdminAppOptions) {
     const readStore = requireReadStore();
     const users = await readStore.listUsers();
     return c.json(adminUserListSchema.parse(users));
+  });
+
+  // Single-user detail (#141): ability per pack, rollups, recent Answer Log
+  // entries, and the replay-derived ability trajectory.
+  app.get("/users/:userId", async (c) => {
+    const readStore = requireReadStore();
+    const userId = c.req.param("userId");
+    const [users, answers, packAbilities] = await Promise.all([
+      readStore.listUsers(),
+      readStore.listAnswersForUser(userId),
+      readStore.listAllPackAbilities(),
+    ]);
+    const user = users.find((u) => u.id === userId);
+    if (!user) return c.json({ error: `unknown user: ${userId}` }, 404);
+    const detail = buildUserDetail(pack, user, answers, packAbilities);
+    return c.json(adminUserDetailSchema.parse(detail));
   });
 
   return app;
