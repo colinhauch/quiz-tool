@@ -5,6 +5,7 @@
     { "path": "./packages/engine" },
     { "path": "./packs" },
     { "path": "./packages/server" },
-    { "path": "./packages/web" }
+    { "path": "./packages/web" },
+    { "path": "./packages/admin" }
   ]
 }

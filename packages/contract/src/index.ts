@@ -8,7 +8,12 @@ import { z } from "zod";
  * truth. Nothing Node-native may ever land here, or `web` would pull it in.
  *
  * Route schemas arrive with the slices that add the routes (see #12–#14).
+ *
+ * The admin visualizer's own seam lives in `./admin.ts`, re-exported below so
+ * both surfaces import from `@geo/contract` alone.
  */
+
+export * from "./admin.js";
 
 export const healthSchema = z.object({
   status: z.literal("ok"),
