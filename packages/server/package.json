@@ -3,6 +3,9 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "exports": {
+    "./pack-loader": "./src/pack-loader.ts"
+  },
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "bundle-packs": "tsx scripts/bundle-packs.ts",
