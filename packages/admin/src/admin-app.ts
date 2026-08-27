@@ -5,6 +5,7 @@ import {
   adminHealthSchema,
   adminPackDetailSchema,
   adminPackListSchema,
+  adminUserListSchema,
 } from "@geo/contract";
 import type { Pack } from "@geo/engine";
 import type { LoadedPack } from "@geo/server/pack-loader";
@@ -14,6 +15,7 @@ import { previewGenerator } from "./generatorPreviewProjection.js";
 import { computeGraphHealth } from "./healthChecks.js";
 import { computeOwnership, type Ownership } from "./ownership.js";
 import { getPackDetail, listPacks } from "./packProjection.js";
+import type { AdminReadStore } from "./read-store.js";
 
 /**
  * The admin BFF's dependencies, passed in rather than reached for — the same
@@ -24,7 +26,7 @@ import { getPackDetail, listPacks } from "./packProjection.js";
  *
  * `pack` is the assembled graph every static surface (Packs, Graph Health,
  * Generator Preview) projects over. The cross-user read seam (`AdminReadStore`)
- * and the injectable rng/clock arrive with the slices that need them (#140+).
+ * arrives with the slices that need it (#140+).
  */
 export interface AdminAppOptions {
   /** The assembled graph: every discovered pack, including catalog-hidden ones. */
@@ -46,6 +48,14 @@ export interface AdminAppOptions {
    * boot-cost, never in the request's hot path after the first call.
    */
   packSources?: LoadedPack[];
+  /**
+   * The cross-user read seam (#140–#144): Users, single-user detail,
+   * population aggregates, Results, and its charts/leaderboard. Optional so
+   * the graph-only routes above keep working with no store at all (as every
+   * existing test does); a route that needs it 500s with a clear message when
+   * it's missing, rather than the app failing to construct.
+   */
+  readStore?: AdminReadStore;
 }
 
 /**
@@ -115,6 +125,19 @@ export function createAdminApp(options: AdminAppOptions) {
     const preview = previewGenerator(pack, statementId);
     if (!preview) return c.json({ error: `unknown statement: ${statementId}` }, 404);
     return c.json(adminGeneratorPreviewSchema.parse(preview));
+  });
+
+  // The cross-user seam (#140+). Every route below reads through `readStore`.
+  function requireReadStore(): AdminReadStore {
+    if (!options.readStore) throw new Error("AdminReadStore is not configured");
+    return options.readStore;
+  }
+
+  // Users surface (#140): every user, from `auth.users` via the service role.
+  app.get("/users", async (c) => {
+    const readStore = requireReadStore();
+    const users = await readStore.listUsers();
+    return c.json(adminUserListSchema.parse(users));
   });
 
   return app;

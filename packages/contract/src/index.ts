@@ -14,6 +14,7 @@ import { z } from "zod";
  */
 
 export * from "./admin.js";
+export * from "./admin-store.js";
 
 export const healthSchema = z.object({
   status: z.literal("ok"),

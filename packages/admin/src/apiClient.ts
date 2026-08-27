@@ -5,6 +5,7 @@ import type {
   AdminHealth,
   AdminPackDetail,
   AdminPackList,
+  AdminUserList,
 } from "@geo/contract";
 
 /**
@@ -68,4 +69,10 @@ export async function getGraphHealth(): Promise<AdminGraphHealthReport> {
 export async function getGeneratorPreview(statementId: string): Promise<AdminGeneratorPreview | null> {
   const res = await adminFetchOptional(`/generator-preview/${encodeURIComponent(statementId)}`);
   return res ? ((await res.json()) as AdminGeneratorPreview) : null;
+}
+
+/** Every user, from `auth.users` via the cross-user read seam (#140). */
+export async function getUsers(): Promise<AdminUserList> {
+  const res = await adminFetch("/users");
+  return (await res.json()) as AdminUserList;
 }
