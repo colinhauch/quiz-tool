@@ -6,8 +6,11 @@ import {
   adminPackDetailSchema,
   adminPackListSchema,
   adminPopulationSchema,
+  adminResultsFilterSchema,
+  adminResultsResponseSchema,
   adminUserDetailSchema,
   adminUserListSchema,
+  type AdminResultsFilter,
 } from "@geo/contract";
 import type { Pack } from "@geo/engine";
 import type { LoadedPack } from "@geo/server/pack-loader";
@@ -19,6 +22,7 @@ import { computeOwnership, type Ownership } from "./ownership.js";
 import { getPackDetail, listPacks } from "./packProjection.js";
 import { buildPopulation } from "./populationProjection.js";
 import type { AdminReadStore } from "./read-store.js";
+import { buildResultRows, buildResultsResponse, filterResultRows } from "./resultsProjection.js";
 import { buildUserDetail } from "./userDetailProjection.js";
 
 /**
@@ -165,6 +169,33 @@ export function createAdminApp(options: AdminAppOptions) {
     const readStore = requireReadStore();
     const [users, answers] = await Promise.all([readStore.listUsers(), readStore.listAllAnswers()]);
     return c.json(adminPopulationSchema.parse(buildPopulation(users, answers)));
+  });
+
+  /** Parses `/results`'s composable query filters (#143). `correct` arrives as the string "true"/"false" over a query string. */
+  function parseResultsFilter(c: { req: { query: (key: string) => string | undefined } }): AdminResultsFilter {
+    const raw: Record<string, unknown> = {};
+    const userId = c.req.query("userId");
+    const packId = c.req.query("packId");
+    const relation = c.req.query("relation");
+    const correct = c.req.query("correct");
+    const from = c.req.query("from");
+    const to = c.req.query("to");
+    if (userId !== undefined) raw.userId = userId;
+    if (packId !== undefined) raw.packId = packId;
+    if (relation !== undefined) raw.relation = relation;
+    if (correct !== undefined) raw.correct = correct === "true";
+    if (from !== undefined) raw.from = from;
+    if (to !== undefined) raw.to = to;
+    return adminResultsFilterSchema.parse(raw);
+  }
+
+  // Results surface (#143): every answer across every user, with composable filters.
+  app.get("/results", async (c) => {
+    const readStore = requireReadStore();
+    const filter = parseResultsFilter(c);
+    const [users, answers] = await Promise.all([readStore.listUsers(), readStore.listAllAnswers()]);
+    const rows = filterResultRows(buildResultRows(pack, users, answers), filter);
+    return c.json(adminResultsResponseSchema.parse(buildResultsResponse(rows)));
   });
 
   return app;

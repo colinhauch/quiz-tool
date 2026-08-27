@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { adminPopulationSchema, adminUserAggregateSchema, adminUserDetailSchema, adminUserListSchema } from "./admin-store.js";
+import {
+  adminPopulationSchema,
+  adminResultRowSchema,
+  adminResultsFilterSchema,
+  adminResultsResponseSchema,
+  adminUserAggregateSchema,
+  adminUserDetailSchema,
+  adminUserListSchema,
+} from "./admin-store.js";
 
 describe("adminUserListSchema", () => {
   it("accepts a list of users, including a never-signed-in one", () => {
@@ -56,5 +64,31 @@ describe("adminPopulationSchema", () => {
       activityByDay: [{ date: "2026-08-20", activeUsers: 2, answerCount: 10 }],
     };
     expect(adminPopulationSchema.parse(payload)).toEqual(payload);
+  });
+});
+
+describe("adminResultsFilterSchema", () => {
+  it("accepts every filter absent (unfiltered)", () => {
+    expect(adminResultsFilterSchema.parse({})).toEqual({});
+  });
+
+  it("accepts a composed set of filters", () => {
+    const payload = { userId: "u1", packId: "core-geo", relation: "located_in", correct: true, from: "2026-08-01", to: "2026-08-20" };
+    expect(adminResultsFilterSchema.parse(payload)).toEqual(payload);
+  });
+});
+
+describe("adminResultsResponseSchema", () => {
+  it("accepts rows plus counts that summarize them", () => {
+    const row = adminResultRowSchema.parse({
+      cardId: "S1:object",
+      input: "Japan",
+      correct: true,
+      askedAt: "2026-08-20T00:00:00.000Z",
+      userId: "u1",
+      userEmail: "a@example.com",
+    });
+    const payload = { rows: [row], total: 1, accuracy: 1 };
+    expect(adminResultsResponseSchema.parse(payload)).toEqual(payload);
   });
 });

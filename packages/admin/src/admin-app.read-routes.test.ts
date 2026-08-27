@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { adminPopulationSchema, adminUserDetailSchema, adminUserListSchema } from "@geo/contract";
+import { adminPopulationSchema, adminResultsResponseSchema, adminUserDetailSchema, adminUserListSchema } from "@geo/contract";
 import { createAdminApp } from "./admin-app.js";
 import { createInMemoryReadStore, type AdminAnswerRow, type AdminUser } from "./read-store.js";
 import { fixtureReadStorePack } from "./test-fixtures.js";
@@ -69,5 +69,29 @@ describe("GET /population", () => {
     const body = adminPopulationSchema.parse(await res.json());
     expect(body.totalUsers).toBe(2);
     expect(body.totalAnswers).toBe(2);
+  });
+});
+
+describe("GET /results", () => {
+  it("lists every answer across users, unfiltered", async () => {
+    const res = await buildApp().request("/results");
+    expect(res.status).toBe(200);
+    const body = adminResultsResponseSchema.parse(await res.json());
+    expect(body.total).toBe(2);
+  });
+
+  it("applies query filters, and counts recompute to match", async () => {
+    const res = await buildApp().request("/results?userId=u1");
+    const body = adminResultsResponseSchema.parse(await res.json());
+    expect(body.total).toBe(1);
+    expect(body.accuracy).toBe(1);
+    expect(body.rows[0]?.userId).toBe("u1");
+  });
+
+  it("applies a correct=false filter (string-coerced from the query)", async () => {
+    const res = await buildApp().request("/results?correct=false");
+    const body = adminResultsResponseSchema.parse(await res.json());
+    expect(body.total).toBe(1);
+    expect(body.rows[0]?.userId).toBe("u2");
   });
 });

@@ -128,3 +128,41 @@ export const adminPopulationSchema = z
   .strict();
 
 export type AdminPopulation = z.infer<typeof adminPopulationSchema>;
+
+/**
+ * `GET /results` query params (#143). Every filter is optional and composable;
+ * omitting all of them lists every answer across every user.
+ */
+export const adminResultsFilterSchema = z
+  .object({
+    userId: z.string().min(1).optional(),
+    packId: z.string().min(1).optional(),
+    relation: z.string().min(1).optional(),
+    correct: z.boolean().optional(),
+    from: z.string().min(1).optional(),
+    to: z.string().min(1).optional(),
+  })
+  .strict();
+
+export type AdminResultsFilter = z.infer<typeof adminResultsFilterSchema>;
+
+/** One answer row in the Results surface: an answer log entry plus which user answered it. */
+export const adminResultRowSchema = adminAnswerLogEntrySchema
+  .extend({
+    userId: z.string().min(1),
+    userEmail: z.string().min(1).nullable(),
+  })
+  .strict();
+
+export type AdminResultRow = z.infer<typeof adminResultRowSchema>;
+
+/** `GET /results` response — the filtered rows plus counts/accuracy over that same filtered set. */
+export const adminResultsResponseSchema = z
+  .object({
+    rows: z.array(adminResultRowSchema),
+    total: z.number().int().nonnegative(),
+    accuracy: z.number().min(0).max(1),
+  })
+  .strict();
+
+export type AdminResultsResponse = z.infer<typeof adminResultsResponseSchema>;

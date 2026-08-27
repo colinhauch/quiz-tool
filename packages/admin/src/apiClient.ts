@@ -6,6 +6,8 @@ import type {
   AdminPackDetail,
   AdminPackList,
   AdminPopulation,
+  AdminResultsFilter,
+  AdminResultsResponse,
   AdminUserDetail,
   AdminUserList,
 } from "@geo/contract";
@@ -89,4 +91,23 @@ export async function getUserDetail(userId: string): Promise<AdminUserDetail | n
 export async function getPopulation(): Promise<AdminPopulation> {
   const res = await adminFetch("/population");
   return (await res.json()) as AdminPopulation;
+}
+
+/** Turns a Results filter into a query string, omitting absent filters entirely. */
+function resultsQuery(filter: AdminResultsFilter): string {
+  const params = new URLSearchParams();
+  if (filter.userId !== undefined) params.set("userId", filter.userId);
+  if (filter.packId !== undefined) params.set("packId", filter.packId);
+  if (filter.relation !== undefined) params.set("relation", filter.relation);
+  if (filter.correct !== undefined) params.set("correct", String(filter.correct));
+  if (filter.from !== undefined) params.set("from", filter.from);
+  if (filter.to !== undefined) params.set("to", filter.to);
+  const qs = params.toString();
+  return qs ? `?${qs}` : "";
+}
+
+/** Every answer across every user, filtered composably; counts/accuracy reflect the same filtered set (#143). */
+export async function getResults(filter: AdminResultsFilter = {}): Promise<AdminResultsResponse> {
+  const res = await adminFetch(`/results${resultsQuery(filter)}`);
+  return (await res.json()) as AdminResultsResponse;
 }
