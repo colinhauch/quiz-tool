@@ -95,17 +95,25 @@ export function buildLeaderboard(
     perUser.set(row.userId, entry);
   }
 
-  const byAccuracy: AdminLeaderboardEntry[] = [...perUser.entries()]
-    .map(([userId, { total, correct }]) => ({ userId, accuracy: total === 0 ? 0 : correct / total }))
-    .sort((a, b) => b.accuracy - a.accuracy)
-    .slice(0, LEADERBOARD_LIMIT)
-    .map(({ userId, accuracy }) => ({ userId, userEmail: emailByUserId.get(userId) ?? null, accuracy }));
+  // byAccuracy and byVolume are the same ranking over `perUser`, differing only
+  // in the metric each ranks and reports; one helper keeps them from drifting.
+  const topBy = (
+    metric: (stats: { total: number; correct: number }) => number,
+  ): { userId: string; userEmail: string | null; value: number }[] =>
+    [...perUser.entries()]
+      .map(([userId, stats]) => ({ userId, value: metric(stats) }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, LEADERBOARD_LIMIT)
+      .map(({ userId, value }) => ({ userId, userEmail: emailByUserId.get(userId) ?? null, value }));
 
-  const byVolume: AdminLeaderboardEntry[] = [...perUser.entries()]
-    .map(([userId, { total }]) => ({ userId, volume: total }))
-    .sort((a, b) => b.volume - a.volume)
-    .slice(0, LEADERBOARD_LIMIT)
-    .map(({ userId, volume }) => ({ userId, userEmail: emailByUserId.get(userId) ?? null, volume }));
+  const byAccuracy: AdminLeaderboardEntry[] = topBy(({ total, correct }) =>
+    total === 0 ? 0 : correct / total,
+  ).map(({ value, ...entry }) => ({ ...entry, accuracy: value }));
+
+  const byVolume: AdminLeaderboardEntry[] = topBy(({ total }) => total).map(({ value, ...entry }) => ({
+    ...entry,
+    volume: value,
+  }));
 
   return { byAbility, byAccuracy, byVolume };
 }

@@ -4,10 +4,7 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./pack-loader": "./src/pack-loader.ts",
-    "./storage": "./src/storage.ts",
-    "./supabase-storage": "./src/supabase-storage.ts",
-    "./catalog": "./src/catalog.ts"
+    "./pack-loader": "./src/pack-loader.ts"
   },
   "scripts": {
     "dev": "tsx watch src/index.ts",
