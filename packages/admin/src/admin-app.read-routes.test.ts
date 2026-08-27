@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { adminPopulationSchema, adminResultsResponseSchema, adminUserDetailSchema, adminUserListSchema } from "@geo/contract";
+import {
+  adminPopulationSchema,
+  adminResultsChartsSchema,
+  adminResultsResponseSchema,
+  adminUserDetailSchema,
+  adminUserListSchema,
+} from "@geo/contract";
 import { createAdminApp } from "./admin-app.js";
 import { createInMemoryReadStore, type AdminAnswerRow, type AdminUser } from "./read-store.js";
 import { fixtureReadStorePack } from "./test-fixtures.js";
@@ -27,6 +33,10 @@ function buildApp() {
     packAbilities: [
       { userId: "u1", packId: "test-pack", ability: 1550 },
       { userId: "u2", packId: "other-pack", ability: 1450 },
+    ],
+    cardDifficulties: [
+      { cardId: "S1:object", difficulty: 1600, answerCount: 4 },
+      { cardId: "S2:object", difficulty: 1400, answerCount: 2 },
     ],
   });
   return createAdminApp({ pack: fixtureReadStorePack(), readStore });
@@ -93,5 +103,22 @@ describe("GET /results", () => {
     const body = adminResultsResponseSchema.parse(await res.json());
     expect(body.total).toBe(1);
     expect(body.rows[0]?.userId).toBe("u2");
+  });
+});
+
+describe("GET /results/charts", () => {
+  it("serves charts, leaderboard, and hardest/easiest Cards", async () => {
+    const res = await buildApp().request("/results/charts");
+    expect(res.status).toBe(200);
+    const body = adminResultsChartsSchema.parse(await res.json());
+    expect(body.hardestCards[0]?.cardId).toBe("S1:object");
+    expect(body.easiestCards[0]?.cardId).toBe("S2:object");
+    expect(body.leaderboard.byAbility.length).toBeGreaterThan(0);
+  });
+
+  it("honors the same filters as /results", async () => {
+    const res = await buildApp().request("/results/charts?userId=u1");
+    const body = adminResultsChartsSchema.parse(await res.json());
+    expect(body.accuracyOverTime.every((p) => p.count <= 1)).toBe(true);
   });
 });

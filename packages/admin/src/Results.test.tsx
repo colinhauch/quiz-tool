@@ -30,6 +30,20 @@ const ALL_ROWS = [
 
 const FILTERED_ROWS = [ALL_ROWS[0]];
 
+const CHARTS_ALL = {
+  accuracyOverTime: [{ date: "2026-08-20", count: 1, accuracy: 1 }],
+  volumeOverTime: [{ date: "2026-08-20", count: 1 }],
+  accuracyByPack: [{ key: "test-pack", count: 1, accuracy: 1 }],
+  accuracyByRelation: [{ key: "located_in", count: 1, accuracy: 1 }],
+  leaderboard: {
+    byAbility: [{ userId: "u1", userEmail: "a@example.com", packId: "test-pack", ability: 1550 }],
+    byAccuracy: [{ userId: "u1", userEmail: "a@example.com", accuracy: 1 }],
+    byVolume: [{ userId: "u1", userEmail: "a@example.com", volume: 1 }],
+  },
+  hardestCards: [{ cardId: "S1:object", difficulty: 1600, answerCount: 4 }],
+  easiestCards: [{ cardId: "S2:object", difficulty: 1400, answerCount: 2 }],
+};
+
 function mockFetchSequence() {
   vi.stubGlobal(
     "fetch",
@@ -38,6 +52,8 @@ function mockFetchSequence() {
       if (path === "/api/results") return new Response(JSON.stringify({ rows: ALL_ROWS, total: 2, accuracy: 0.5 }), { status: 200 });
       if (path === "/api/results?userId=u1")
         return new Response(JSON.stringify({ rows: FILTERED_ROWS, total: 1, accuracy: 1 }), { status: 200 });
+      if (path === "/api/results/charts") return new Response(JSON.stringify(CHARTS_ALL), { status: 200 });
+      if (path === "/api/results/charts?userId=u1") return new Response(JSON.stringify(CHARTS_ALL), { status: 200 });
       return new Response(null, { status: 404 });
     }),
   );
@@ -57,6 +73,14 @@ describe("Results surface", () => {
     expect(await screen.findByText("2 answers · 50.0% accuracy")).toBeInTheDocument();
     expect(screen.getByText("a@example.com")).toBeInTheDocument();
     expect(screen.getByText("b@example.com")).toBeInTheDocument();
+  });
+
+  it("shows the analytical views: charts, leaderboard, hardest/easiest Cards", async () => {
+    render(<Results />);
+    expect(await screen.findByText("Accuracy over time")).toBeInTheDocument();
+    expect(screen.getByText("By ability")).toBeInTheDocument();
+    expect(screen.getByText(/Hardest Cards/)).toBeInTheDocument();
+    expect(screen.getByText(/S1:object — difficulty 1600.0/)).toBeInTheDocument();
   });
 
   it("applying a userId filter narrows the results and re-fetches", async () => {

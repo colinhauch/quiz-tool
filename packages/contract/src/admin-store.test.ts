@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
+  adminAccuracyByKeySchema,
+  adminCardDifficultySchema,
+  adminLeaderboardSchema,
   adminPopulationSchema,
   adminResultRowSchema,
+  adminResultsChartsSchema,
   adminResultsFilterSchema,
   adminResultsResponseSchema,
   adminUserAggregateSchema,
@@ -90,5 +94,23 @@ describe("adminResultsResponseSchema", () => {
     });
     const payload = { rows: [row], total: 1, accuracy: 1 };
     expect(adminResultsResponseSchema.parse(payload)).toEqual(payload);
+  });
+});
+
+describe("adminResultsChartsSchema", () => {
+  it("accepts the full analytical payload", () => {
+    const accByKey = adminAccuracyByKeySchema.parse({ key: "core-geo", count: 5, accuracy: 0.8 });
+    const leaderboard = adminLeaderboardSchema.parse({ byAbility: [], byAccuracy: [], byVolume: [] });
+    const card = adminCardDifficultySchema.parse({ cardId: "S1:object", difficulty: 1480, answerCount: 3 });
+    const payload = {
+      accuracyOverTime: [{ date: "2026-08-20", count: 5, accuracy: 0.8 }],
+      volumeOverTime: [{ date: "2026-08-20", count: 5 }],
+      accuracyByPack: [accByKey],
+      accuracyByRelation: [accByKey],
+      leaderboard,
+      hardestCards: [card],
+      easiestCards: [card],
+    };
+    expect(adminResultsChartsSchema.parse(payload)).toEqual(payload);
   });
 });

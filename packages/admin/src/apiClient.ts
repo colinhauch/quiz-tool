@@ -6,6 +6,7 @@ import type {
   AdminPackDetail,
   AdminPackList,
   AdminPopulation,
+  AdminResultsCharts,
   AdminResultsFilter,
   AdminResultsResponse,
   AdminUserDetail,
@@ -110,4 +111,10 @@ function resultsQuery(filter: AdminResultsFilter): string {
 export async function getResults(filter: AdminResultsFilter = {}): Promise<AdminResultsResponse> {
   const res = await adminFetch(`/results${resultsQuery(filter)}`);
   return (await res.json()) as AdminResultsResponse;
+}
+
+/** Charts, leaderboard, and hardest/easiest Cards over the same (optionally filtered) Results set (#144). */
+export async function getResultsCharts(filter: AdminResultsFilter = {}): Promise<AdminResultsCharts> {
+  const res = await adminFetch(`/results/charts${resultsQuery(filter)}`);
+  return (await res.json()) as AdminResultsCharts;
 }

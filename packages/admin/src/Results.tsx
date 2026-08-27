@@ -1,6 +1,15 @@
 import { useEffect, useState } from "react";
-import type { AdminResultRow, AdminResultsFilter, AdminResultsResponse } from "@geo/contract";
-import { getResults } from "./apiClient.js";
+import type {
+  AdminAccuracyByKey,
+  AdminCardDifficulty,
+  AdminLeaderboardEntry,
+  AdminResultRow,
+  AdminResultsCharts,
+  AdminResultsFilter,
+  AdminResultsResponse,
+  AdminTimeSeriesPoint,
+} from "@geo/contract";
+import { getResults, getResultsCharts } from "./apiClient.js";
 import { AnswerJumpLinks } from "./AnswerJumpLinks.js";
 
 /** `correct`'s tri-state as a `<select>` needs it: unset, or one of the two booleans, spelled out as strings. */
@@ -112,14 +121,141 @@ function ResultsTable({ rows }: { rows: AdminResultRow[] }) {
   );
 }
 
-/** Results surface — every answer across all users, with composable filters (#143). */
+function TimeSeriesTable({ title, points }: { title: string; points: AdminTimeSeriesPoint[] }) {
+  return (
+    <div>
+      <h3>{title}</h3>
+      {points.length === 0 ? (
+        <p className="admin-muted">No data.</p>
+      ) : (
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Count</th>
+              {points[0]?.accuracy !== undefined && <th>Accuracy</th>}
+            </tr>
+          </thead>
+          <tbody>
+            {points.map((p) => (
+              <tr key={p.date}>
+                <td>{p.date}</td>
+                <td>{p.count}</td>
+                {p.accuracy !== undefined && <td>{(p.accuracy * 100).toFixed(1)}%</td>}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </div>
+  );
+}
+
+function AccuracyByKeyTable({ title, rows }: { title: string; rows: AdminAccuracyByKey[] }) {
+  return (
+    <div>
+      <h3>{title}</h3>
+      {rows.length === 0 ? (
+        <p className="admin-muted">No data.</p>
+      ) : (
+        <table>
+          <thead>
+            <tr>
+              <th>Key</th>
+              <th>Count</th>
+              <th>Accuracy</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr key={r.key}>
+                <td>{r.key}</td>
+                <td>{r.count}</td>
+                <td>{(r.accuracy * 100).toFixed(1)}%</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </div>
+  );
+}
+
+function LeaderboardTable({ title, entries }: { title: string; entries: AdminLeaderboardEntry[] }) {
+  return (
+    <div>
+      <h4>{title}</h4>
+      {entries.length === 0 ? (
+        <p className="admin-muted">No data.</p>
+      ) : (
+        <ol>
+          {entries.map((entry, i) => (
+            <li key={`${entry.userId}:${entry.packId ?? ""}:${i}`}>
+              {entry.userEmail ?? entry.userId}
+              {entry.ability !== undefined && ` — ${entry.ability.toFixed(1)} (${entry.packId})`}
+              {entry.accuracy !== undefined && ` — ${(entry.accuracy * 100).toFixed(1)}%`}
+              {entry.volume !== undefined && ` — ${entry.volume} answers`}
+            </li>
+          ))}
+        </ol>
+      )}
+    </div>
+  );
+}
+
+function CardDifficultyList({ title, cards }: { title: string; cards: AdminCardDifficulty[] }) {
+  return (
+    <div>
+      <h4>{title}</h4>
+      {cards.length === 0 ? (
+        <p className="admin-muted">No data.</p>
+      ) : (
+        <ol>
+          {cards.map((card) => (
+            <li key={card.cardId}>
+              {card.cardId} — difficulty {card.difficulty.toFixed(1)} ({card.answerCount} answers)
+            </li>
+          ))}
+        </ol>
+      )}
+    </div>
+  );
+}
+
+function ChartsView({ charts }: { charts: AdminResultsCharts }) {
+  return (
+    <div className="admin-results-charts">
+      <TimeSeriesTable title="Accuracy over time" points={charts.accuracyOverTime} />
+      <TimeSeriesTable title="Volume over time" points={charts.volumeOverTime} />
+      <AccuracyByKeyTable title="Accuracy by pack" rows={charts.accuracyByPack} />
+      <AccuracyByKeyTable title="Accuracy by Relation" rows={charts.accuracyByRelation} />
+
+      <h3>Leaderboard</h3>
+      <div className="admin-leaderboard">
+        <LeaderboardTable title="By ability" entries={charts.leaderboard.byAbility} />
+        <LeaderboardTable title="By accuracy" entries={charts.leaderboard.byAccuracy} />
+        <LeaderboardTable title="By volume" entries={charts.leaderboard.byVolume} />
+      </div>
+
+      <h3>Cards</h3>
+      <div className="admin-card-difficulty">
+        <CardDifficultyList title="Hardest Cards" cards={charts.hardestCards} />
+        <CardDifficultyList title="Easiest Cards" cards={charts.easiestCards} />
+      </div>
+    </div>
+  );
+}
+
+/** Results surface — every answer across all users, composable filters, charts, leaderboard, hardest/easiest Cards (#143, #144). */
 export function Results() {
   const [pendingFilter, setPendingFilter] = useState<AdminResultsFilter>({});
   const [filter, setFilter] = useState<AdminResultsFilter>({});
   const [results, setResults] = useState<AdminResultsResponse | undefined>(undefined);
+  const [charts, setCharts] = useState<AdminResultsCharts | undefined>(undefined);
 
   useEffect(() => {
     getResults(filter).then(setResults);
+    getResultsCharts(filter).then(setCharts);
   }, [filter]);
 
   return (
@@ -138,6 +274,7 @@ export function Results() {
         <p className="admin-surface__placeholder">Loading…</p>
       )}
       {results && <ResultsTable rows={results.rows} />}
+      {charts && <ChartsView charts={charts} />}
     </section>
   );
 }

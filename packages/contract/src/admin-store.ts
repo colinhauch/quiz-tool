@@ -166,3 +166,83 @@ export const adminResultsResponseSchema = z
   .strict();
 
 export type AdminResultsResponse = z.infer<typeof adminResultsResponseSchema>;
+
+/** One point on a time-bucketed chart (accuracy or volume over time). */
+export const adminTimeSeriesPointSchema = z
+  .object({
+    date: z.string().min(1),
+    count: z.number().int().nonnegative(),
+    accuracy: z.number().min(0).max(1).optional(),
+  })
+  .strict();
+
+export type AdminTimeSeriesPoint = z.infer<typeof adminTimeSeriesPointSchema>;
+
+/** Accuracy broken down by a dimension (pack id or Relation). */
+export const adminAccuracyByKeySchema = z
+  .object({
+    key: z.string().min(1),
+    count: z.number().int().nonnegative(),
+    accuracy: z.number().min(0).max(1),
+  })
+  .strict();
+
+export type AdminAccuracyByKey = z.infer<typeof adminAccuracyByKeySchema>;
+
+/** One leaderboard row — whichever of ability/accuracy/volume the board is ranked by is present. */
+export const adminLeaderboardEntrySchema = z
+  .object({
+    userId: z.string().min(1),
+    userEmail: z.string().min(1).nullable(),
+    packId: z.string().min(1).optional(),
+    ability: z.number().optional(),
+    accuracy: z.number().min(0).max(1).optional(),
+    volume: z.number().int().nonnegative().optional(),
+  })
+  .strict();
+
+export type AdminLeaderboardEntry = z.infer<typeof adminLeaderboardEntrySchema>;
+
+/** `GET /results/leaderboard` — three boards over the (optionally filtered) population. */
+export const adminLeaderboardSchema = z
+  .object({
+    byAbility: z.array(adminLeaderboardEntrySchema),
+    byAccuracy: z.array(adminLeaderboardEntrySchema),
+    byVolume: z.array(adminLeaderboardEntrySchema),
+  })
+  .strict();
+
+export type AdminLeaderboard = z.infer<typeof adminLeaderboardSchema>;
+
+/** One Card from the global `card_difficulty` cache, resolved for display. */
+export const adminCardDifficultySchema = z
+  .object({
+    cardId: z.string().min(1),
+    difficulty: z.number(),
+    answerCount: z.number().int().nonnegative(),
+    statementId: z.string().min(1).optional(),
+    relation: z.string().min(1).optional(),
+    packId: z.string().min(1).optional(),
+  })
+  .strict();
+
+export type AdminCardDifficulty = z.infer<typeof adminCardDifficultySchema>;
+
+/**
+ * `GET /results/charts` — the analytical layer over the (optionally filtered)
+ * Results set (#144): accuracy/volume over time, accuracy by pack and by
+ * Relation, the three leaderboards, and hardest/easiest Cards globally.
+ */
+export const adminResultsChartsSchema = z
+  .object({
+    accuracyOverTime: z.array(adminTimeSeriesPointSchema),
+    volumeOverTime: z.array(adminTimeSeriesPointSchema),
+    accuracyByPack: z.array(adminAccuracyByKeySchema),
+    accuracyByRelation: z.array(adminAccuracyByKeySchema),
+    leaderboard: adminLeaderboardSchema,
+    hardestCards: z.array(adminCardDifficultySchema),
+    easiestCards: z.array(adminCardDifficultySchema),
+  })
+  .strict();
+
+export type AdminResultsCharts = z.infer<typeof adminResultsChartsSchema>;

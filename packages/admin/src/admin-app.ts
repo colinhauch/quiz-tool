@@ -6,6 +6,7 @@ import {
   adminPackDetailSchema,
   adminPackListSchema,
   adminPopulationSchema,
+  adminResultsChartsSchema,
   adminResultsFilterSchema,
   adminResultsResponseSchema,
   adminUserDetailSchema,
@@ -18,6 +19,14 @@ import { Hono } from "hono";
 import { getEntityDetail } from "./entityProjection.js";
 import { previewGenerator } from "./generatorPreviewProjection.js";
 import { computeGraphHealth } from "./healthChecks.js";
+import {
+  buildAccuracyByPack,
+  buildAccuracyByRelation,
+  buildAccuracyOverTime,
+  buildHardestEasiestCards,
+  buildLeaderboard,
+  buildVolumeOverTime,
+} from "./leaderboard.js";
 import { computeOwnership, type Ownership } from "./ownership.js";
 import { getPackDetail, listPacks } from "./packProjection.js";
 import { buildPopulation } from "./populationProjection.js";
@@ -196,6 +205,33 @@ export function createAdminApp(options: AdminAppOptions) {
     const [users, answers] = await Promise.all([readStore.listUsers(), readStore.listAllAnswers()]);
     const rows = filterResultRows(buildResultRows(pack, users, answers), filter);
     return c.json(adminResultsResponseSchema.parse(buildResultsResponse(rows)));
+  });
+
+  // Results charts + leaderboard + hardest/easiest Cards (#144): the
+  // analytical layer over the same filtered Results set, plus the leaderboard
+  // and the globally-scoped hardest/easiest Cards from `card_difficulty`.
+  app.get("/results/charts", async (c) => {
+    const readStore = requireReadStore();
+    const filter = parseResultsFilter(c);
+    const [users, answers, packAbilities, cardDifficulties] = await Promise.all([
+      readStore.listUsers(),
+      readStore.listAllAnswers(),
+      readStore.listAllPackAbilities(),
+      readStore.listCardDifficulties(),
+    ]);
+    const allRows = buildResultRows(pack, users, answers);
+    const filteredRows = filterResultRows(allRows, filter);
+    const { hardestCards, easiestCards } = buildHardestEasiestCards(pack, cardDifficulties);
+    const charts = {
+      accuracyOverTime: buildAccuracyOverTime(filteredRows),
+      volumeOverTime: buildVolumeOverTime(filteredRows),
+      accuracyByPack: buildAccuracyByPack(filteredRows),
+      accuracyByRelation: buildAccuracyByRelation(filteredRows),
+      leaderboard: buildLeaderboard(users, packAbilities, filter, filteredRows),
+      hardestCards,
+      easiestCards,
+    };
+    return c.json(adminResultsChartsSchema.parse(charts));
   });
 
   return app;
