@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { adminUserDetailSchema, adminUserListSchema } from "@geo/contract";
+import { adminPopulationSchema, adminUserDetailSchema, adminUserListSchema } from "@geo/contract";
 import { createAdminApp } from "./admin-app.js";
 import { createInMemoryReadStore, type AdminAnswerRow, type AdminUser } from "./read-store.js";
 import { fixtureReadStorePack } from "./test-fixtures.js";
@@ -59,5 +59,15 @@ describe("GET /users/:userId", () => {
   it("404s an unknown user id", async () => {
     const res = await buildApp().request("/users/does-not-exist");
     expect(res.status).toBe(404);
+  });
+});
+
+describe("GET /population", () => {
+  it("serves the all-users aggregate view", async () => {
+    const res = await buildApp().request("/population");
+    expect(res.status).toBe(200);
+    const body = adminPopulationSchema.parse(await res.json());
+    expect(body.totalUsers).toBe(2);
+    expect(body.totalAnswers).toBe(2);
   });
 });

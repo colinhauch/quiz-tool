@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { adminUserAggregateSchema, adminUserDetailSchema, adminUserListSchema } from "./admin-store.js";
+import { adminPopulationSchema, adminUserAggregateSchema, adminUserDetailSchema, adminUserListSchema } from "./admin-store.js";
 
 describe("adminUserListSchema", () => {
   it("accepts a list of users, including a never-signed-in one", () => {
@@ -44,5 +44,17 @@ describe("adminUserAggregateSchema", () => {
     expect(() =>
       adminUserAggregateSchema.parse({ totalAnswers: 1, accuracy: 1.5, packsTouched: [], lastActiveAt: null }),
     ).toThrow();
+  });
+});
+
+describe("adminPopulationSchema", () => {
+  it("accepts an aggregate population payload", () => {
+    const payload = {
+      totalUsers: 2,
+      totalAnswers: 10,
+      accuracyDistribution: [{ label: "50-75%", userCount: 2 }],
+      activityByDay: [{ date: "2026-08-20", activeUsers: 2, answerCount: 10 }],
+    };
+    expect(adminPopulationSchema.parse(payload)).toEqual(payload);
   });
 });

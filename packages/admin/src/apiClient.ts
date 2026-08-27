@@ -5,6 +5,7 @@ import type {
   AdminHealth,
   AdminPackDetail,
   AdminPackList,
+  AdminPopulation,
   AdminUserDetail,
   AdminUserList,
 } from "@geo/contract";
@@ -82,4 +83,10 @@ export async function getUsers(): Promise<AdminUserList> {
 export async function getUserDetail(userId: string): Promise<AdminUserDetail | null> {
   const res = await adminFetchOptional(`/users/${encodeURIComponent(userId)}`);
   return res ? ((await res.json()) as AdminUserDetail) : null;
+}
+
+/** The all-users aggregate view: counts, accuracy distribution, activity (#142). */
+export async function getPopulation(): Promise<AdminPopulation> {
+  const res = await adminFetch("/population");
+  return (await res.json()) as AdminPopulation;
 }

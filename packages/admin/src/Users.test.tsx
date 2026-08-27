@@ -7,6 +7,13 @@ const USERS = [
   { id: "u2", email: null, createdAt: "2026-08-02T00:00:00.000Z", lastSignInAt: null },
 ];
 
+const POPULATION = {
+  totalUsers: 2,
+  totalAnswers: 5,
+  accuracyDistribution: [{ label: "75-100%", userCount: 2 }],
+  activityByDay: [{ date: "2026-08-20", activeUsers: 2, answerCount: 5 }],
+};
+
 const USER_DETAIL = {
   user: USERS[0],
   abilities: [{ packId: "test-pack", packLabel: "Test Pack", ability: 1550 }],
@@ -29,6 +36,7 @@ const USER_DETAIL = {
 function mockFetchSequence() {
   const responses = new Map<string, unknown>([
     ["/api/users", USERS],
+    ["/api/population", POPULATION],
     ["/api/users/u1", USER_DETAIL],
   ]);
   vi.stubGlobal(
@@ -51,11 +59,13 @@ describe("Users surface", () => {
     vi.unstubAllGlobals();
   });
 
-  it("lists every user through the cross-user seam", async () => {
+  it("lists every user and shows the population summary", async () => {
     render(<Users />);
     expect(await screen.findByText("a@example.com")).toBeInTheDocument();
     expect(screen.getByText("u2")).toBeInTheDocument();
     expect(screen.getByText("never")).toBeInTheDocument();
+    expect(screen.getByText("Total users: 2")).toBeInTheDocument();
+    expect(screen.getByText("75-100%")).toBeInTheDocument();
   });
 
   it("opens a user's detail and can navigate back", async () => {

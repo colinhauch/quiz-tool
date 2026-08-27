@@ -5,6 +5,7 @@ import {
   adminHealthSchema,
   adminPackDetailSchema,
   adminPackListSchema,
+  adminPopulationSchema,
   adminUserDetailSchema,
   adminUserListSchema,
 } from "@geo/contract";
@@ -16,6 +17,7 @@ import { previewGenerator } from "./generatorPreviewProjection.js";
 import { computeGraphHealth } from "./healthChecks.js";
 import { computeOwnership, type Ownership } from "./ownership.js";
 import { getPackDetail, listPacks } from "./packProjection.js";
+import { buildPopulation } from "./populationProjection.js";
 import type { AdminReadStore } from "./read-store.js";
 import { buildUserDetail } from "./userDetailProjection.js";
 
@@ -156,6 +158,13 @@ export function createAdminApp(options: AdminAppOptions) {
     if (!user) return c.json({ error: `unknown user: ${userId}` }, 404);
     const detail = buildUserDetail(pack, user, answers, packAbilities);
     return c.json(adminUserDetailSchema.parse(detail));
+  });
+
+  // All-users aggregate view (#142): counts, accuracy distribution, activity.
+  app.get("/population", async (c) => {
+    const readStore = requireReadStore();
+    const [users, answers] = await Promise.all([readStore.listUsers(), readStore.listAllAnswers()]);
+    return c.json(adminPopulationSchema.parse(buildPopulation(users, answers)));
   });
 
   return app;

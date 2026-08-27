@@ -95,3 +95,36 @@ export const adminUserDetailSchema = z
   .strict();
 
 export type AdminUserDetail = z.infer<typeof adminUserDetailSchema>;
+
+/** One bucket of the accuracy-distribution histogram — e.g. "50-75%" and how many users fall in it. */
+export const adminAccuracyBucketSchema = z
+  .object({
+    label: z.string().min(1),
+    userCount: z.number().int().nonnegative(),
+  })
+  .strict();
+
+export type AdminAccuracyBucket = z.infer<typeof adminAccuracyBucketSchema>;
+
+/** One day's activity across the whole population. */
+export const adminActivityDaySchema = z
+  .object({
+    date: z.string().min(1),
+    activeUsers: z.number().int().nonnegative(),
+    answerCount: z.number().int().nonnegative(),
+  })
+  .strict();
+
+export type AdminActivityDay = z.infer<typeof adminActivityDaySchema>;
+
+/** `GET /population` — aggregate counts, accuracy distribution, and activity across every user (#142). */
+export const adminPopulationSchema = z
+  .object({
+    totalUsers: z.number().int().nonnegative(),
+    totalAnswers: z.number().int().nonnegative(),
+    accuracyDistribution: z.array(adminAccuracyBucketSchema),
+    activityByDay: z.array(adminActivityDaySchema),
+  })
+  .strict();
+
+export type AdminPopulation = z.infer<typeof adminPopulationSchema>;
