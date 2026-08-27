@@ -1,4 +1,10 @@
-import { adminEntityDetailSchema, adminHealthSchema, adminPackDetailSchema, adminPackListSchema } from "@geo/contract";
+import {
+  adminEntityDetailSchema,
+  adminGraphHealthReportSchema,
+  adminHealthSchema,
+  adminPackDetailSchema,
+  adminPackListSchema,
+} from "@geo/contract";
 import type { Entity, Pack, Statement } from "@geo/engine";
 import type { LoadedPack } from "@geo/server/pack-loader";
 import { describe, expect, it } from "vitest";
@@ -128,5 +134,18 @@ describe("admin app", () => {
     const app = createAdminApp({ pack: fixturePack(), packSources: fixturePackSources() });
     const res = await app.request("/entities/does-not-exist");
     expect(res.status).toBe(404);
+  });
+
+  it("serves the graph health report", async () => {
+    const app = createAdminApp({ pack: fixturePack(), packSources: fixturePackSources() });
+    const res = await app.request("/health/graph");
+    expect(res.status).toBe(200);
+    const body = adminGraphHealthReportSchema.parse(await res.json());
+    expect(body.checks.map((c) => c.id).sort()).toEqual([
+      "duplicate-ownership",
+      "missing-visual-aid",
+      "orphaned-entities",
+      "uncovered-statements",
+    ]);
   });
 });

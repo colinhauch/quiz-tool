@@ -1,4 +1,4 @@
-import type { AdminEntityDetail, AdminHealth, AdminPackDetail, AdminPackList } from "@geo/contract";
+import type { AdminEntityDetail, AdminGraphHealthReport, AdminHealth, AdminPackDetail, AdminPackList } from "@geo/contract";
 
 /**
  * The single choke point every admin SPA→BFF call passes through, mirroring the
@@ -49,4 +49,10 @@ export async function getPackDetail(packId: string): Promise<AdminPackDetail | n
 export async function getEntityDetail(entityId: string): Promise<AdminEntityDetail | null> {
   const res = await adminFetchOptional(`/entities/${encodeURIComponent(entityId)}`);
   return res ? ((await res.json()) as AdminEntityDetail) : null;
+}
+
+/** The Graph Health report: every check, its count, and its failing items (#138). */
+export async function getGraphHealth(): Promise<AdminGraphHealthReport> {
+  const res = await adminFetch("/health/graph");
+  return (await res.json()) as AdminGraphHealthReport;
 }

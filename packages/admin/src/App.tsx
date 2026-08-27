@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { SURFACES, type SurfaceId } from "./surfaces.js";
+import { usePacksFocus } from "./navigation.js";
 
 /**
  * The admin shell: a persistent left nav across the five surfaces — Packs,
@@ -13,6 +14,18 @@ import { SURFACES, type SurfaceId } from "./surfaces.js";
  */
 export function App() {
   const [active, setActive] = useState<SurfaceId>("packs");
+
+  // A cross-surface drill-down (Graph Health → Packs, #138) writes a pending
+  // focus request rather than calling into this shell directly (the surface
+  // registry renders every surface as a bare `ComponentType`, with no props to
+  // drill through — see `navigation.ts`). This is the one place that watches
+  // for it and switches surfaces; `Packs` itself consumes the request once
+  // mounted, to pick where within itself to land.
+  const pendingFocus = usePacksFocus();
+  useEffect(() => {
+    if (pendingFocus) setActive("packs");
+  }, [pendingFocus]);
+
   // SURFACES is non-empty (a compile-time constant), so this is a real fallback,
   // not a possible-undefined the shell has to reason about.
   const surface = SURFACES.find((s) => s.id === active) ?? SURFACES[0]!;

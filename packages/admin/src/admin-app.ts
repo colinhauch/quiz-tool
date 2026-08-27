@@ -1,8 +1,15 @@
-import { adminEntityDetailSchema, adminHealthSchema, adminPackDetailSchema, adminPackListSchema } from "@geo/contract";
+import {
+  adminEntityDetailSchema,
+  adminGraphHealthReportSchema,
+  adminHealthSchema,
+  adminPackDetailSchema,
+  adminPackListSchema,
+} from "@geo/contract";
 import type { Pack } from "@geo/engine";
 import type { LoadedPack } from "@geo/server/pack-loader";
 import { Hono } from "hono";
 import { getEntityDetail } from "./entityProjection.js";
+import { computeGraphHealth } from "./healthChecks.js";
 import { computeOwnership, type Ownership } from "./ownership.js";
 import { getPackDetail, listPacks } from "./packProjection.js";
 
@@ -24,9 +31,10 @@ export interface AdminAppOptions {
    * The raw per-pack sources `pack` was assembled from — the shape
    * `@geo/server/pack-loader`'s `discoverPacks`/`loadPack` produce at boot,
    * before `assembleGraph` merges every pack's entities into one `Map` and
-   * loses which pack shipped which. The Packs and Entity surfaces need that
-   * per-pack breakdown to attribute Entity Owners and Relation definitions
-   * (`ownership.ts`); the assembled graph alone can't answer it.
+   * loses which pack shipped which. The Packs, Entity, and Graph Health
+   * surfaces need that per-pack breakdown to attribute Entity Owners and
+   * Relation definitions (`ownership.ts`); the assembled graph alone can't
+   * answer it.
    *
    * Optional and test-only in practice: a test passes a small fixture so the
    * route runs in-process with no disk. When omitted (the real `index.ts`,
@@ -90,6 +98,13 @@ export function createAdminApp(options: AdminAppOptions) {
     const detail = getEntityDetail(pack, entityId, ownership);
     if (!detail) return c.json({ error: `unknown entity: ${entityId}` }, 404);
     return c.json(adminEntityDetailSchema.parse(detail));
+  });
+
+  // Graph Health surface (#138): orphaned entities, uncovered statements,
+  // missing coordinates/visual aid, duplicate relation definitions / owners.
+  app.get("/health/graph", async (c) => {
+    const ownership = await getOwnership();
+    return c.json(adminGraphHealthReportSchema.parse(computeGraphHealth(pack, ownership)));
   });
 
   return app;

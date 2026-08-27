@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { adminEntityDetailSchema, adminHealthSchema, adminPackDetailSchema, adminPackListSchema } from "./admin.js";
+import {
+  adminEntityDetailSchema,
+  adminGraphHealthReportSchema,
+  adminHealthSchema,
+  adminPackDetailSchema,
+  adminPackListSchema,
+} from "./admin.js";
 
 describe("adminHealthSchema", () => {
   it("accepts the read-only ok payload", () => {
@@ -129,5 +135,27 @@ describe("adminEntityDetailSchema", () => {
       statements: [],
     };
     expect(adminEntityDetailSchema.parse(payload)).toEqual(payload);
+  });
+});
+
+describe("adminGraphHealthReportSchema", () => {
+  it("accepts a report with per-check counts and drill-down items", () => {
+    const payload = {
+      checks: [
+        {
+          id: "orphaned-entities",
+          label: "Orphaned entities",
+          count: 1,
+          items: [{ targetType: "entity", targetId: "Q999", detail: "in no statement" }],
+        },
+        {
+          id: "uncovered-statements",
+          label: "Uncovered statements",
+          count: 0,
+          items: [],
+        },
+      ],
+    };
+    expect(adminGraphHealthReportSchema.parse(payload)).toEqual(payload);
   });
 });

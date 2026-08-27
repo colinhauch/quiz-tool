@@ -1,6 +1,7 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { App } from "./App.js";
+import { focusPacksOn } from "./navigation.js";
 import { SURFACES } from "./surfaces.js";
 
 describe("admin shell", () => {
@@ -29,5 +30,17 @@ describe("admin shell", () => {
     expect(screen.getByRole("heading", { name: "Graph Health" })).toBeInTheDocument();
     // The read-only indicator survives the switch — it is shell chrome.
     expect(screen.getByRole("status")).toHaveTextContent(/read-only/i);
+  });
+
+  it("switches to Packs when a cross-surface focus request arrives (Graph Health drill-down, #138)", () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole("button", { name: "Graph Health" }));
+    expect(screen.getByRole("button", { name: "Graph Health" })).toHaveAttribute("aria-current", "page");
+
+    act(() => {
+      focusPacksOn({ kind: "entity", entityId: "Q1" });
+    });
+
+    expect(screen.getByRole("button", { name: "Packs" })).toHaveAttribute("aria-current", "page");
   });
 });

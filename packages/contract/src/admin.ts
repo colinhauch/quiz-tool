@@ -171,3 +171,39 @@ export const adminEntityDetailSchema = z
   .strict();
 
 export type AdminEntityDetail = z.infer<typeof adminEntityDetailSchema>;
+
+/**
+ * One Graph Health finding, drilling down to the offending Entity or Statement
+ * so the operator can jump straight to it on the Packs surface (#138).
+ */
+export const adminHealthIssueSchema = z
+  .object({
+    targetType: z.enum(["entity", "statement"]),
+    targetId: z.string().min(1),
+    packId: z.string().min(1).optional(),
+    detail: z.string().min(1),
+  })
+  .strict();
+
+export type AdminHealthIssue = z.infer<typeof adminHealthIssueSchema>;
+
+/** One check's result: a summary count plus every failing item. */
+export const adminHealthCheckSchema = z
+  .object({
+    id: z.string().min(1),
+    label: z.string().min(1),
+    count: z.number().int().nonnegative(),
+    items: z.array(adminHealthIssueSchema),
+  })
+  .strict();
+
+export type AdminHealthCheck = z.infer<typeof adminHealthCheckSchema>;
+
+/** `GET /admin/health/graph` — every Graph Health check, run over the assembled graph. */
+export const adminGraphHealthReportSchema = z
+  .object({
+    checks: z.array(adminHealthCheckSchema),
+  })
+  .strict();
+
+export type AdminGraphHealthReport = z.infer<typeof adminGraphHealthReportSchema>;
