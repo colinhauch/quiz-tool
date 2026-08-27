@@ -1,6 +1,9 @@
-import { adminHealthSchema } from "@geo/contract";
+import { adminHealthSchema, adminPackDetailSchema, adminPackListSchema } from "@geo/contract";
 import type { Pack } from "@geo/engine";
+import type { LoadedPack } from "@geo/server/pack-loader";
 import { Hono } from "hono";
+import { computeOwnership, type Ownership } from "./ownership.js";
+import { getPackDetail, listPacks } from "./packProjection.js";
 
 /**
  * The admin BFF's dependencies, passed in rather than reached for — the same
@@ -16,6 +19,22 @@ import { Hono } from "hono";
 export interface AdminAppOptions {
   /** The assembled graph: every discovered pack, including catalog-hidden ones. */
   pack: Pack;
+  /**
+   * The raw per-pack sources `pack` was assembled from — the shape
+   * `@geo/server/pack-loader`'s `discoverPacks`/`loadPack` produce at boot,
+   * before `assembleGraph` merges every pack's entities into one `Map` and
+   * loses which pack shipped which. The Packs surface needs that per-pack
+   * breakdown to attribute Entity Owners and Relation definitions
+   * (`ownership.ts`); the assembled graph alone can't answer it.
+   *
+   * Optional and test-only in practice: a test passes a small fixture so the
+   * route runs in-process with no disk. When omitted (the real `index.ts`,
+   * which already calls `loadAllPacks()` for `pack` and is not re-plumbed
+   * here), the BFF re-discovers the same `packs/` directory itself, on first
+   * request, and caches the result — an extra disk read at admin-BFF
+   * boot-cost, never in the request's hot path after the first call.
+   */
+  packSources?: LoadedPack[];
 }
 
 /**
@@ -25,13 +44,43 @@ export interface AdminAppOptions {
  * exercise the routes in-process, the primary integration seam for the whole
  * admin package.
  */
-export function createAdminApp(_options: AdminAppOptions) {
+export function createAdminApp(options: AdminAppOptions) {
   const app = new Hono();
+  const { pack } = options;
+
+  // Resolved once and memoized: a test supplies `packSources` directly (no
+  // disk, no await beyond a resolved promise); the real BFF discovers it lazily
+  // on first request rather than blocking every boot with a second pack read
+  // alongside `index.ts`'s `loadAllPacks()`.
+  let ownershipPromise: Promise<Ownership> | undefined;
+  function getOwnership(): Promise<Ownership> {
+    if (!ownershipPromise) {
+      ownershipPromise = (
+        options.packSources
+          ? Promise.resolve(options.packSources)
+          : import("@geo/server/pack-loader").then(({ discoverPacks, loadPack }) =>
+              Promise.all(discoverPacks().map(loadPack)),
+            )
+      ).then(computeOwnership);
+    }
+    return ownershipPromise;
+  }
 
   // The liveness probe and the seam's proof-of-life: it round-trips through the
   // admin contract schema, so an accidental shape drift fails here rather than
   // in the browser. `readOnly` is pinned true — see `adminHealthSchema`.
   app.get("/health", (c) => c.json(adminHealthSchema.parse({ status: "ok", readOnly: true })));
+
+  // Packs surface (#136): every discovered pack, then one pack's Entities and
+  // Statements, Relations split into defined-here vs asserted-elsewhere.
+  app.get("/packs", (c) => c.json(adminPackListSchema.parse(listPacks(pack))));
+
+  app.get("/packs/:packId", async (c) => {
+    const packId = c.req.param("packId");
+    if (!pack.packs.has(packId)) return c.json({ error: `unknown pack: ${packId}` }, 404);
+    const ownership = await getOwnership();
+    return c.json(adminPackDetailSchema.parse(getPackDetail(pack, packId, ownership)));
+  });
 
   return app;
 }

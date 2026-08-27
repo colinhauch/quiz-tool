@@ -1,5 +1,6 @@
-import { adminHealthSchema } from "@geo/contract";
+import { adminHealthSchema, adminPackDetailSchema, adminPackListSchema } from "@geo/contract";
 import type { Entity, Pack, Statement } from "@geo/engine";
+import type { LoadedPack } from "@geo/server/pack-loader";
 import { describe, expect, it } from "vitest";
 import { createAdminApp } from "./admin-app.js";
 
@@ -31,10 +32,85 @@ export function fixturePack(): Pack {
   };
 }
 
+/**
+ * The raw per-pack sources behind `fixturePack()`, for the routes that need
+ * ownership attribution (Packs detail, Entity detail, Graph Health). A route
+ * test passes this explicitly so it never touches disk — see `ownership.ts`.
+ */
+function fixturePackSources(): LoadedPack[] {
+  return [
+    {
+      id: TEST_PACK.id,
+      dirName: TEST_PACK.id,
+      dir: new URL("file:///packs/test-pack/"),
+      manifest: {
+        id: TEST_PACK.id,
+        version: TEST_PACK.version,
+        labels: TEST_PACK.labels,
+        relations: { located_in: { labels: { en: "is in country" } } },
+      },
+      entities: new Map([
+        ["Q1490", { id: "Q1490", labels: { en: "Tokyo" }, types: ["city"] }],
+        ["Q17", { id: "Q17", labels: { en: "Japan" }, types: ["country"] }],
+      ]),
+      statements: [],
+      generators: {},
+    } as LoadedPack,
+  ];
+}
+
 describe("admin app", () => {
   it("serves a read-only health check over the in-process seam", async () => {
     const res = await createAdminApp({ pack: fixturePack() }).request("/health");
     expect(res.status).toBe(200);
     expect(adminHealthSchema.parse(await res.json())).toEqual({ status: "ok", readOnly: true });
+  });
+
+  it("lists packs, including any with no statements", async () => {
+    const app = createAdminApp({ pack: fixturePack(), packSources: fixturePackSources() });
+    const res = await app.request("/packs");
+    expect(res.status).toBe(200);
+    const body = adminPackListSchema.parse(await res.json());
+    expect(body).toEqual([
+      {
+        id: "test-pack",
+        label: "Test Pack",
+        version: "0.0.1",
+        license: undefined,
+        credits: undefined,
+        statementCount: 1,
+        cardCount: 1,
+      },
+    ]);
+  });
+
+  it("serves a pack's detail with its owned entities and relation groups", async () => {
+    const app = createAdminApp({ pack: fixturePack(), packSources: fixturePackSources() });
+    const res = await app.request("/packs/test-pack");
+    expect(res.status).toBe(200);
+    const body = adminPackDetailSchema.parse(await res.json());
+    expect(body.entities.map((e) => e.id).sort()).toEqual(["Q1490", "Q17"]);
+    expect(body.relations).toEqual([
+      {
+        relation: "located_in",
+        definedHere: true,
+        definedBy: undefined,
+        statements: [
+          {
+            id: "S1",
+            relation: "located_in",
+            subject: { id: "Q1490", label: "Tokyo" },
+            object: { kind: "entity", entity: { id: "Q17", label: "Japan" } },
+            packId: "test-pack",
+          },
+        ],
+      },
+    ]);
+  });
+
+  it("404s a pack detail request for an unknown pack", async () => {
+    const app = createAdminApp({ pack: fixturePack(), packSources: fixturePackSources() });
+    const res = await app.request("/packs/does-not-exist");
+    expect(res.status).toBe(404);
   });
 });

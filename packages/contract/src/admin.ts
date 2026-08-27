@@ -27,3 +27,111 @@ export const adminHealthSchema = z
   .strict();
 
 export type AdminHealth = z.infer<typeof adminHealthSchema>;
+
+/**
+ * Shared building blocks for the Packs / Entity / Graph Health / Generator
+ * Preview surfaces (#136–#139). These read the assembled `Pack` graph only —
+ * no database, no `AdminReadStore` — so every shape here is a projection over
+ * `@geo/engine` types, never a widening of them.
+ */
+
+const adminCreditSchema = z.object({ source: z.string(), retrieved: z.string() }).strict();
+
+/**
+ * `GET /admin/packs` — every discovered pack (ADR-0001), including
+ * catalog-hidden ones (ADR-0003: visibility is a player/catalog policy the
+ * admin ignores). Unlike the player-facing `packSummarySchema` in `index.ts`,
+ * this has no `included` flag and does not filter out entity-only packs like
+ * `core-geo` — the operator needs to see everything that was loaded.
+ */
+export const adminPackSummarySchema = z
+  .object({
+    id: z.string().min(1),
+    label: z.string().min(1),
+    version: z.string().min(1),
+    license: z.string().optional(),
+    credits: z.array(adminCreditSchema).optional(),
+    statementCount: z.number().int().nonnegative(),
+    cardCount: z.number().int().nonnegative(),
+  })
+  .strict();
+
+export type AdminPackSummary = z.infer<typeof adminPackSummarySchema>;
+
+export const adminPackListSchema = z.array(adminPackSummarySchema);
+
+export type AdminPackList = z.infer<typeof adminPackListSchema>;
+
+/** An entity as a link target: enough to render and to navigate to it. */
+export const adminEntityRefSchema = z
+  .object({
+    id: z.string().min(1),
+    label: z.string().min(1),
+  })
+  .strict();
+
+export type AdminEntityRef = z.infer<typeof adminEntityRefSchema>;
+
+/** A statement's object slot, resolved for display: a linked entity or a literal's display text. */
+export const adminObjectSlotSchema = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("entity"), entity: adminEntityRefSchema }).strict(),
+  z.object({ kind: z.literal("literal"), literal: z.string() }).strict(),
+]);
+
+export type AdminObjectSlot = z.infer<typeof adminObjectSlotSchema>;
+
+/** One statement, with its subject/object resolved to navigable entity refs. */
+export const adminStatementSchema = z
+  .object({
+    id: z.string().min(1),
+    relation: z.string().min(1),
+    subject: adminEntityRefSchema,
+    object: adminObjectSlotSchema,
+    /** The pack that authored this statement (`Statement.pack`). */
+    packId: z.string().min(1),
+  })
+  .strict();
+
+export type AdminStatement = z.infer<typeof adminStatementSchema>;
+
+export const adminEntitySummarySchema = z
+  .object({
+    id: z.string().min(1),
+    label: z.string().min(1),
+    types: z.array(z.string()),
+  })
+  .strict();
+
+export type AdminEntitySummary = z.infer<typeof adminEntitySummarySchema>;
+
+/**
+ * One relation's statements within a pack detail, tagged with whether this
+ * pack defines the relation or merely asserts statements against it (CONTEXT.md
+ * "Relation": exactly one pack defines it; other packs may still use it).
+ * `definedBy` names the defining pack when it differs from the pack being viewed.
+ */
+export const adminRelationGroupSchema = z
+  .object({
+    relation: z.string().min(1),
+    definedHere: z.boolean(),
+    definedBy: z.string().min(1).optional(),
+    statements: z.array(adminStatementSchema),
+  })
+  .strict();
+
+export type AdminRelationGroup = z.infer<typeof adminRelationGroupSchema>;
+
+/** `GET /admin/packs/:packId` — a pack's Entities and Statements (#136). */
+export const adminPackDetailSchema = z
+  .object({
+    id: z.string().min(1),
+    label: z.string().min(1),
+    version: z.string().min(1),
+    license: z.string().optional(),
+    credits: z.array(adminCreditSchema).optional(),
+    entities: z.array(adminEntitySummarySchema),
+    relations: z.array(adminRelationGroupSchema),
+  })
+  .strict();
+
+export type AdminPackDetail = z.infer<typeof adminPackDetailSchema>;
