@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   adminEntityDetailSchema,
+  adminGeneratorPreviewSchema,
   adminGraphHealthReportSchema,
   adminHealthSchema,
   adminPackDetailSchema,
@@ -101,7 +102,6 @@ describe("adminPackDetailSchema", () => {
   });
 });
 
-
 describe("adminEntityDetailSchema", () => {
   it("accepts an entity with coordinate and statements it's subject/object of", () => {
     const payload = {
@@ -157,5 +157,39 @@ describe("adminGraphHealthReportSchema", () => {
       ],
     };
     expect(adminGraphHealthReportSchema.parse(payload)).toEqual(payload);
+  });
+});
+
+describe("adminGeneratorPreviewSchema", () => {
+  it("accepts a quizzable card with a rendered prompt", () => {
+    const payload = {
+      statementId: "cc:tokyo-japan",
+      relation: "located_in",
+      packId: "core-cities",
+      packLabel: "Core Cities",
+      provenance: "Core Cities",
+      cards: [
+        {
+          hiddenSlot: "object",
+          quizzable: true,
+          prompt: "What country is Tokyo in?",
+          questionKind: "text",
+          correctAnswer: "Japan",
+        },
+      ],
+    };
+    expect(adminGeneratorPreviewSchema.parse(payload)).toEqual(payload);
+  });
+
+  it("accepts a non-quizzable card with a reason instead of a prompt", () => {
+    const payload = {
+      statementId: "s1",
+      relation: "unquizzed",
+      packId: "p",
+      packLabel: "P",
+      provenance: "P",
+      cards: [{ hiddenSlot: "object", quizzable: false, reason: "relation has no generator" }],
+    };
+    expect(adminGeneratorPreviewSchema.parse(payload)).toEqual(payload);
   });
 });

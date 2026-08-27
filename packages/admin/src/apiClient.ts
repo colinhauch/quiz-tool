@@ -1,4 +1,11 @@
-import type { AdminEntityDetail, AdminGraphHealthReport, AdminHealth, AdminPackDetail, AdminPackList } from "@geo/contract";
+import type {
+  AdminEntityDetail,
+  AdminGeneratorPreview,
+  AdminGraphHealthReport,
+  AdminHealth,
+  AdminPackDetail,
+  AdminPackList,
+} from "@geo/contract";
 
 /**
  * The single choke point every admin SPA→BFF call passes through, mirroring the
@@ -55,4 +62,10 @@ export async function getEntityDetail(entityId: string): Promise<AdminEntityDeta
 export async function getGraphHealth(): Promise<AdminGraphHealthReport> {
   const res = await adminFetch("/health/graph");
   return (await res.json()) as AdminGraphHealthReport;
+}
+
+/** What a statement's generator would render, or `null` if unknown (#139). */
+export async function getGeneratorPreview(statementId: string): Promise<AdminGeneratorPreview | null> {
+  const res = await adminFetchOptional(`/generator-preview/${encodeURIComponent(statementId)}`);
+  return res ? ((await res.json()) as AdminGeneratorPreview) : null;
 }

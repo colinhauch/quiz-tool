@@ -1,5 +1,6 @@
 import {
   adminEntityDetailSchema,
+  adminGeneratorPreviewSchema,
   adminGraphHealthReportSchema,
   adminHealthSchema,
   adminPackDetailSchema,
@@ -9,6 +10,7 @@ import type { Pack } from "@geo/engine";
 import type { LoadedPack } from "@geo/server/pack-loader";
 import { Hono } from "hono";
 import { getEntityDetail } from "./entityProjection.js";
+import { previewGenerator } from "./generatorPreviewProjection.js";
 import { computeGraphHealth } from "./healthChecks.js";
 import { computeOwnership, type Ownership } from "./ownership.js";
 import { getPackDetail, listPacks } from "./packProjection.js";
@@ -105,6 +107,14 @@ export function createAdminApp(options: AdminAppOptions) {
   app.get("/health/graph", async (c) => {
     const ownership = await getOwnership();
     return c.json(adminGraphHealthReportSchema.parse(computeGraphHealth(pack, ownership)));
+  });
+
+  // Generator Preview surface (#139): what a statement's generator emits.
+  app.get("/generator-preview/:statementId", (c) => {
+    const statementId = c.req.param("statementId");
+    const preview = previewGenerator(pack, statementId);
+    if (!preview) return c.json({ error: `unknown statement: ${statementId}` }, 404);
+    return c.json(adminGeneratorPreviewSchema.parse(preview));
   });
 
   return app;

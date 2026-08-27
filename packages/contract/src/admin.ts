@@ -207,3 +207,48 @@ export const adminGraphHealthReportSchema = z
   .strict();
 
 export type AdminGraphHealthReport = z.infer<typeof adminGraphHealthReportSchema>;
+
+/**
+ * One card the Generator Preview would render — a statement paired with a
+ * hidden slot (mirrors `@geo/engine`'s `Card`). `quizzable` is false when the
+ * statement's relation has no generator; the preview then shows `reason`
+ * instead of a rendered prompt, degrading gracefully rather than erroring.
+ *
+ * The engine has one Question Kind today (`text`, `RenderedContent.input`);
+ * `distractors`/`correctOption` are carried for a future multiple-choice kind
+ * (ADR-0002) without the engine's surface needing to grow to support this
+ * preview — they are simply absent until a generator ever produces them.
+ */
+export const adminGeneratorPreviewCardSchema = z
+  .object({
+    hiddenSlot: z.string().min(1),
+    quizzable: z.boolean(),
+    prompt: z.string().min(1).optional(),
+    questionKind: z.string().min(1).optional(),
+    correctAnswer: z.string().min(1).optional(),
+    distractors: z.array(z.string().min(1)).optional(),
+    reason: z.string().min(1).optional(),
+  })
+  .strict();
+
+export type AdminGeneratorPreviewCard = z.infer<typeof adminGeneratorPreviewCardSchema>;
+
+/**
+ * `GET /admin/generator-preview` — what a Statement's Generator emits, for the
+ * operator-picked pack + statement (#139). `cards` carries one entry per
+ * supported hidden slot, so forward and reverse cards preview side by side
+ * when a relation supports both.
+ */
+export const adminGeneratorPreviewSchema = z
+  .object({
+    statementId: z.string().min(1),
+    relation: z.string().min(1),
+    packId: z.string().min(1),
+    packLabel: z.string().min(1),
+    /** The source line the player would see for a question from this statement. */
+    provenance: z.string().min(1),
+    cards: z.array(adminGeneratorPreviewCardSchema),
+  })
+  .strict();
+
+export type AdminGeneratorPreview = z.infer<typeof adminGeneratorPreviewSchema>;

@@ -1,5 +1,6 @@
 import {
   adminEntityDetailSchema,
+  adminGeneratorPreviewSchema,
   adminGraphHealthReportSchema,
   adminHealthSchema,
   adminPackDetailSchema,
@@ -147,5 +148,29 @@ describe("admin app", () => {
       "orphaned-entities",
       "uncovered-statements",
     ]);
+  });
+
+  it("serves a generator preview for a statement", async () => {
+    const app = createAdminApp({ pack: fixturePack(), packSources: fixturePackSources() });
+    const res = await app.request("/generator-preview/S1");
+    expect(res.status).toBe(200);
+    const body = adminGeneratorPreviewSchema.parse(await res.json());
+    expect(body.cards).toEqual([
+      {
+        hiddenSlot: "object",
+        quizzable: true,
+        prompt: "What country is Tokyo in?",
+        questionKind: "text",
+        correctAnswer: "Japan",
+        distractors: undefined,
+        reason: undefined,
+      },
+    ]);
+  });
+
+  it("404s a generator preview request for an unknown statement", async () => {
+    const app = createAdminApp({ pack: fixturePack(), packSources: fixturePackSources() });
+    const res = await app.request("/generator-preview/does-not-exist");
+    expect(res.status).toBe(404);
   });
 });
