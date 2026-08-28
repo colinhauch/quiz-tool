@@ -34,6 +34,40 @@ export interface Entity {
    * time. Optional: an entity without one simply gets no map.
    */
   coordinate?: { lat: number; lon: number };
+  /**
+   * Regional land geometry for this entity's neighbourhood, in raw lon/lat
+   * (WGS84). Clipped from Natural Earth 50m land once at import (spec #152,
+   * #154) to the `regionExtent` window and stored here beside `coordinate` —
+   * never computed per request. It is the higher-resolution overlay the reveal
+   * map zooms into. Present only when `coordinate` is; paired with
+   * `regionExtent`, the window it was clipped to.
+   */
+  localGeoJSON?: GeoMultiPolygon;
+  /** The lon/lat window `localGeoJSON` was clipped to (spec #152, #154). */
+  regionExtent?: RegionExtent;
+}
+
+/**
+ * An axis-aligned lon/lat rectangle: the target `viewBox` the reveal map zooms
+ * to. Centered on an entity's coordinate, sized by entity type — tight for a
+ * city, roughly-country for a country, wide for a continent (spec #152).
+ */
+export interface RegionExtent {
+  minLon: number;
+  minLat: number;
+  maxLon: number;
+  maxLat: number;
+}
+
+/**
+ * A GeoJSON MultiPolygon geometry in raw lon/lat (WGS84) — nothing is
+ * pre-projected, so the client projects it with the same point math it uses
+ * for the pin. `coordinates` is `[polygon][ring][vertex][lon, lat]`; within a
+ * polygon, ring 0 is the outer boundary and any later rings are holes.
+ */
+export interface GeoMultiPolygon {
+  type: "MultiPolygon";
+  coordinates: number[][][][];
 }
 
 /** Engine-level literal datatypes. Packs may not add to this set. */
