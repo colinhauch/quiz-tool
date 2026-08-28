@@ -170,14 +170,15 @@ export interface RenderedQuestion {
 }
 
 /**
- * The generic visual-aid slot: `{ renderer, entityId, ...rendererData }`.
- * Server-computed and fully-hydrated — the client switches on `renderer` and
- * knows nothing about entities or coordinates. v1 has one renderer, `map`;
- * the union exists so a future renderer (flag, photo) is an addition, not a
- * reshape.
+ * The generic visual-aid slot: `{ kind, entityId, ...kindData }`.
+ * Server-computed and fully-hydrated — the client switches on `kind` and
+ * knows nothing about entities or coordinates. v1 has one kind, `map`;
+ * the union exists so a future kind (flag, photo) is an addition, not a
+ * reshape. (`kind`, not `renderer`: CONTEXT.md reserves "renderer" against
+ * for the pack-side Generator.)
  */
 export interface MapVisualAid {
-  renderer: "map";
+  kind: "map";
   entityId: string;
   lat: number;
   lon: number;

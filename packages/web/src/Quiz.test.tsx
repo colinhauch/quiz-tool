@@ -228,7 +228,7 @@ describe("Quiz", () => {
     stubFetch([tokyo], {
       correct: true,
       acceptedAnswer: "Japan",
-      revealVisual: { renderer: "map", entityId: "Q1490", lat: 35.6895, lon: 139.6917, label: "Tokyo" },
+      revealVisual: { kind: "map", entityId: "Q1490", lat: 35.6895, lon: 139.6917, label: "Tokyo" },
     });
     render(<Quiz />);
 
@@ -256,7 +256,7 @@ describe("Quiz", () => {
   // up for future card kinds. Never ship a stub descriptor like this outside
   // a test.
   const stubMap = (label: string): VisualAid => ({
-    renderer: "map",
+    kind: "map",
     entityId: "Q999",
     lat: 1,
     lon: 2,

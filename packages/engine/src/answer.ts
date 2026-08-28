@@ -62,7 +62,7 @@ export interface AnswerResult {
 function revealVisualFor(entity: Entity | undefined): VisualAid | undefined {
   if (!entity?.coordinate) return undefined;
   return {
-    renderer: "map",
+    kind: "map",
     entityId: entity.id,
     lat: entity.coordinate.lat,
     lon: entity.coordinate.lon,

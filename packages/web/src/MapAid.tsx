@@ -7,9 +7,9 @@ import { WORLD_LAND_PATH } from "./world-map.generated.js";
  * viewBox, so plotting a coordinate is `x = (lon + 180) / 360 * W`,
  * `y = (90 - lat) / 180 * H` — the same projection the path was generated with.
  *
- * Kept behind the plain `{lat, lon, label}` interface so the renderer is
+ * Kept behind the plain `{lat, lon, label}` interface so the map component is
  * swappable without touching `VisualAid`, the generic slot that owns the
- * `renderer` dispatch.
+ * `kind` dispatch.
  */
 const WIDTH = 360;
 const HEIGHT = 180;
