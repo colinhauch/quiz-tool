@@ -152,7 +152,7 @@ describe("checkAnswer, revealVisual", () => {
     types: ["continent"],
     coordinate: { lat: 48.69, lon: 9.14 },
   };
-  const tokyoMap = { renderer: "map", entityId: "Q1490", lat: 35.6897, lon: 139.6922, label: "Tokyo" };
+  const tokyoMap = { kind: "map", entityId: "Q1490", lat: 35.6897, lon: 139.6922, label: "Tokyo" };
 
   // A city→country statement, quizzable both ways.
   function makeCityCountryPack(subject: Entity, object: Entity): Pack {
@@ -190,7 +190,7 @@ describe("checkAnswer, revealVisual", () => {
     };
     const result = checkAnswer(pack, "cap:russia:subject", "Russia");
     expect(result.acceptedAnswer).toBe("Russia");
-    expect(result.revealVisual).toEqual({ renderer: "map", entityId: "Q649", lat: 55.75, lon: 37.62, label: "Moscow" });
+    expect(result.revealVisual).toEqual({ kind: "map", entityId: "Q649", lat: 55.75, lon: 37.62, label: "Moscow" });
   });
 
   it("maps the country, not the continent, for a continent card", () => {
@@ -205,7 +205,7 @@ describe("checkAnswer, revealVisual", () => {
     };
     const result = checkAnswer(pack, "cont:andorra:object", "Asia");
     expect(result).toMatchObject({ correct: false, acceptedAnswer: "Europe" });
-    expect(result.revealVisual).toEqual({ renderer: "map", entityId: "Q228", lat: 42.5, lon: 1.5, label: "Andorra" });
+    expect(result.revealVisual).toEqual({ kind: "map", entityId: "Q228", lat: 42.5, lon: 1.5, label: "Andorra" });
   });
 
   it("falls back to the country when the object has no coordinate (e.g. a currency)", () => {
@@ -219,7 +219,7 @@ describe("checkAnswer, revealVisual", () => {
       packs,
     };
     const result = checkAnswer(pack, "cur:andorra:object", "Euro");
-    expect(result.revealVisual).toEqual({ renderer: "map", entityId: "Q228", lat: 42.5, lon: 1.5, label: "Andorra" });
+    expect(result.revealVisual).toEqual({ kind: "map", entityId: "Q228", lat: 42.5, lon: 1.5, label: "Andorra" });
   });
 
   it("omits revealVisual when neither end has a coordinate", () => {
@@ -342,7 +342,7 @@ describe("checkAnswer, transcontinental (accepts and lists every continent)", ()
     expect(result.correct).toBe(true);
     expect(result.acceptedAnswers).toEqual(["Asia", "Europe"]);
     // The map pins Kazakhstan (the country), not either continent.
-    expect(result.revealVisual).toEqual({ renderer: "map", entityId: "Q232", lat: 48, lon: 68, label: "Kazakhstan" });
+    expect(result.revealVisual).toEqual({ kind: "map", entityId: "Q232", lat: 48, lon: 68, label: "Kazakhstan" });
   });
 });
 

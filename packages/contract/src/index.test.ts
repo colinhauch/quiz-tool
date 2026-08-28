@@ -119,7 +119,7 @@ describe("answerResponseSchema", () => {
       correct: true,
       acceptedAnswer: "Tokyo",
       acceptedAnswers: ["Tokyo"],
-      revealVisual: { renderer: "map", entityId: "Q1490", lat: 35.6897, lon: 139.6922, label: "Tokyo" },
+      revealVisual: { kind: "map", entityId: "Q1490", lat: 35.6897, lon: 139.6922, label: "Tokyo" },
     };
     expect(answerResponseSchema.parse(res)).toEqual(res);
   });
@@ -129,21 +129,21 @@ describe("answerResponseSchema", () => {
       correct: true,
       acceptedAnswer: "Tokyo",
       acceptedAnswers: ["Tokyo"],
-      revealVisual: { renderer: "map", entityId: "Q1490", lat: "north", lon: 139.6922, label: "Tokyo" },
+      revealVisual: { kind: "map", entityId: "Q1490", lat: "north", lon: 139.6922, label: "Tokyo" },
     };
     expect(answerResponseSchema.safeParse(res).success).toBe(false);
   });
 });
 
 describe("visualAidSchema", () => {
-  const map = { renderer: "map", entityId: "Q1490", lat: 35.6897, lon: 139.6922, label: "Tokyo" };
+  const map = { kind: "map", entityId: "Q1490", lat: 35.6897, lon: 139.6922, label: "Tokyo" };
 
   it("validates a well-formed map descriptor", () => {
     expect(visualAidSchema.parse(map)).toEqual(map);
   });
 
-  it("rejects an unknown renderer", () => {
-    expect(visualAidSchema.safeParse({ ...map, renderer: "flag" }).success).toBe(false);
+  it("rejects an unknown visual-aid kind", () => {
+    expect(visualAidSchema.safeParse({ ...map, kind: "flag" }).success).toBe(false);
   });
 
   it("rejects a missing field", () => {
@@ -169,13 +169,13 @@ describe("questionResponseSchema, promptVisual", () => {
   it("validates with a well-formed promptVisual", () => {
     const withVisual = {
       ...question,
-      promptVisual: { renderer: "map", entityId: "Q1490", lat: 35.6897, lon: 139.6922, label: "Tokyo" },
+      promptVisual: { kind: "map", entityId: "Q1490", lat: 35.6897, lon: 139.6922, label: "Tokyo" },
     };
     expect(questionResponseSchema.parse(withVisual)).toEqual(withVisual);
   });
 
   it("rejects a malformed promptVisual", () => {
-    const withBadVisual = { ...question, promptVisual: { renderer: "map" } };
+    const withBadVisual = { ...question, promptVisual: { kind: "map" } };
     expect(questionResponseSchema.safeParse(withBadVisual).success).toBe(false);
   });
 });

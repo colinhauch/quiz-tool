@@ -3,9 +3,9 @@ import { MapAid } from "./MapAid.js";
 
 /**
  * The generic visual slot — used for both the prompt-time and reveal-time
- * positions in the card. Dispatches on `renderer`: it knows nothing about
+ * positions in the card. Dispatches on `kind`: it knows nothing about
  * entities or coordinates, only how to route a descriptor to the component
- * that draws it. Undefined or an unknown renderer renders nothing, so no
+ * that draws it. Undefined or an unknown kind renders nothing, so no
  * wrapper element exists and no space is reserved.
  *
  * `slot` only adds a modifier class (`visual-aid--prompt` / `visual-aid--reveal`)
@@ -22,7 +22,7 @@ export function VisualAid({
   if (!visual) return null;
 
   const rendered = (() => {
-    switch (visual.renderer) {
+    switch (visual.kind) {
       case "map":
         return <MapAid lat={visual.lat} lon={visual.lon} label={visual.label} />;
       default:

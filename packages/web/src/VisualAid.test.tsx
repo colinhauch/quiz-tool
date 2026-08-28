@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { VisualAid } from "./VisualAid.js";
 
 const tokyo: VisualAidData = {
-  renderer: "map",
+  kind: "map",
   entityId: "Q1490",
   lat: 35.6895,
   lon: 139.6917,

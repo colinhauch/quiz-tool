@@ -387,7 +387,7 @@ describe("full loop over the real fixture pack and a temp-file database", () => 
       // (country), even though the answer is Japan — the specific place is the
       // memory hook. Tokyo (Q1490) carries a real P625 coordinate (#110).
       revealVisual: {
-        renderer: "map",
+        kind: "map",
         entityId: "Q1490",
         lat: 35.68944444444445,
         lon: 139.69166666666666,

@@ -34,14 +34,15 @@ export type Health = z.infer<typeof healthSchema>;
  * wrong once two packs shared a prefix (#40).
  */
 /**
- * The generic visual-aid slot: `{ renderer, entityId, ...rendererData }`,
- * mirroring `VisualAid` in `@geo/engine`. Generic by design — a discriminated
- * union on `renderer` — so a future renderer (flag, photo) is a new member of
- * the union, not a reshape of the seam. v1 has one member, `map`.
+ * The generic visual-aid slot: `{ kind, entityId, ...kindData }`, mirroring
+ * `VisualAid` in `@geo/engine`. Generic by design — a discriminated union on
+ * `kind` — so a future kind (flag, photo) is a new member of the union, not a
+ * reshape of the seam. v1 has one member, `map`. (`kind`, not `renderer`:
+ * CONTEXT.md reserves "renderer" against for the pack-side Generator.)
  */
 export const mapVisualAidSchema = z
   .object({
-    renderer: z.literal("map"),
+    kind: z.literal("map"),
     entityId: z.string().min(1),
     lat: z.number(),
     lon: z.number(),
@@ -49,7 +50,7 @@ export const mapVisualAidSchema = z
   })
   .strict();
 
-export const visualAidSchema = z.discriminatedUnion("renderer", [mapVisualAidSchema]);
+export const visualAidSchema = z.discriminatedUnion("kind", [mapVisualAidSchema]);
 
 export type VisualAid = z.infer<typeof visualAidSchema>;
 
