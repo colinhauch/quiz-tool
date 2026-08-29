@@ -218,6 +218,19 @@ export interface MapVisualAid {
   lon: number;
   /** The entity's English canonical label. */
   label: string;
+  /**
+   * Higher-resolution local land geometry for the pinned region, in raw lon/lat
+   * (spec #152, #155) — the hi-res overlay the reveal map composites over the
+   * baked 110m world base in the same coordinate space. Copied straight from the
+   * entity's stored `localGeoJSON`; present only when the entity carries one.
+   */
+  localGeoJSON?: GeoMultiPolygon;
+  /**
+   * The lon/lat rectangle the reveal map frames the pin at — the regional
+   * `viewBox` target (spec #152, #155). Copied from the entity's stored
+   * `regionExtent`; present only when the entity carries one.
+   */
+  regionExtent?: RegionExtent;
 }
 
 export type VisualAid = MapVisualAid;

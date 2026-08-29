@@ -24,7 +24,15 @@ export function VisualAid({
   const rendered = (() => {
     switch (visual.kind) {
       case "map":
-        return <MapAid lat={visual.lat} lon={visual.lon} label={visual.label} />;
+        return (
+          <MapAid
+            lat={visual.lat}
+            lon={visual.lon}
+            label={visual.label}
+            localGeoJSON={visual.localGeoJSON}
+            regionExtent={visual.regionExtent}
+          />
+        );
       default:
         return null;
     }

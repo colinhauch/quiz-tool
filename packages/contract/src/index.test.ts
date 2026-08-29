@@ -150,6 +150,23 @@ describe("visualAidSchema", () => {
     const { label: _label, ...withoutLabel } = map;
     expect(visualAidSchema.safeParse(withoutLabel).success).toBe(false);
   });
+
+  it("validates a map descriptor carrying regional geometry + extent (#155)", () => {
+    const enriched = {
+      ...map,
+      localGeoJSON: {
+        type: "MultiPolygon",
+        coordinates: [[[[139, 35], [140, 35], [140, 36], [139, 35]]]],
+      },
+      regionExtent: { minLon: 138.19, minLat: 34.69, maxLon: 141.19, maxLat: 36.69 },
+    };
+    expect(visualAidSchema.parse(enriched)).toEqual(enriched);
+  });
+
+  it("rejects a localGeoJSON with the wrong geometry tag", () => {
+    const bad = { ...map, localGeoJSON: { type: "Polygon", coordinates: [] } };
+    expect(visualAidSchema.safeParse(bad).success).toBe(false);
+  });
 });
 
 describe("questionResponseSchema, promptVisual", () => {

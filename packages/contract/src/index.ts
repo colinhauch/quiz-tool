@@ -40,6 +40,35 @@ export type Health = z.infer<typeof healthSchema>;
  * reshape of the seam. v1 has one member, `map`. (`kind`, not `renderer`:
  * CONTEXT.md reserves "renderer" against for the pack-side Generator.)
  */
+/**
+ * A GeoJSON MultiPolygon in raw lon/lat (WGS84), mirroring `GeoMultiPolygon` in
+ * `@geo/engine`. Nothing is pre-projected — the client projects it with the
+ * same point math it uses for the pin. `coordinates` is
+ * `[polygon][ring][vertex][lon, lat]`; ring 0 is the outer boundary, later
+ * rings are holes. Not deeply validated (four levels of arrays of number pairs);
+ * the shape is server-produced from stored data, so we assert the tag and let
+ * the nested numbers through as-is.
+ */
+export const geoMultiPolygonSchema = z
+  .object({
+    type: z.literal("MultiPolygon"),
+    coordinates: z.array(z.array(z.array(z.array(z.number())))),
+  })
+  .strict();
+
+/**
+ * The lon/lat rectangle the reveal map frames the pin at, mirroring
+ * `RegionExtent` in `@geo/engine` (spec #152, #155).
+ */
+export const regionExtentSchema = z
+  .object({
+    minLon: z.number(),
+    minLat: z.number(),
+    maxLon: z.number(),
+    maxLat: z.number(),
+  })
+  .strict();
+
 export const mapVisualAidSchema = z
   .object({
     kind: z.literal("map"),
@@ -47,6 +76,11 @@ export const mapVisualAidSchema = z
     lat: z.number(),
     lon: z.number(),
     label: z.string().min(1),
+    // Regional overlay + framing, computed at import (#154) and carried here
+    // fully hydrated (#155). Optional: an entity with a coordinate but no stored
+    // clip still maps, at world scale.
+    localGeoJSON: geoMultiPolygonSchema.optional(),
+    regionExtent: regionExtentSchema.optional(),
   })
   .strict();
 

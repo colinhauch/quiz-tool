@@ -227,6 +227,32 @@ describe("checkAnswer, revealVisual", () => {
     const result = checkAnswer(makeCityCountryPack(tokyoNoCoord, japan), "cc:tokyo-japan:object", "Japan");
     expect(result).not.toHaveProperty("revealVisual");
   });
+
+  it("carries the entity's stored regional geometry and extent when present (#155)", () => {
+    // A city with geometry clipped at import (#154): the reveal payload passes
+    // the stored localGeoJSON + regionExtent straight through, fully hydrated,
+    // so the client frames the pin regionally with a crisp overlay.
+    const regionExtent = { minLon: 138.19, minLat: 34.69, maxLon: 141.19, maxLat: 36.69 };
+    const localGeoJSON = {
+      type: "MultiPolygon" as const,
+      coordinates: [[[[139, 35], [140, 35], [140, 36], [139, 36], [139, 35]]]],
+    };
+    const tokyoWithGeometry: Entity = { ...tokyo, localGeoJSON, regionExtent };
+    const result = checkAnswer(
+      makeCityCountryPack(tokyoWithGeometry, japanWithCoordinate),
+      "cc:tokyo-japan:object",
+      "Japan",
+    );
+    expect(result.revealVisual).toEqual({ ...tokyoMap, localGeoJSON, regionExtent });
+  });
+
+  it("maps without regional geometry when the entity has none (#155)", () => {
+    // A coordinate but no stored clip: the map still shows, just at world scale —
+    // no localGeoJSON/regionExtent keys, so the client falls back to full-world.
+    const result = checkAnswer(makeCityCountryPack(tokyo, japanWithCoordinate), "cc:tokyo-japan:object", "Japan");
+    expect(result.revealVisual).not.toHaveProperty("localGeoJSON");
+    expect(result.revealVisual).not.toHaveProperty("regionExtent");
+  });
 });
 
 // A `capital` statement quizzable both ways; the pack declares both slots so

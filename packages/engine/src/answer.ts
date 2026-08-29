@@ -61,13 +61,19 @@ export interface AnswerResult {
 /** A map descriptor for `entity` when it has a coordinate, omitted otherwise. */
 function revealVisualFor(entity: Entity | undefined): VisualAid | undefined {
   if (!entity?.coordinate) return undefined;
-  return {
+  const visual: VisualAid = {
     kind: "map",
     entityId: entity.id,
     lat: entity.coordinate.lat,
     lon: entity.coordinate.lon,
     label: entity.labels.en,
   };
+  // Regional geometry rides along when the entity was clipped at import (#154);
+  // an entity with a coordinate but no stored geometry still maps, just at the
+  // world silhouette — the client falls back to full-world framing.
+  if (entity.localGeoJSON) visual.localGeoJSON = entity.localGeoJSON;
+  if (entity.regionExtent) visual.regionExtent = entity.regionExtent;
+  return visual;
 }
 
 /**

@@ -379,7 +379,7 @@ describe("full loop over the real fixture pack and a temp-file database", () => 
       body: JSON.stringify({ cardId: question.cardId, input: "Japan" }),
     });
     const result = answerResponseSchema.parse(await res.json());
-    expect(result).toEqual({
+    expect(result).toMatchObject({
       correct: true,
       acceptedAnswer: "Japan",
       acceptedAnswers: ["Japan"],
@@ -394,6 +394,17 @@ describe("full loop over the real fixture pack and a temp-file database", () => 
         label: "Tokyo",
       },
     });
+    // The reveal payload carries the stored regional geometry + extent (#155),
+    // fully hydrated from the entity's import-time clip. Asserted by shape, not
+    // by exact polygon — the geometry is large and lives in the pack data.
+    expect(result.revealVisual?.regionExtent).toMatchObject({
+      minLon: expect.any(Number),
+      minLat: expect.any(Number),
+      maxLon: expect.any(Number),
+      maxLat: expect.any(Number),
+    });
+    expect(result.revealVisual?.localGeoJSON?.type).toBe("MultiPolygon");
+    expect(result.revealVisual?.localGeoJSON?.coordinates.length).toBeGreaterThan(0);
 
     const recorded = await store.all();
     expect(recorded).toHaveLength(1);
