@@ -1,5 +1,11 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { AnswerRecord, AnswerStore, SelectionStore } from "./storage.js";
+import type {
+  AnswerRecord,
+  AnswerStore,
+  FeedbackRecord,
+  FeedbackStore,
+  SelectionStore,
+} from "./storage.js";
 
 /**
  * Supabase-backed stores — the production persistence path behind the same
@@ -50,6 +56,28 @@ export function createSupabaseAnswerStore(client: SupabaseClient): AnswerStore {
         correct: row.correct,
         askedAt: row.asked_at,
       }));
+    },
+  };
+}
+
+/**
+ * Supabase-backed feedback store — insert only. There is no read here on purpose:
+ * the `feedback` table has an insert policy for `authenticated` and no select
+ * policy, so a select would return nothing anyway (only the admin's `service_role`
+ * reads it). `user_id` is omitted for the same reason the answer store omits it —
+ * the column defaults to `auth.uid()` and the RLS with-check pins it to the caller.
+ */
+export function createSupabaseFeedbackStore(client: SupabaseClient): FeedbackStore {
+  return {
+    async record(feedback: FeedbackRecord) {
+      const { error } = await client.from("feedback").insert({
+        kind: feedback.kind,
+        card_id: feedback.cardId,
+        comment: feedback.comment,
+        context: feedback.context,
+        created_at: feedback.createdAt,
+      });
+      if (error) throw new Error(`feedback.insert failed: ${error.message}`);
     },
   };
 }

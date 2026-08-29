@@ -1,3 +1,4 @@
+import type { FeedbackContext } from "@geo/contract";
 import Database from "better-sqlite3";
 
 /**
@@ -95,6 +96,93 @@ export function createSelectionStore(db: Database.Database): SelectionStore {
     },
     async write(packIds: string[]) {
       writeTxn(packIds);
+    },
+  };
+}
+
+/**
+ * One learner-submitted feedback report, as the store persists it. `kind` splits
+ * general app feedback from a question flag; `cardId` and `context` are populated
+ * only for question feedback (null for general). `comment` is always present —
+ * general requires the learner's text, a question flag with an empty box carries
+ * the default sentinel sentence the client supplied.
+ */
+export interface FeedbackRecord {
+  kind: "general" | "question";
+  cardId: string | null;
+  comment: string;
+  context: FeedbackContext | null;
+  /** ISO-8601 timestamp of when the report was recorded. */
+  createdAt: string;
+}
+
+/**
+ * Records feedback. Deliberately write-only: the learner-facing app can submit
+ * feedback but never read it back (only the admin's `service_role` reads it),
+ * so there is no `all()` on the production seam — the isolation is in the RLS,
+ * and the narrow interface makes an accidental learner-side read impossible to
+ * wire. The in-memory store below adds an `all()` for test assertions only.
+ *
+ * Async for the same reason `AnswerStore` is: the production store is Supabase
+ * Postgres over the network (see `supabase-storage.ts`).
+ */
+export interface FeedbackStore {
+  record(feedback: FeedbackRecord): Promise<void>;
+}
+
+interface FeedbackRow {
+  kind: "general" | "question";
+  cardId: string | null;
+  comment: string;
+  context: string | null;
+  createdAt: string;
+}
+
+/**
+ * A better-sqlite3 feedback store for local dev and tests, satisfying the
+ * production {@link FeedbackStore} seam plus an `all()` the route never uses but
+ * tests read to assert what was recorded (prior art: {@link createAnswerStore}).
+ * `context` is stored as a JSON string, mirroring the jsonb column in Postgres.
+ */
+export function createFeedbackStore(
+  db: Database.Database,
+): FeedbackStore & { all(): Promise<FeedbackRecord[]> } {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS feedback (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      kind TEXT NOT NULL,
+      card_id TEXT,
+      comment TEXT NOT NULL,
+      context TEXT,
+      created_at TEXT NOT NULL
+    )
+  `);
+
+  const insert = db.prepare(
+    "INSERT INTO feedback (kind, card_id, comment, context, created_at) VALUES (@kind, @cardId, @comment, @context, @createdAt)",
+  );
+  const selectAll = db.prepare(
+    "SELECT kind, card_id AS cardId, comment, context, created_at AS createdAt FROM feedback ORDER BY id",
+  );
+
+  return {
+    async record(feedback) {
+      insert.run({
+        kind: feedback.kind,
+        cardId: feedback.cardId,
+        comment: feedback.comment,
+        context: feedback.context === null ? null : JSON.stringify(feedback.context),
+        createdAt: feedback.createdAt,
+      });
+    },
+    async all() {
+      return (selectAll.all() as FeedbackRow[]).map((row) => ({
+        kind: row.kind,
+        cardId: row.cardId,
+        comment: row.comment,
+        context: row.context === null ? null : (JSON.parse(row.context) as FeedbackContext),
+        createdAt: row.createdAt,
+      }));
     },
   };
 }

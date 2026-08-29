@@ -525,6 +525,82 @@ body {
   cursor: not-allowed;
 }
 
+/* ── Feedback: a single freeform note ────────────────────── */
+/* Deliberately spare — one box, one button. The learner can never read feedback
+   back, so the sent confirmation beside the button is the only signal it landed. */
+.feedback__head {
+  margin-bottom: 1.5rem;
+}
+
+.feedback__title {
+  font-family: var(--serif);
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  color: var(--indigo);
+  line-height: 1.1;
+}
+
+.feedback__sub {
+  margin-top: 0.35rem;
+  color: rgba(39, 24, 126, 0.7);
+  font-size: 1rem;
+}
+
+.feedback__box {
+  width: 100%;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--cornflower);
+  border-radius: 0.375rem;
+  font-size: 1rem;
+  font-family: var(--sans);
+  color: var(--indigo);
+  background: var(--platinum);
+  resize: vertical;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.feedback__box:focus {
+  outline: none;
+  border-color: var(--cornflower);
+  box-shadow: 0 0 0 3px rgba(117, 139, 253, 0.15);
+}
+
+.feedback__bar {
+  margin-top: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.feedback__bar-spacer {
+  flex: 1;
+}
+
+.feedback__note {
+  font-size: 0.9rem;
+}
+
+.feedback__note--sent {
+  color: var(--green);
+}
+
+.feedback__note--error {
+  color: var(--red);
+}
+
+.feedback__bar .btn-primary {
+  width: auto;
+  padding: 0.7rem 1.4rem;
+  white-space: nowrap;
+}
+
+.feedback__bar .btn-primary:disabled {
+  background: rgba(174, 184, 254, 0.4);
+  color: rgba(241, 242, 246, 0.7);
+  cursor: not-allowed;
+}
+
 /* ── Responsive ──────────────────────────────────────────── */
 @media (max-width: 480px) {
   .app-title {

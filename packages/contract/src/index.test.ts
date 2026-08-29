@@ -3,6 +3,7 @@ import {
   answerLogSchema,
   answerRequestSchema,
   answerResponseSchema,
+  feedbackRequestSchema,
   healthSchema,
   questionResponseSchema,
 } from "./index.js";
@@ -116,5 +117,66 @@ describe("answerLogSchema", () => {
 
   it("rejects an entry with extra fields", () => {
     expect(answerLogSchema.safeParse([{ ...entry, debug: 1 }]).success).toBe(false);
+  });
+});
+
+describe("feedbackRequestSchema", () => {
+  it("validates a general submission (comment only)", () => {
+    const req = { kind: "general", comment: "The map is gorgeous." };
+    expect(feedbackRequestSchema.parse(req)).toEqual(req);
+  });
+
+  it("validates a question submission with card_id and a context snapshot", () => {
+    const req = {
+      kind: "question",
+      card_id: "cc:tokyo-japan:object",
+      comment: "This question is wrong",
+      context: {
+        prompt: "What country is Tokyo in?",
+        packLabel: "Cities & Countries",
+        packId: "core-cities",
+        acceptedAnswers: ["Japan"],
+        input: "China",
+      },
+    };
+    expect(feedbackRequestSchema.parse(req)).toEqual(req);
+  });
+
+  // A flag raised before answering has neither input nor accepted answers yet.
+  it("accepts a partial context", () => {
+    expect(
+      feedbackRequestSchema.safeParse({
+        kind: "question",
+        card_id: "c",
+        comment: "broken prompt",
+        context: { prompt: "What country is Tokyo in?", packId: "core-cities" },
+      }).success,
+    ).toBe(true);
+  });
+
+  it("rejects an unknown kind", () => {
+    expect(feedbackRequestSchema.safeParse({ kind: "praise", comment: "hi" }).success).toBe(false);
+  });
+
+  // General feedback must carry text; a question flag's empty box is filled with
+  // a default sentence client-side, so the seam never sees an empty comment.
+  it("rejects an empty comment", () => {
+    expect(feedbackRequestSchema.safeParse({ kind: "general", comment: "" }).success).toBe(false);
+  });
+
+  it("rejects extra top-level fields", () => {
+    expect(
+      feedbackRequestSchema.safeParse({ kind: "general", comment: "hi", status: "resolved" }).success,
+    ).toBe(false);
+  });
+
+  it("rejects an unknown context field", () => {
+    expect(
+      feedbackRequestSchema.safeParse({
+        kind: "question",
+        comment: "hi",
+        context: { prompt: "p", userId: "leak" },
+      }).success,
+    ).toBe(false);
   });
 });

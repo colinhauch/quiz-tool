@@ -15,6 +15,7 @@ import { loadAllPacks } from "./pack-loader.js";
 import {
   type AnswerStore,
   createAnswerStore,
+  createFeedbackStore,
   createSelectionStore,
   openDatabase,
   type SelectionStore,
@@ -173,6 +174,85 @@ describe("POST /answer", () => {
     });
     expect(res.status).toBe(404);
     expect(await store.all()).toEqual([]);
+  });
+});
+
+describe("POST /feedback", () => {
+  function memoryFeedback() {
+    return createFeedbackStore(openDatabase(":memory:"));
+  }
+
+  function post(app: ReturnType<typeof createApp>, body: unknown) {
+    return app.request("/feedback", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+    });
+  }
+
+  it("records a general submission with the comment", async () => {
+    const feedback = memoryFeedback();
+    const app = createApp({
+      pack: fixturePack(),
+      store: memoryStore(),
+      feedback,
+      now: () => new Date("2026-08-29T12:00:00.000Z"),
+    });
+    const res = await post(app, { kind: "general", comment: "The map is gorgeous." });
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ ok: true });
+    expect(await feedback.all()).toEqual([
+      {
+        kind: "general",
+        cardId: null,
+        comment: "The map is gorgeous.",
+        context: null,
+        createdAt: "2026-08-29T12:00:00.000Z",
+      },
+    ]);
+  });
+
+  it("records a question submission with its card_id and context snapshot", async () => {
+    const feedback = memoryFeedback();
+    const app = createApp({
+      pack: fixturePack(),
+      store: memoryStore(),
+      feedback,
+      now: () => new Date("2026-08-29T12:00:00.000Z"),
+    });
+    const context = {
+      prompt: "What country is Tokyo in?",
+      packLabel: "Test Pack",
+      packId: "test-pack",
+      acceptedAnswers: ["Japan"],
+      input: "China",
+    };
+    const res = await post(app, {
+      kind: "question",
+      card_id: "S1:object",
+      comment: "This question is wrong",
+      context,
+    });
+    expect(res.status).toBe(200);
+    expect(await feedback.all()).toEqual([
+      {
+        kind: "question",
+        cardId: "S1:object",
+        comment: "This question is wrong",
+        context,
+        createdAt: "2026-08-29T12:00:00.000Z",
+      },
+    ]);
+  });
+
+  it("returns 400 on a body that fails the contract, and records nothing", async () => {
+    const feedback = memoryFeedback();
+    const app = createApp({ pack: fixturePack(), store: memoryStore(), feedback });
+    // Empty comment is refused at the seam.
+    expect((await post(app, { kind: "general", comment: "" })).status).toBe(400);
+    // Unknown kind is refused too.
+    expect((await post(app, { kind: "praise", comment: "hi" })).status).toBe(400);
+    expect(await feedback.all()).toEqual([]);
   });
 });
 
@@ -533,16 +613,25 @@ describe("multi-user mode", () => {
 
   /** Per-user in-memory stores, created on first sight of a subject. */
   function perUserStores() {
-    const byUser = new Map<string, { store: AnswerStore; selection: SelectionStore }>();
-    return (_client: unknown, userId: string) => {
-      let stores = byUser.get(userId);
-      if (!stores) {
+    const byUser = new Map<
+      string,
+      { store: AnswerStore; selection: SelectionStore; feedback: ReturnType<typeof createFeedbackStore> }
+    >();
+    const stores = (_client: unknown, userId: string) => {
+      let s = byUser.get(userId);
+      if (!s) {
         const db = openDatabase(":memory:");
-        stores = { store: createAnswerStore(db), selection: createSelectionStore(db) };
-        byUser.set(userId, stores);
+        s = {
+          store: createAnswerStore(db),
+          selection: createSelectionStore(db),
+          feedback: createFeedbackStore(db),
+        };
+        byUser.set(userId, s);
       }
-      return stores;
+      return s;
     };
+    stores.byUser = byUser;
+    return stores;
   }
 
   function multiUserApp() {
@@ -563,6 +652,44 @@ describe("multi-user mode", () => {
     expect((await app.request("/health")).status).toBe(200);
     expect((await app.request("/question")).status).toBe(401);
     expect((await app.request("/packs")).status).toBe(401);
+  });
+
+  it("rejects unauthenticated feedback and records a signed-in learner's", async () => {
+    const stores = perUserStores();
+    const app = createApp({
+      pack: pickerGraph(),
+      rng: () => 0,
+      now: () => new Date("2026-08-29T12:00:00.000Z"),
+      auth: {
+        jwks: publicKey,
+        supabaseUrl: "https://project.supabase.co",
+        supabaseKey: "sb_publishable_test",
+      },
+      storesForUser: stores,
+    });
+
+    const unauthed = await app.request("/feedback", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ kind: "general", comment: "hi" }),
+    });
+    expect(unauthed.status).toBe(401);
+
+    const res = await app.request("/feedback", {
+      method: "POST",
+      headers: { "content-type": "application/json", ...(await bearer("user-a")) },
+      body: JSON.stringify({ kind: "general", comment: "The map is gorgeous." }),
+    });
+    expect(res.status).toBe(200);
+    expect(await stores.byUser.get("user-a")?.feedback.all()).toEqual([
+      {
+        kind: "general",
+        cardId: null,
+        comment: "The map is gorgeous.",
+        context: null,
+        createdAt: "2026-08-29T12:00:00.000Z",
+      },
+    ]);
   });
 
   it("serves a signed-in learner their questions", async () => {

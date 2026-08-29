@@ -60,4 +60,13 @@ describe("App shell", () => {
     fireEvent.click(screen.getByRole("button", { name: /^quiz$/i }));
     expect(await screen.findByText("What country is Tokyo in?")).toBeInTheDocument();
   });
+
+  it("navigates to the feedback view", async () => {
+    stubFetch();
+    render(<App />);
+    await screen.findByText("What country is Tokyo in?");
+
+    fireEvent.click(screen.getByRole("button", { name: /feedback/i }));
+    expect(await screen.findByLabelText(/your feedback/i)).toBeInTheDocument();
+  });
 });
