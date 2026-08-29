@@ -1,7 +1,14 @@
 import type { VisualAid as VisualAidData } from "@geo/contract";
 import { useEffect, useRef, useState } from "react";
 import { WORLD_LAND_PATH } from "./world-map.generated.js";
-import { WORLD_VIEW, easeInOutCubic, extentToView, interpolateView } from "./mapZoom.js";
+import {
+  WORLD_ASPECT,
+  WORLD_VIEW,
+  extentToView,
+  fitAspect,
+  interpolateView,
+  zoomAtTime,
+} from "./mapZoom.js";
 
 /**
  * The reveal map: one animated equirectangular viewport that shows both the
@@ -14,15 +21,18 @@ import { WORLD_VIEW, easeInOutCubic, extentToView, interpolateView } from "./map
  * construction.
  *
  * Zoom is a 1-D track (see `mapZoom`): the `viewBox` is the linear interpolation
- * between the whole-world frame (`t = 0`) and the regional `regionExtent`
- * (`t = 1`). A slider gives the learner manual global⟷regional control, always
- * aimed at the same server-fixed target — no free panning, you cannot get lost.
+ * between the whole-world frame (`t = 0`) and the regional target (`t = 1`). The
+ * target is the `regionExtent` fitted to the world's aspect ratio, so the frame
+ * keeps a constant shape — and therefore a constant on-screen height — from
+ * global all the way in (no reflow shoving the content below it). A slider gives
+ * the learner manual global⟷regional control, always aimed at that same
+ * server-fixed target — no free panning, you cannot get lost.
  *
- * Auto-zoom (`autoZoom`, a persisted learner toggle): the map appears global,
- * waits `idleDelayMs`, then flies to the regional framing over `flyDurationMs`.
- * Any manual slider input cancels an in-progress fly and hands over control.
- * `prefers-reduced-motion` suppresses the fly entirely — the map snaps straight
- * to the regional framing, and the slider stays available.
+ * Auto-zoom (`autoZoom`, a persisted learner toggle): the map gently oscillates
+ * — hold global (`idleMs`), ease in (`flyMs`), hold regional (`holdMs`), ease
+ * back out, repeat (see `zoomAtTime`). Any manual slider input cancels the
+ * oscillation and hands over control. `prefers-reduced-motion` suppresses all
+ * motion — the map snaps straight to the regional framing, slider still available.
  *
  * Graceful degradation: an entity with a coordinate but no stored clip carries
  * no `regionExtent`/`localGeoJSON`. There is then nothing to zoom toward, so the
@@ -39,17 +49,20 @@ type MapProps = Pick<
   Extract<VisualAidData, { kind: "map" }>,
   "lat" | "lon" | "label" | "localGeoJSON" | "regionExtent"
 > & {
-  /** Whether the map auto-flies to the regional framing. Default off. */
+  /** Whether the map auto-zooms (oscillates global⟷regional). Default off. */
   autoZoom?: boolean;
-  /** Pause at global scale before the fly begins. Tunable. */
-  idleDelayMs?: number;
-  /** Duration of the global→regional fly. Tunable. */
-  flyDurationMs?: number;
+  /** Pause at global scale before easing in. Tunable. */
+  idleMs?: number;
+  /** Duration of each ease in / ease out. Tunable. */
+  flyMs?: number;
+  /** Pause at the regional framing before easing back out. Tunable. */
+  holdMs?: number;
 };
 
 const WIDTH = WORLD_VIEW.w;
-const IDLE_DELAY_MS = 900;
-const FLY_DURATION_MS = 1100;
+const IDLE_MS = 500;
+const FLY_MS = 900;
+const HOLD_MS = 3000;
 
 function project(lat: number, lon: number) {
   return { x: lon + 180, y: 90 - lat };
@@ -86,20 +99,25 @@ export function MapAid({
   localGeoJSON,
   regionExtent,
   autoZoom = false,
-  idleDelayMs = IDLE_DELAY_MS,
-  flyDurationMs = FLY_DURATION_MS,
+  idleMs = IDLE_MS,
+  flyMs = FLY_MS,
+  holdMs = HOLD_MS,
 }: MapProps) {
-  const regionView = regionExtent ? extentToView(regionExtent) : null;
+  // The zoom target: the regional extent grown to the world's aspect ratio, so
+  // the frame's shape (and on-screen height) never changes as it zooms.
+  const regionView = regionExtent
+    ? fitAspect(extentToView(regionExtent), WORLD_ASPECT)
+    : null;
   const canZoom = regionView !== null;
 
   // Zoom position on the 1-D track: 0 = global, 1 = regional. With reduced
-  // motion we skip the fly by snapping to the destination; otherwise we start
-  // global (and, if auto-zoom is on, animate there — see the effect below).
+  // motion we skip all motion by snapping to the destination; otherwise we start
+  // global (and, if auto-zoom is on, oscillate — see the effect below).
   const [t, setT] = useState(() =>
     canZoom && autoZoom && prefersReducedMotion() ? 1 : 0,
   );
 
-  // Once the learner grabs the slider we never auto-fly again for this reveal.
+  // Once the learner grabs the slider we never auto-zoom again for this reveal.
   const manualRef = useRef(false);
 
   useEffect(() => {
@@ -112,25 +130,19 @@ export function MapAid({
     const step = (now: number) => {
       if (manualRef.current) return;
       if (start === null) start = now;
-      const progress = Math.min((now - start) / flyDurationMs, 1);
-      setT(easeInOutCubic(progress));
-      if (progress < 1) frame = requestAnimationFrame(step);
+      setT(zoomAtTime(now - start, { idleMs, flyMs, holdMs }));
+      frame = requestAnimationFrame(step); // repeats until unmount or manual input
     };
-    const timer = setTimeout(() => {
-      if (!manualRef.current) frame = requestAnimationFrame(step);
-    }, idleDelayMs);
+    frame = requestAnimationFrame(step);
 
-    return () => {
-      clearTimeout(timer);
-      cancelAnimationFrame(frame);
-    };
+    return () => cancelAnimationFrame(frame);
     // Re-arm only when the target (the pinned point) or the tuning changes — not
     // on every animation frame. Keyed on the primitive coordinate rather than
-    // the `regionExtent` object so a fresh-but-equal payload can't restart the fly.
-  }, [canZoom, autoZoom, idleDelayMs, flyDurationMs, lat, lon]);
+    // the `regionExtent` object so a fresh-but-equal payload can't restart it.
+  }, [canZoom, autoZoom, idleMs, flyMs, holdMs, lat, lon]);
 
   function onScrub(next: number) {
-    manualRef.current = true; // cancels the fly (the rAF loop bails on this)
+    manualRef.current = true; // cancels the oscillation (the rAF loop bails on this)
     setT(next);
   }
 

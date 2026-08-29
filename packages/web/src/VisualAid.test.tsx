@@ -19,7 +19,9 @@ const enriched: VisualAidData = {
     coordinates: [[[[139, 35], [140, 35], [140, 36], [139, 35]]]],
   },
 };
-const REGION_VIEWBOX = "318.19 53.31 3 2";
+// The regional extent (318.19 53.31 3×2) fitted to the world's 2:1 aspect:
+// widened to 4×2 around the same center, so the frame never changes shape.
+const REGION_VIEWBOX = "317.69 53.31 4 2";
 const WORLD_VIEWBOX = "0 0 360 180";
 
 /** Force `prefers-reduced-motion` on/off (jsdom has no matchMedia by default). */
