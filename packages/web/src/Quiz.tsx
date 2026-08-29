@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { AnswerBox } from "./AnswerBox.js";
 import { getQuestion, submitAnswer as submitAnswerRequest } from "./apiClient.js";
 import { readAutocompletePref, writeAutocompletePref } from "./autocompletePref.js";
+import { readAutoZoomPref, writeAutoZoomPref } from "./autoZoomPref.js";
 import { VisualAid } from "./VisualAid.js";
 
 // "Asia or Europe" for a transcontinental country; "Japan" for a single answer.
@@ -18,11 +19,17 @@ export function Quiz() {
   const [view, setView] = useState<View>({ state: "loading" });
   const [input, setInput] = useState("");
   const [suggestEnabled, setSuggestEnabled] = useState(readAutocompletePref);
+  const [autoZoomEnabled, setAutoZoomEnabled] = useState(readAutoZoomPref);
   const nextButtonRef = useRef<HTMLButtonElement>(null);
 
   function toggleSuggest(enabled: boolean) {
     setSuggestEnabled(enabled);
     writeAutocompletePref(enabled);
+  }
+
+  function toggleAutoZoom(enabled: boolean) {
+    setAutoZoomEnabled(enabled);
+    writeAutoZoomPref(enabled);
   }
 
   const loadQuestion = useCallback(async () => {
@@ -72,6 +79,14 @@ export function Quiz() {
           />
           Autocomplete
         </label>
+        <label className="quiz-card__toggle">
+          <input
+            type="checkbox"
+            checked={autoZoomEnabled}
+            onChange={(e) => toggleAutoZoom(e.target.checked)}
+          />
+          Auto-zoom
+        </label>
       </div>
       <div className="quiz-card__body">
         <p className="quiz-prompt">{view.question.prompt}</p>
@@ -98,7 +113,7 @@ export function Quiz() {
               </strong>{" "}
               The answer is {answerList.format(view.result.acceptedAnswers)}.
             </p>
-            <VisualAid visual={view.result.revealVisual} slot="reveal" />
+            <VisualAid visual={view.result.revealVisual} slot="reveal" autoZoom={autoZoomEnabled} />
             <button
               ref={nextButtonRef}
               className="btn-primary"

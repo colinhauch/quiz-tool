@@ -11,13 +11,18 @@ import { MapAid } from "./MapAid.js";
  * `slot` only adds a modifier class (`visual-aid--prompt` / `visual-aid--reveal`)
  * so the two positions can be spaced differently in CSS; it has no effect on
  * what gets rendered.
+ *
+ * `autoZoom` is the learner's persisted auto-zoom preference, forwarded to the
+ * map; the slot itself is otherwise oblivious to what any descriptor does.
  */
 export function VisualAid({
   visual,
   slot,
+  autoZoom,
 }: {
   visual: VisualAidData | undefined;
   slot?: "prompt" | "reveal";
+  autoZoom?: boolean;
 }) {
   if (!visual) return null;
 
@@ -31,6 +36,7 @@ export function VisualAid({
             label={visual.label}
             localGeoJSON={visual.localGeoJSON}
             regionExtent={visual.regionExtent}
+            autoZoom={autoZoom}
           />
         );
       default:
