@@ -20,6 +20,26 @@ type RegionExtent = NonNullable<Extract<VisualAidData, { kind: "map" }>["regionE
 /** Projected size of the full-world frame (`x = lon + 180`, `y = 90 - lat`). */
 export const WORLD_VIEW: View = { x: 0, y: 0, w: 360, h: 180 };
 
+/** The frame's width-to-height ratio, held constant across the whole zoom. */
+export const WORLD_ASPECT = WORLD_VIEW.w / WORLD_VIEW.h;
+
+/**
+ * Grow a view (around its center, never cropping) until it matches `aspect`.
+ *
+ * The regional extent's own aspect rarely matches the viewport's, and a viewBox
+ * whose aspect changes as it zooms makes the rendered SVG reflow its height —
+ * which shoves the content below it around. Fitting both zoom endpoints to one
+ * aspect keeps the frame a constant shape (and constant on-screen height) from
+ * global all the way in.
+ */
+export function fitAspect(view: View, aspect: number): View {
+  const w = Math.max(view.w, view.h * aspect);
+  const h = Math.max(view.h, view.w / aspect);
+  const cx = view.x + view.w / 2;
+  const cy = view.y + view.h / 2;
+  return { x: cx - w / 2, y: cy - h / 2, w, h };
+}
+
 /** The regional extent (a lon/lat rectangle) as a projected `viewBox`. */
 export function extentToView(extent: RegionExtent): View {
   return {
@@ -45,4 +65,23 @@ export function interpolateView(global: View, regional: View, t: number): View {
 /** Ease-in-out for the auto-zoom fly. Monotonic, f(0) = 0, f(1) = 1. */
 export function easeInOutCubic(t: number): number {
   return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+}
+
+/** One auto-zoom oscillation cycle, in milliseconds. All phases tunable. */
+export type ZoomTimeline = { idleMs: number; flyMs: number; holdMs: number };
+
+/**
+ * The auto-zoom position at `elapsedMs` — a repeating global→regional→global
+ * oscillation (spec #152, #156, revised by feel): hold global for `idleMs`,
+ * ease in over `flyMs`, hold regional for `holdMs`, ease back out over `flyMs`,
+ * then loop. Pure function of elapsed time so the timeline is testable without
+ * running frames; the component just feeds it `now - start` each frame.
+ */
+export function zoomAtTime(elapsedMs: number, { idleMs, flyMs, holdMs }: ZoomTimeline): number {
+  const cycle = idleMs + flyMs + holdMs + flyMs;
+  const p = ((elapsedMs % cycle) + cycle) % cycle; // wrap, guarding negatives
+  if (p < idleMs) return 0;
+  if (p < idleMs + flyMs) return easeInOutCubic((p - idleMs) / flyMs);
+  if (p < idleMs + flyMs + holdMs) return 1;
+  return 1 - easeInOutCubic((p - idleMs - flyMs - holdMs) / flyMs);
 }

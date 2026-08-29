@@ -494,6 +494,10 @@ body {
 .map-aid {
   display: block;
   width: 100%;
+  /* The viewBox holds a constant 2:1 aspect through the whole zoom (the regional
+     target is aspect-fitted), so the box keeps a fixed height and never reflows
+     the Next button below it. Pinned explicitly as a guard. */
+  aspect-ratio: 2 / 1;
   height: auto;
   border-radius: 0.375rem;
   background: var(--platinum);
