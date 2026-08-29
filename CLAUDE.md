@@ -15,6 +15,20 @@ Shut down what you start, in the same session. Identify before killing — `ps -
 
 A quiz app that teaches world geography from a knowledge graph, tracks every answer, and surfaces knowledge gaps. TypeScript. Built and deployed: the engine, server, web app, and packs live under `packages/` and `packs/`, backed by Supabase Postgres. The code is the source of truth; the specs carry the reasoning behind it.
 
+## Branching and deployment
+
+Three long-lived branches promote forward: `dev` → `test` → `prod`. Feature work branches off `dev` and PRs back into it; changes move `dev`→`test`→`prod` by PR, never by committing to `test`/`prod` directly. Each promotion is gated by the `checks` CI job (typecheck, tests, pack validation) — keep that job name stable, branch protection requires it.
+
+Each long-lived branch auto-deploys (CF Workers Builds) to its own Worker + isolated Supabase schema in one shared project:
+
+| Branch | Domain | Schema |
+| --- | --- | --- |
+| `prod` | quiz.colinhauch.com | `public` |
+| `test` | quiz-test.colinhauch.com | `test` |
+| `dev` | quiz-dev.colinhauch.com | `dev` |
+
+`prod` is the default branch and production. Config lives in `packages/server/wrangler.toml` and `.github/workflows/ci.yml`.
+
 ## Three kinds of documentation
 
 **`/specs` — concepts and decisions.** Why the system is shaped the way it is: motivation, rationale, rejected alternatives, failed attempts, open questions. Organized by concept, because concepts are what the code tree can't express. Read these when you are about to **build something new** or make a structural decision.
