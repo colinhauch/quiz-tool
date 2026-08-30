@@ -11,9 +11,10 @@
 -- `service_role` (which bypasses RLS) reads the table. Grants follow suit:
 -- insert to `authenticated`, select to `service_role`.
 --
--- NOTE: this is applied to the live Supabase project out-of-band (via the
--- Supabase MCP `apply_migration`, as the earlier env migrations were — there is
--- no auto-apply pipeline yet; see docs/deploy/supabase-next-steps / issue #88).
+-- APPLIED 2026-08-30 to the live project via the Supabase MCP `apply_migration`,
+-- as the earlier migrations were — there is no auto-apply pipeline yet (see
+-- docs/deploy/migrations.md and issue #88). The filename matches the version
+-- recorded in the migration history so the repo and the database agree.
 
 do $$
 declare
