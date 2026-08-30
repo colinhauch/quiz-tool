@@ -18,6 +18,7 @@ import { assembleLoaded } from "./pack-loader.js";
 import { loadedCatalog, loadedPacks } from "./packs.generated.js";
 import {
   createSupabaseAnswerStore,
+  createSupabaseFeedbackStore,
   createSupabaseRatingStore,
   createSupabaseSelectionStore,
 } from "./supabase-storage.js";
@@ -59,6 +60,7 @@ function getApp(env: Env) {
         store: createSupabaseAnswerStore(client),
         selection: createSupabaseSelectionStore(client),
         rating: createSupabaseRatingStore(client),
+        feedback: createSupabaseFeedbackStore(client),
       }),
     });
     builtFor = env;

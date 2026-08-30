@@ -3,6 +3,7 @@ import {
   answerRequestSchema,
   answerResponseSchema,
   entityListSchema,
+  feedbackRequestSchema,
   healthSchema,
   packListSchema,
   packSelectionRequestSchema,
@@ -33,13 +34,14 @@ import { type Context, Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { type AuthEnv, type AuthOptions, createAuthMiddleware } from "./auth.js";
 import type { Catalog } from "./catalog.js";
-import type { AnswerStore, RatingStore, SelectionStore } from "./storage.js";
+import type { AnswerStore, FeedbackStore, RatingStore, SelectionStore } from "./storage.js";
 
-/** The stores that serve one learner: their answer log, pack selection, and Elo ratings. */
+/** The stores that serve one learner: their answer log, pack selection, Elo ratings, and feedback channel. */
 export interface UserStores {
   store: AnswerStore;
   selection?: SelectionStore;
   rating?: RatingStore;
+  feedback?: FeedbackStore;
 }
 
 export interface AppOptions {
@@ -53,6 +55,8 @@ export interface AppOptions {
   store?: AnswerStore;
   /** Single-user mode: where the learner's pack selection is persisted. Omit for a non-persisting app. */
   selection?: SelectionStore;
+  /** Single-user mode: where learner feedback is recorded. Omit to disable the feedback route. */
+  feedback?: FeedbackStore;
   /**
    * Single-user mode: the Elo rating cache. Omit to run without live ratings —
    * answers are still logged, just with no snapshot and no difficulty/ability
@@ -115,6 +119,7 @@ export function createApp({
   store,
   selection,
   rating,
+  feedback,
   auth,
   storesForUser,
   rng,
@@ -137,15 +142,22 @@ export function createApp({
     store: AnswerStore;
     selection?: SelectionStore;
     rating?: RatingStore;
+    feedback?: FeedbackStore;
     key: string;
   } {
     if (storesForUser) {
       const userId = c.get("userId");
       const built = storesForUser(c.get("supabase"), userId);
-      return { store: built.store, selection: built.selection, rating: built.rating, key: userId };
+      return {
+        store: built.store,
+        selection: built.selection,
+        rating: built.rating,
+        feedback: built.feedback,
+        key: userId,
+      };
     }
     // Guarded in the constructor: single-user mode always has an injected store.
-    return { store: store as AnswerStore, selection, rating, key: SINGLE_USER };
+    return { store: store as AnswerStore, selection, rating, feedback, key: SINGLE_USER };
   }
 
   // First run selects everything, so introducing the picker regresses nothing.
@@ -347,6 +359,31 @@ export function createApp({
     });
     await update?.persist();
     return c.json(answerResponseSchema.parse(result));
+  });
+
+  // Record a learner's feedback. Write-only by design: there is no GET here or
+  // anywhere in this app, so the channel is a one-way submission clients cannot
+  // read back (only the admin's service_role reads the table). Like /answer, this
+  // takes untrusted client input, so a malformed or non-contract body maps to 400
+  // rather than surfacing as a 500. The store is RLS-scoped to the caller.
+  app.post("/feedback", async (c) => {
+    let body: ReturnType<typeof feedbackRequestSchema.parse>;
+    try {
+      body = feedbackRequestSchema.parse(await c.req.json());
+    } catch (err) {
+      throw new HTTPException(400, { message: "malformed feedback request", cause: err });
+    }
+
+    const { feedback: fb } = resolve(c);
+    if (!fb) throw new HTTPException(500, { message: "no feedback store configured" });
+    await fb.record({
+      kind: body.kind,
+      cardId: body.card_id ?? null,
+      comment: body.comment,
+      context: body.context ?? null,
+      createdAt: now().toISOString(),
+    });
+    return c.json({ ok: true });
   });
 
   // The raw answer log for review, most recent first. The store keeps the log

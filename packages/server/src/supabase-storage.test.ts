@@ -3,6 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { AnswerRecord } from "./storage.js";
 import {
   createSupabaseAnswerStore,
+  createSupabaseFeedbackStore,
   createSupabaseRatingStore,
   createSupabaseSelectionStore,
 } from "./supabase-storage.js";
@@ -80,6 +81,30 @@ describe.skipIf(!ready)("Supabase stores (integration, RLS)", () => {
     // Each store sees only its own user's row — isolation is enforced in Postgres.
     expect(await storeA.all()).toEqual([answer]);
     expect(await storeB.all()).toEqual([{ ...answer, input: "Berlin", correct: false }]);
+  });
+
+  it("lets a client insert feedback but never read it back (insert-only RLS)", async () => {
+    const a = await signedInUser(admin);
+    createdUserIds.push(a.id);
+
+    const store = createSupabaseFeedbackStore(a.client);
+    await store.record({
+      kind: "general",
+      cardId: null,
+      comment: "The map is gorgeous.",
+      context: null,
+      createdAt: "2026-08-29T12:00:00.000Z",
+    });
+
+    // No select policy: a client select succeeds but returns zero rows, even the
+    // caller's own. Only the admin's service_role can read the table.
+    const { data: asClient, error: clientErr } = await a.client.from("feedback").select("*");
+    expect(clientErr).toBeNull();
+    expect(asClient).toEqual([]);
+
+    // The row is really there — the service_role sees it.
+    const { data: asAdmin } = await admin.from("feedback").select("comment").eq("user_id", a.id);
+    expect(asAdmin).toEqual([{ comment: "The map is gorgeous." }]);
   });
 
   it("reads null on first run, then round-trips a selection, isolated per user", async () => {

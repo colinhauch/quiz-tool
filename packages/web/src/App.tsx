@@ -3,11 +3,12 @@ import { AnswerLog } from "./AnswerLog.js";
 import { type AuthBoundary, AUTH_CALLBACK_PATH, getAuthBoundary } from "./auth.js";
 import { AuthCallback } from "./AuthCallback.js";
 import { AuthWidget } from "./AuthWidget.js";
+import { Feedback } from "./Feedback.js";
 import { Packs } from "./Packs.js";
 import { Quiz } from "./Quiz.js";
 import { SignInGate } from "./SignInGate.js";
 
-type Tab = "quiz" | "answers" | "packs";
+type Tab = "quiz" | "answers" | "packs" | "feedback";
 
 /**
  * The app shell: an Indigo header band (carrying the topographic texture) with
@@ -69,6 +70,13 @@ export function App({ boundary = getAuthBoundary() }: { boundary?: AuthBoundary 
             <button type="button" aria-current={tab === "packs"} onClick={() => setTab("packs")}>
               Packs
             </button>
+            <button
+              type="button"
+              aria-current={tab === "feedback"}
+              onClick={() => setTab("feedback")}
+            >
+              Feedback
+            </button>
           </nav>
         </div>
       </header>
@@ -77,6 +85,7 @@ export function App({ boundary = getAuthBoundary() }: { boundary?: AuthBoundary 
         {tab === "quiz" && <Quiz />}
         {tab === "answers" && <AnswerLog />}
         {tab === "packs" && <Packs />}
+        {tab === "feedback" && <Feedback />}
       </main>
     </>
   );

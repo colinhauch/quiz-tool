@@ -2,6 +2,7 @@ import type {
   AnswerLog as AnswerLogData,
   AnswerResponse,
   EntityList,
+  FeedbackRequest,
   PackList,
   QuestionResponse,
 } from "@geo/contract";
@@ -95,4 +96,16 @@ export async function getPacks(): Promise<PackList> {
 export async function savePacks(packIds: string[]): Promise<void> {
   const res = await apiFetch("/api/packs", jsonInit("PUT", { packIds }));
   if (!res.ok) throw new Error("save rejected");
+}
+
+/**
+ * POSTs a feedback report. Goes through {@link apiFetch} like every other call,
+ * so the learner's Bearer token rides along — the feedback table's RLS policy is
+ * insert-only for `authenticated` and checks `user_id = auth.uid()`, so an
+ * unauthenticated POST would be rejected by the server and again by the database.
+ * There is deliberately no read counterpart: feedback is write-only for learners.
+ */
+export async function submitFeedback(body: FeedbackRequest): Promise<void> {
+  const res = await apiFetch("/api/feedback", jsonInit("POST", body));
+  if (!res.ok) throw new Error(`feedback submission failed: ${res.status}`);
 }

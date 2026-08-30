@@ -16,11 +16,19 @@ is a straight **task**.
   holds the SQL but nothing applies it on deploy.
 - Auth/users are **shared** across all three envs (one `auth.users`, one signing
   key). No failure-domain isolation. Accepted pre-launch.
-- prod has 0 real rows; still pre-launch.
+- prod has 0 real rows; still pre-launch. **But `dev` does not** — as of
+  2026-08-30 it holds 234 answers across 3 real users. Migrations must protect
+  `dev`, not just `public`.
 
 ---
 
 ## 1. Migration workflow across the 3 schemas  ⚠️ DECISION — highest priority
+> The **interim runbook is now written up**: see [migrations.md](migrations.md)
+> for how to apply a migration by hand without losing data (classify, baseline
+> counts, DO-loop over all three schemas, verify, commit). It codifies option (a)
+> below as the current rule. The decision on the *automated* mechanism is still
+> open — everything below stands.
+
 The dangerous gap now that schema-per-env is live: **how does a future schema
 change reach all three schemas consistently?** Today it's inconsistent — `public`
 was built by three plain migrations that hardcode `public`, while `dev`/`test`

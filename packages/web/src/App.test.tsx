@@ -88,6 +88,15 @@ describe("App shell", () => {
     fireEvent.click(screen.getByRole("button", { name: /^quiz$/i }));
     expect(await screen.findByText("What country is Tokyo in?")).toBeInTheDocument();
   });
+
+  it("navigates to the feedback view when signed in", async () => {
+    stubFetch();
+    render(<App boundary={fakeBoundary(signedIn)} />);
+    await screen.findByText("What country is Tokyo in?");
+
+    fireEvent.click(screen.getByRole("button", { name: /feedback/i }));
+    expect(await screen.findByLabelText(/your feedback/i)).toBeInTheDocument();
+  });
 });
 
 describe("App auth gate", () => {

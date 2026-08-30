@@ -259,3 +259,42 @@ export type PackSelectionRequest = z.infer<typeof packSelectionRequestSchema>;
 export const answerLogSchema = z.array(answerLogEntrySchema);
 
 export type AnswerLog = z.infer<typeof answerLogSchema>;
+
+/**
+ * The snapshot a question-feedback report carries: what the learner actually saw
+ * on the card, captured at submission time so the operator can investigate even
+ * after the underlying pack data changes. Every field is optional because a flag
+ * raised before answering has no `input` or `acceptedAnswers` yet, and general
+ * feedback carries no context at all (see spec #160).
+ */
+export const feedbackContextSchema = z
+  .object({
+    prompt: z.string().optional(),
+    packLabel: z.string().optional(),
+    packId: z.string().optional(),
+    acceptedAnswers: z.array(z.string()).optional(),
+    input: z.string().optional(),
+  })
+  .strict();
+
+export type FeedbackContext = z.infer<typeof feedbackContextSchema>;
+
+/**
+ * `POST /feedback` request — one learner-submitted report. `kind` splits general
+ * app feedback from a flag against a specific question; `card_id` and `context`
+ * are populated only for the `question` kind (the card the report is about, and
+ * the snapshot of what was on screen). `comment` is always non-empty: general
+ * feedback requires the learner's text, and a question flag with an empty box
+ * carries a default sentinel sentence the client supplies. There is deliberately
+ * no read side to this contract — clients submit but never read feedback back.
+ */
+export const feedbackRequestSchema = z
+  .object({
+    kind: z.enum(["general", "question"]),
+    card_id: z.string().min(1).optional(),
+    comment: z.string().min(1),
+    context: feedbackContextSchema.optional(),
+  })
+  .strict();
+
+export type FeedbackRequest = z.infer<typeof feedbackRequestSchema>;

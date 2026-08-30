@@ -9,6 +9,7 @@ import {
   setAccessTokenSource,
   setUnauthorizedHandler,
   submitAnswer,
+  submitFeedback,
 } from "./apiClient.js";
 
 afterEach(() => {
@@ -183,5 +184,42 @@ describe("apiClient auth", () => {
     await getQuestion();
 
     expect(onUnauthorized).not.toHaveBeenCalled();
+  });
+
+  it("submitFeedback POSTs the feedback body as JSON to /api/feedback", async () => {
+    const fetchMock = vi.fn(() => Promise.resolve({ ok: true, json: async () => ({}) }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await submitFeedback({ kind: "general", comment: "The map is gorgeous." });
+
+    expect(fetchMock).toHaveBeenCalledWith("/api/feedback", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ kind: "general", comment: "The map is gorgeous." }),
+    });
+  });
+
+  // The feedback table's RLS policy checks `user_id = auth.uid()`, so the token
+  // has to ride along or the insert is refused by the database.
+  it("submitFeedback attaches the bearer token when a learner is signed in", async () => {
+    const fetchMock = vi.fn(() => Promise.resolve({ ok: true, json: async () => ({}) }));
+    vi.stubGlobal("fetch", fetchMock);
+    setAccessTokenSource(() => "tok-123");
+
+    await submitFeedback({ kind: "general", comment: "hi" });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/feedback",
+      expect.objectContaining({
+        headers: expect.objectContaining({ Authorization: "Bearer tok-123" }),
+      }),
+    );
+  });
+
+  it("submitFeedback rejects when the server does not accept the submission", async () => {
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve({ ok: false, status: 401 })));
+    await expect(submitFeedback({ kind: "general", comment: "hi" })).rejects.toThrow(
+      /feedback submission failed/i,
+    );
   });
 });
