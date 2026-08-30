@@ -2,6 +2,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
   AdminAnswerRow,
   AdminCardDifficultyRow,
+  AdminFeedbackContext,
+  AdminFeedbackRecord,
   AdminPackAbilityRow,
   AdminReadStore,
   AdminUser,
@@ -55,6 +57,50 @@ function toAnswerRow(row: AnswerRow): AdminAnswerRow {
 }
 
 const ANSWER_COLUMNS = "user_id, card_id, input, correct, asked_at, card_difficulty, pack_ability, k_applied, rating_pack_id";
+
+interface FeedbackRow {
+  id: number;
+  user_id: string;
+  kind: "general" | "question";
+  card_id: string | null;
+  comment: string;
+  context: Record<string, unknown> | null;
+  status: "unresolved" | "resolved";
+  created_at: string;
+}
+
+/**
+ * `context` is a jsonb column, so nothing constrains what is actually in it —
+ * a row written out-of-band (the resolve-by-SQL workflow spec #160 describes)
+ * could carry an extra key. The route parses rows through a `.strict()`
+ * contract schema, so an unexpected key would fail the whole request; picking
+ * the known fields here keeps one bad row from taking the surface down.
+ */
+function toFeedbackContext(context: Record<string, unknown>): AdminFeedbackContext {
+  const out: AdminFeedbackContext = {};
+  if (typeof context.prompt === "string") out.prompt = context.prompt;
+  if (typeof context.packLabel === "string") out.packLabel = context.packLabel;
+  if (typeof context.packId === "string") out.packId = context.packId;
+  if (Array.isArray(context.acceptedAnswers)) {
+    out.acceptedAnswers = context.acceptedAnswers.filter((a): a is string => typeof a === "string");
+  }
+  if (typeof context.input === "string") out.input = context.input;
+  return out;
+}
+
+function toFeedbackRecord(row: FeedbackRow): AdminFeedbackRecord {
+  const record: AdminFeedbackRecord = {
+    id: row.id,
+    userId: row.user_id,
+    kind: row.kind,
+    comment: row.comment,
+    status: row.status,
+    createdAt: row.created_at,
+  };
+  if (row.card_id !== null) record.cardId = row.card_id;
+  if (row.context !== null) record.context = toFeedbackContext(row.context);
+  return record;
+}
 
 export function createSupabaseReadStore(client: SupabaseClient): AdminReadStore {
   return {
@@ -136,6 +182,27 @@ export function createSupabaseReadStore(client: SupabaseClient): AdminReadStore 
         if (error) throw new Error(`card_difficulty.select-all failed: ${error.message}`);
         const rows = (data as { card_id: string; difficulty: number; answer_count: number }[] | null) ?? [];
         out.push(...rows.map((r) => ({ cardId: r.card_id, difficulty: r.difficulty, answerCount: r.answer_count })));
+        if (rows.length < PAGE) break;
+      }
+      return out;
+    },
+
+    // Only the service role can read this table at all: `feedback`'s RLS is
+    // insert-only for `authenticated` with no select policy (spec #160), so a
+    // learner can submit but never read feedback back — the admin BFF is the
+    // one reader. Ordering is re-established by `buildFeedbackRows` anyway;
+    // asking Postgres for it keeps paging stable across requests.
+    async listFeedback() {
+      const out: AdminFeedbackRecord[] = [];
+      for (let from = 0; ; from += PAGE) {
+        const { data, error } = await client
+          .from("feedback")
+          .select("id, user_id, kind, card_id, comment, context, status, created_at")
+          .order("created_at", { ascending: false })
+          .range(from, from + PAGE - 1);
+        if (error) throw new Error(`feedback.select-all failed: ${error.message}`);
+        const rows = (data as FeedbackRow[] | null) ?? [];
+        out.push(...rows.map(toFeedbackRecord));
         if (rows.length < PAGE) break;
       }
       return out;

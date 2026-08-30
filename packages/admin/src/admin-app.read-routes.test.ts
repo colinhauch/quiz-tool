@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  adminFeedbackListSchema,
   adminPopulationSchema,
   adminResultsChartsSchema,
   adminResultsResponseSchema,
@@ -7,7 +8,12 @@ import {
   adminUserListSchema,
 } from "@geo/contract";
 import { createAdminApp } from "./admin-app.js";
-import { createInMemoryReadStore, type AdminAnswerRow, type AdminUser } from "./read-store.js";
+import {
+  createInMemoryReadStore,
+  type AdminAnswerRow,
+  type AdminFeedbackRecord,
+  type AdminUser,
+} from "./read-store.js";
 import { fixtureReadStorePack } from "./test-fixtures.js";
 
 /**
@@ -26,6 +32,29 @@ const ANSWERS: AdminAnswerRow[] = [
   { userId: "u2", cardId: "S2:object", input: "wrong", correct: false, askedAt: "2026-08-21T00:00:00.000Z" },
 ];
 
+const FEEDBACK: AdminFeedbackRecord[] = [
+  { id: 1, userId: "u1", kind: "general", comment: "Love the app", status: "resolved", createdAt: "2026-08-28T00:00:00.000Z" },
+  {
+    id: 2,
+    userId: "u2",
+    kind: "question",
+    cardId: "S2:object",
+    comment: "The prompt is broken",
+    status: "unresolved",
+    createdAt: "2026-08-29T00:00:00.000Z",
+  },
+  {
+    id: 3,
+    userId: "u1",
+    kind: "question",
+    cardId: "S1:object",
+    comment: "This question is wrong",
+    status: "unresolved",
+    createdAt: "2026-08-30T00:00:00.000Z",
+    context: { prompt: "Capital of Japan?", packLabel: "Test Pack", packId: "test-pack", acceptedAnswers: ["Tokyo"], input: "Kyoto" },
+  },
+];
+
 function buildApp() {
   const readStore = createInMemoryReadStore({
     users: USERS,
@@ -38,6 +67,7 @@ function buildApp() {
       { cardId: "S1:object", difficulty: 1600, answerCount: 4 },
       { cardId: "S2:object", difficulty: 1400, answerCount: 2 },
     ],
+    feedback: FEEDBACK,
   });
   return createAdminApp({ pack: fixtureReadStorePack(), readStore });
 }
@@ -120,5 +150,33 @@ describe("GET /results/charts", () => {
     const res = await buildApp().request("/results/charts?userId=u1");
     const body = adminResultsChartsSchema.parse(await res.json());
     expect(body.accuracyOverTime.every((p) => p.count <= 1)).toBe(true);
+  });
+});
+
+describe("GET /feedback", () => {
+  it("lists every report newest-first with the submitter's email resolved", async () => {
+    const res = await buildApp().request("/feedback");
+    expect(res.status).toBe(200);
+    const body = adminFeedbackListSchema.parse(await res.json());
+    expect(body.map((r) => r.id)).toEqual([3, 2, 1]);
+    expect(body[2]?.userEmail).toBe("a@example.com");
+    expect(body[0]?.context?.acceptedAnswers).toEqual(["Tokyo"]);
+  });
+
+  it("filters by status", async () => {
+    const res = await buildApp().request("/feedback?status=resolved");
+    const body = adminFeedbackListSchema.parse(await res.json());
+    expect(body.map((r) => r.id)).toEqual([1]);
+  });
+
+  it("filters by kind", async () => {
+    const res = await buildApp().request("/feedback?kind=question");
+    const body = adminFeedbackListSchema.parse(await res.json());
+    expect(body.map((r) => r.id)).toEqual([3, 2]);
+  });
+
+  it("500s when no read store is configured", async () => {
+    const res = await createAdminApp({ pack: fixtureReadStorePack() }).request("/feedback");
+    expect(res.status).toBe(500);
   });
 });

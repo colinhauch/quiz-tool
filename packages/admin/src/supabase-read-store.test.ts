@@ -92,4 +92,26 @@ describe.skipIf(!ready)("createSupabaseReadStore (integration, service role)", (
     const difficulties = await store.listCardDifficulties();
     expect(difficulties).toContainEqual({ cardId, difficulty: 1470, answerCount: 2 });
   });
+
+  it("reads feedback across users, including the captured context (#163)", async () => {
+    const a = await createUser();
+    const cardId = `cc:read-store-${crypto.randomUUID()}:object`;
+    const context = { prompt: "Capital of Japan?", packLabel: "Capital Cities", packId: "capital-cities", acceptedAnswers: ["Tokyo"] };
+
+    await admin.from("feedback").insert([
+      { user_id: a, kind: "general", comment: `general ${cardId}` },
+      { user_id: a, kind: "question", card_id: cardId, comment: "This question is wrong", context },
+    ]);
+
+    const store = createSupabaseReadStore(admin);
+    const feedback = await store.listFeedback();
+
+    const question = feedback.find((row) => row.cardId === cardId);
+    expect(question).toMatchObject({ userId: a, kind: "question", comment: "This question is wrong", status: "unresolved", context });
+
+    const general = feedback.find((row) => row.comment === `general ${cardId}`);
+    expect(general).toMatchObject({ userId: a, kind: "general", status: "unresolved" });
+    expect(general?.cardId).toBeUndefined();
+    expect(general?.context).toBeUndefined();
+  });
 });
