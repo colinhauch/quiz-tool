@@ -1,6 +1,7 @@
 import type { FeedbackContext } from "@geo/contract";
 import { fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { setSignedInSource } from "./auth.js";
 import { DEFAULT_QUESTION_COMMENT, QuestionFeedback } from "./QuestionFeedback.js";
 
 /** Records every POSTed body so a submission can be asserted on (see Feedback.test.tsx). */
@@ -18,13 +19,24 @@ const asking: FeedbackContext = {
   prompt: "What country is Tokyo in?",
   packId: "core-cities",
   packLabel: "Cities & Countries",
+  answered: false,
 };
-const answered: FeedbackContext = { ...asking, input: "Chian", acceptedAnswers: ["Japan"] };
+const answered: FeedbackContext = {
+  ...asking,
+  answered: true,
+  input: "Chian",
+  acceptedAnswers: ["Japan"],
+};
 
 const open = () => fireEvent.click(screen.getByRole("button", { name: /submit feedback about this question/i }));
 const send = () => fireEvent.click(screen.getByRole("button", { name: /^send$/i }));
 
+beforeEach(() => {
+  setSignedInSource(() => true);
+});
+
 afterEach(() => {
+  setSignedInSource(() => false);
   vi.restoreAllMocks();
 });
 
@@ -118,9 +130,40 @@ describe("QuestionFeedback", () => {
     expect(screen.getByLabelText(/feedback about this question/i)).not.toBeNull();
   });
 
-  it("offers nothing to a signed-out visitor", () => {
-    stubFetch();
+  it("refuses a signed-out submission locally instead of posting it", async () => {
+    const posts = stubFetch();
     render(<QuestionFeedback cardId="cc:tokyo-japan:object" context={asking} isSignedIn={false} />);
-    expect(screen.queryByRole("button", { name: /submit feedback about this question/i })).toBeNull();
+    open();
+    send();
+
+    expect(await screen.findByRole("status")).toHaveTextContent(/sign in to send feedback/i);
+    expect(posts).toEqual([]);
+  });
+
+  // The gate on the app as a whole is about to loosen for anonymous play, so
+  // this surface has to read the sign-in state itself rather than assume it.
+  it("reads the sign-in state from the auth boundary when no prop is given", async () => {
+    setSignedInSource(() => false);
+    const posts = stubFetch();
+    render(<QuestionFeedback cardId="cc:tokyo-japan:object" context={asking} />);
+    open();
+    send();
+
+    expect(await screen.findByRole("status")).toHaveTextContent(/sign in to send feedback/i);
+    expect(posts).toEqual([]);
+  });
+
+  it("abandons the draft when the learner cancels", () => {
+    stubFetch();
+    render(<QuestionFeedback cardId="cc:tokyo-japan:object" context={asking} />);
+    open();
+    fireEvent.change(screen.getByLabelText(/feedback about this question/i), {
+      target: { value: "never mind" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /cancel/i }));
+
+    expect(screen.queryByLabelText(/feedback about this question/i)).toBeNull();
+    open();
+    expect(screen.getByLabelText(/feedback about this question/i)).toHaveValue("");
   });
 });

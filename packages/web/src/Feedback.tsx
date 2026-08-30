@@ -1,12 +1,13 @@
 import { type FormEvent, useState } from "react";
 import { submitFeedback } from "./apiClient.js";
+import { readSignedIn } from "./auth.js";
 
 interface FeedbackProps {
   /**
-   * Whether a learner is signed in. Feedback is attributable, so an unauthed
-   * visitor is guarded out here rather than allowed to submit (spec #160). The
-   * app is signed-in-only today, so this defaults to true; the sign-in-request
-   * flow for real unauthed visitors is deferred.
+   * Whether a learner is signed in, read from the auth boundary by default.
+   * Feedback is attributable, so this surface checks for itself rather than
+   * trusting the app-wide gate — anonymous visitors are coming, and the answer
+   * has to stay no here. The sign-in-request flow for them is still deferred.
    */
   isSignedIn?: boolean;
 }
@@ -20,7 +21,7 @@ type Status = "editing" | "sending" | "sent" | "error";
  * resets, so a second note can follow immediately — the learner can never read
  * feedback back, so the confirmation is the only signal it went through.
  */
-export function Feedback({ isSignedIn = true }: FeedbackProps) {
+export function Feedback({ isSignedIn = readSignedIn() }: FeedbackProps) {
   const [comment, setComment] = useState("");
   const [status, setStatus] = useState<Status>("editing");
 
@@ -77,6 +78,17 @@ export function Feedback({ isSignedIn = true }: FeedbackProps) {
             </p>
           )}
           <div className="feedback__bar-spacer" />
+          <button
+            type="button"
+            className="feedback__cancel"
+            onClick={() => {
+              setComment("");
+              setStatus("editing");
+            }}
+            disabled={comment.length === 0}
+          >
+            Cancel
+          </button>
           <button
             className="btn-primary"
             type="submit"

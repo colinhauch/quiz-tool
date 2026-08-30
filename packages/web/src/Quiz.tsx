@@ -140,6 +140,10 @@ export function Quiz() {
             prompt: view.question.prompt,
             packId: view.question.packId,
             packLabel: view.question.packLabel,
+            // `answered` is what makes the absent input readable: the learner
+            // flagged the card before answering, rather than the client losing
+            // what they typed.
+            answered: view.state === "answered",
             ...(view.state === "answered"
               ? { input, acceptedAnswers: view.result.acceptedAnswers }
               : {}),

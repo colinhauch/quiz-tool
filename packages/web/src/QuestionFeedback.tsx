@@ -1,6 +1,7 @@
 import type { FeedbackContext } from "@geo/contract";
 import { type FormEvent, useState } from "react";
 import { submitFeedback } from "./apiClient.js";
+import { readSignedIn } from "./auth.js";
 
 /**
  * What an empty box submits. A learner flagging a bad question should need two
@@ -21,15 +22,16 @@ interface QuestionFeedbackProps {
    */
   context: FeedbackContext;
   /**
-   * Whether a learner is signed in. Feedback is attributable, so the control is
-   * withheld entirely from a signed-out visitor rather than failing at submit
-   * (the RLS policy would reject the insert anyway). Defaults to true because
-   * the app is signed-in-only today; see {@link Feedback} for the same guard.
+   * Whether a learner is signed in, read from the auth boundary by default.
+   * Feedback is attributable, so this surface checks for itself rather than
+   * trusting the app-wide gate — anonymous visitors are coming, and the answer
+   * has to stay no here. A signed-out submit is refused locally with an error
+   * rather than sent, since the route and the RLS policy would both reject it.
    */
   isSignedIn?: boolean;
 }
 
-type Status = "editing" | "sending" | "sent" | "error";
+type Status = "editing" | "sending" | "sent" | "error" | "signed-out";
 
 /**
  * The per-question feedback control on the quiz card: a small text button that
@@ -39,15 +41,21 @@ type Status = "editing" | "sending" | "sent" | "error";
  * signal the report landed, since learners can never read feedback back. On
  * failure the box stays open so nothing typed is lost.
  */
-export function QuestionFeedback({ cardId, context, isSignedIn = true }: QuestionFeedbackProps) {
+export function QuestionFeedback({
+  cardId,
+  context,
+  isSignedIn = readSignedIn(),
+}: QuestionFeedbackProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [comment, setComment] = useState("");
   const [status, setStatus] = useState<Status>("editing");
 
-  if (!isSignedIn) return null;
-
   async function submit(event: FormEvent) {
     event.preventDefault();
+    if (!isSignedIn) {
+      setStatus("signed-out");
+      return;
+    }
     setStatus("sending");
     try {
       await submitFeedback({
@@ -95,7 +103,7 @@ export function QuestionFeedback({ cardId, context, isSignedIn = true }: Questio
         value={comment}
         onChange={(e) => {
           setComment(e.target.value);
-          if (status === "error") setStatus("editing");
+          if (status === "error" || status === "signed-out") setStatus("editing");
         }}
         rows={3}
       />
@@ -105,10 +113,15 @@ export function QuestionFeedback({ cardId, context, isSignedIn = true }: Questio
             Couldn’t send that. Try again.
           </p>
         )}
+        {status === "signed-out" && (
+          <p role="status" className="feedback__note feedback__note--error">
+            Sign in to send feedback.
+          </p>
+        )}
         <div className="feedback__bar-spacer" />
         <button
           type="button"
-          className="question-feedback__cancel"
+          className="feedback__cancel"
           onClick={() => {
             setComment("");
             setIsOpen(false);

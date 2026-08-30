@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { App } from "./App.js";
-import type { AuthBoundary, AuthState } from "./auth.js";
+import { type AuthBoundary, type AuthState, setSignedInSource } from "./auth.js";
 
 /**
  * A fetch stub covering both views' calls: a question for the quiz, and a
@@ -64,6 +64,7 @@ const signedOut: AuthState = { status: "signed-out", accessToken: null, reason: 
 const expired: AuthState = { status: "signed-out", accessToken: null, reason: "expired" };
 
 afterEach(() => {
+  setSignedInSource(() => false);
   vi.restoreAllMocks();
 });
 
@@ -91,6 +92,9 @@ describe("App shell", () => {
 
   it("navigates to the feedback view when signed in", async () => {
     stubFetch();
+    // The feedback surfaces read the sign-in state themselves rather than
+    // trusting this shell's gate, so the seam has to agree with the boundary.
+    setSignedInSource(() => true);
     render(<App boundary={fakeBoundary(signedIn)} />);
     await screen.findByText("What country is Tokyo in?");
 

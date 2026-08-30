@@ -1,6 +1,7 @@
 import type { AnswerResponse, EntitySummary, QuestionResponse, VisualAid } from "@geo/contract";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { setSignedInSource } from "./auth.js";
 import { DEFAULT_QUESTION_COMMENT } from "./QuestionFeedback.js";
 import { Quiz } from "./Quiz.js";
 import { clearSuggestionCache } from "./suggestions.js";
@@ -71,7 +72,13 @@ function feedbackPosts(fetchMock: ReturnType<typeof stubFetch>): unknown[] {
     .map(([, init]) => JSON.parse((init as { body: string }).body));
 }
 
+beforeEach(() => {
+  // The quiz card's feedback control checks for itself that someone is signed in.
+  setSignedInSource(() => true);
+});
+
 afterEach(() => {
+  setSignedInSource(() => false);
   clearSuggestionCache();
   localStorage.clear();
   vi.restoreAllMocks();
@@ -395,7 +402,12 @@ describe("Quiz", () => {
       card_id: tokyo.cardId,
       comment: DEFAULT_QUESTION_COMMENT,
       // No input or acceptedAnswers: the question has not been answered yet.
-      context: { prompt: tokyo.prompt, packId: tokyo.packId, packLabel: tokyo.packLabel },
+      context: {
+        prompt: tokyo.prompt,
+        packId: tokyo.packId,
+        packLabel: tokyo.packLabel,
+        answered: false,
+      },
     });
   });
 
@@ -422,6 +434,7 @@ describe("Quiz", () => {
         prompt: tokyo.prompt,
         packId: tokyo.packId,
         packLabel: tokyo.packLabel,
+        answered: true,
         input: "Chian",
         acceptedAnswers: ["Japan"],
       },
