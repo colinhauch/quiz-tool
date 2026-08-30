@@ -1,6 +1,7 @@
 import type { AnswerResponse, EntitySummary, QuestionResponse, VisualAid } from "@geo/contract";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { DEFAULT_QUESTION_COMMENT } from "./QuestionFeedback.js";
 import { Quiz } from "./Quiz.js";
 import { clearSuggestionCache } from "./suggestions.js";
 
@@ -45,9 +46,13 @@ function stubFetch(
     acceptedAnswers: result.acceptedAnswers ?? [result.acceptedAnswer],
   };
   const queue = [...questions];
-  const fetchMock = vi.fn((url: string, init?: { method?: string }) => {
+  const fetchMock = vi.fn((url: string, init?: { method?: string; body?: string }) => {
     if (url === "/api/answer" && init?.method === "POST") {
       return Promise.resolve({ json: async () => answerResult });
+    }
+    // The per-question feedback control posts here; `ok` is what submitFeedback checks.
+    if (url === "/api/feedback" && init?.method === "POST") {
+      return Promise.resolve({ ok: true, status: 200, json: async () => ({}) });
     }
     if (url.startsWith("/api/entities")) {
       return Promise.resolve({ json: async () => entities });
@@ -57,6 +62,13 @@ function stubFetch(
   });
   vi.stubGlobal("fetch", fetchMock);
   return fetchMock;
+}
+
+/** The bodies the component POSTed to /api/feedback, in order. */
+function feedbackPosts(fetchMock: ReturnType<typeof stubFetch>): unknown[] {
+  return fetchMock.mock.calls
+    .filter(([url]) => url === "/api/feedback")
+    .map(([, init]) => JSON.parse((init as { body: string }).body));
 }
 
 afterEach(() => {
@@ -93,7 +105,7 @@ describe("Quiz", () => {
     render(<Quiz />);
 
     fireEvent.change(await screen.findByLabelText(/your answer/i), { target: { value: "Japan" } });
-    fireEvent.click(screen.getByRole("button", { name: /submit/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^submit$/i }));
 
     expect(await screen.findByRole("status")).toHaveTextContent("Correct! The answer is Japan.");
     expect(fetchMock).toHaveBeenCalledWith(
@@ -110,7 +122,7 @@ describe("Quiz", () => {
     render(<Quiz />);
 
     fireEvent.change(await screen.findByLabelText(/your answer/i), { target: { value: "China" } });
-    fireEvent.click(screen.getByRole("button", { name: /submit/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^submit$/i }));
 
     expect(await screen.findByRole("status")).toHaveTextContent("Incorrect. The answer is Japan.");
   });
@@ -120,7 +132,7 @@ describe("Quiz", () => {
     render(<Quiz />);
 
     fireEvent.change(await screen.findByLabelText(/your answer/i), { target: { value: "Asia" } });
-    fireEvent.click(screen.getByRole("button", { name: /submit/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^submit$/i }));
 
     expect(await screen.findByRole("status")).toHaveTextContent("Correct! The answer is Asia or Europe.");
   });
@@ -130,7 +142,7 @@ describe("Quiz", () => {
     render(<Quiz />);
 
     fireEvent.change(await screen.findByLabelText(/your answer/i), { target: { value: "Japan" } });
-    fireEvent.click(screen.getByRole("button", { name: /submit/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^submit$/i }));
     fireEvent.click(await screen.findByRole("button", { name: /next question/i }));
 
     expect(await screen.findByText("What country is Paris in?")).toBeInTheDocument();
@@ -207,7 +219,7 @@ describe("Quiz", () => {
 
     expect(box.value).toBe("Japan");
     // A keyboard learner's next Enter should submit, so focus moves to Submit.
-    expect(screen.getByRole("button", { name: /submit/i })).toHaveFocus();
+    expect(screen.getByRole("button", { name: /^submit$/i })).toHaveFocus();
   });
 
   it("still submits a free-text answer that is not in the suggestion list", async () => {
@@ -215,7 +227,7 @@ describe("Quiz", () => {
     render(<Quiz />);
 
     fireEvent.change(await screen.findByLabelText(/your answer/i), { target: { value: "Nippon" } });
-    fireEvent.click(screen.getByRole("button", { name: /submit/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^submit$/i }));
 
     expect(await screen.findByRole("status")).toHaveTextContent("Incorrect. The answer is Japan.");
     expect(fetchMock).toHaveBeenCalledWith(
@@ -233,7 +245,7 @@ describe("Quiz", () => {
     render(<Quiz />);
 
     fireEvent.change(await screen.findByLabelText(/your answer/i), { target: { value: "Japan" } });
-    fireEvent.click(screen.getByRole("button", { name: /submit/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^submit$/i }));
 
     await screen.findByRole("status");
     expect(screen.getByRole("img")).toBeInTheDocument();
@@ -244,7 +256,7 @@ describe("Quiz", () => {
     render(<Quiz />);
 
     fireEvent.change(await screen.findByLabelText(/your answer/i), { target: { value: "Japan" } });
-    fireEvent.click(screen.getByRole("button", { name: /submit/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^submit$/i }));
 
     await screen.findByRole("status");
     expect(screen.queryByRole("img")).not.toBeInTheDocument();
@@ -271,7 +283,7 @@ describe("Quiz", () => {
       fireEvent.change(await screen.findByLabelText(/your answer/i), {
         target: { value: "Japan" },
       });
-      fireEvent.click(screen.getByRole("button", { name: /submit/i }));
+      fireEvent.click(screen.getByRole("button", { name: /^submit$/i }));
       await screen.findByRole("status");
 
       expect(container.querySelectorAll(".visual-aid")).toHaveLength(0);
@@ -289,7 +301,7 @@ describe("Quiz", () => {
       fireEvent.change(await screen.findByLabelText(/your answer/i), {
         target: { value: "Japan" },
       });
-      fireEvent.click(screen.getByRole("button", { name: /submit/i }));
+      fireEvent.click(screen.getByRole("button", { name: /^submit$/i }));
       await screen.findByRole("status");
 
       expect(container.querySelectorAll(".visual-aid")).toHaveLength(1);
@@ -319,7 +331,7 @@ describe("Quiz", () => {
       fireEvent.change(await screen.findByLabelText(/your answer/i), {
         target: { value: "Japan" },
       });
-      fireEvent.click(screen.getByRole("button", { name: /submit/i }));
+      fireEvent.click(screen.getByRole("button", { name: /^submit$/i }));
       await screen.findByRole("status");
 
       expect(container.querySelectorAll(".visual-aid")).toHaveLength(2);
@@ -355,7 +367,7 @@ describe("Quiz", () => {
 
     fireEvent.click(await screen.findByRole("checkbox", { name: /autocomplete/i }));
     fireEvent.change(screen.getByLabelText(/your answer/i), { target: { value: "Japan" } });
-    fireEvent.click(screen.getByRole("button", { name: /submit/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^submit$/i }));
 
     expect(await screen.findByRole("status")).toHaveTextContent("Correct! The answer is Japan.");
   });
@@ -368,5 +380,51 @@ describe("Quiz", () => {
 
     render(<Quiz />);
     expect(await screen.findByRole("checkbox", { name: /autocomplete/i })).not.toBeChecked();
+  });
+
+  it("offers the per-question feedback control before answering, with a pre-answer snapshot", async () => {
+    const fetchMock = stubFetch([tokyo], { correct: true, acceptedAnswer: "Japan" });
+    render(<Quiz />);
+
+    fireEvent.click(await screen.findByRole("button", { name: /submit feedback about this question/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^send$/i }));
+
+    await waitFor(() => expect(feedbackPosts(fetchMock)).toHaveLength(1));
+    expect(feedbackPosts(fetchMock)[0]).toEqual({
+      kind: "question",
+      card_id: tokyo.cardId,
+      comment: DEFAULT_QUESTION_COMMENT,
+      // No input or acceptedAnswers: the question has not been answered yet.
+      context: { prompt: tokyo.prompt, packId: tokyo.packId, packLabel: tokyo.packLabel },
+    });
+  });
+
+  it("offers the control after answering too, with what the learner typed and the accepted answers", async () => {
+    const fetchMock = stubFetch([tokyo], { correct: false, acceptedAnswer: "Japan" });
+    render(<Quiz />);
+
+    fireEvent.change(await screen.findByLabelText(/your answer/i), { target: { value: "Chian" } });
+    fireEvent.click(screen.getByRole("button", { name: /^submit$/i }));
+    await screen.findByText(/the answer is japan/i);
+
+    fireEvent.click(screen.getByRole("button", { name: /submit feedback about this question/i }));
+    fireEvent.change(screen.getByLabelText(/feedback about this question/i), {
+      target: { value: "Chian should count as a typo." },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /^send$/i }));
+
+    await waitFor(() => expect(feedbackPosts(fetchMock)).toHaveLength(1));
+    expect(feedbackPosts(fetchMock)[0]).toEqual({
+      kind: "question",
+      card_id: tokyo.cardId,
+      comment: "Chian should count as a typo.",
+      context: {
+        prompt: tokyo.prompt,
+        packId: tokyo.packId,
+        packLabel: tokyo.packLabel,
+        input: "Chian",
+        acceptedAnswers: ["Japan"],
+      },
+    });
   });
 });

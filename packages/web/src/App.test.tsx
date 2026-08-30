@@ -94,7 +94,7 @@ describe("App shell", () => {
     render(<App boundary={fakeBoundary(signedIn)} />);
     await screen.findByText("What country is Tokyo in?");
 
-    fireEvent.click(screen.getByRole("button", { name: /feedback/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^feedback$/i }));
     expect(await screen.findByLabelText(/your feedback/i)).toBeInTheDocument();
   });
 });

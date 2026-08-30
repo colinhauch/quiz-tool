@@ -861,7 +861,8 @@ body {
   font-size: 1rem;
 }
 
-.feedback__box {
+.feedback__box,
+.question-feedback__box {
   width: 100%;
   padding: 0.85rem 1rem;
   border: 1px solid var(--cornflower);
@@ -874,7 +875,8 @@ body {
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-.feedback__box:focus {
+.feedback__box:focus,
+.question-feedback__box:focus {
   outline: none;
   border-color: var(--cornflower);
   box-shadow: 0 0 0 3px rgba(117, 139, 253, 0.15);
@@ -947,4 +949,59 @@ body {
   .auth-widget__magic input {
     width: 8.5rem;
   }
+}
+
+/* ── Per-question feedback: a quiet control on the quiz card ─ */
+/* Small and low-contrast on purpose: flagging a bad question must be available
+   in both card states without competing with Submit or Next question. */
+.question-feedback {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(174, 184, 254, 0.35);
+}
+
+.question-feedback__open {
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: var(--sans);
+  font-size: 0.85rem;
+  color: rgba(39, 24, 126, 0.6);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.question-feedback__open:hover {
+  color: var(--indigo);
+}
+
+/* Same box as the general one, a size down — it sits inside a card. */
+.question-feedback__box {
+  padding: 0.65rem 0.8rem;
+  font-size: 0.95rem;
+}
+
+.question-feedback__bar {
+  margin-top: 0.65rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.question-feedback__cancel {
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: var(--sans);
+  font-size: 0.85rem;
+  color: rgba(39, 24, 126, 0.6);
+  cursor: pointer;
+}
+
+.question-feedback__bar .btn-primary {
+  width: auto;
+  padding: 0.5rem 1.1rem;
+  font-size: 0.9rem;
+  white-space: nowrap;
 }
