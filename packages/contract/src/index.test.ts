@@ -6,6 +6,7 @@ import {
   feedbackRequestSchema,
   healthSchema,
   questionResponseSchema,
+  visualAidSchema,
 } from "./index.js";
 
 describe("contract", () => {
@@ -25,6 +26,7 @@ describe("questionResponseSchema", () => {
     input: "text",
     packId: "core-cities",
     packLabel: "Cities & Countries",
+    answerTypes: ["country"],
   };
 
   it("validates a well-formed rendered question", () => {
@@ -53,6 +55,14 @@ describe("questionResponseSchema", () => {
   it("rejects a leaked answer field", () => {
     expect(questionResponseSchema.safeParse({ ...question, answer: "Japan" }).success).toBe(false);
   });
+
+  it("requires answerTypes and rejects empty type strings", () => {
+    const { answerTypes: _t, ...withoutTypes } = question;
+    expect(questionResponseSchema.safeParse(withoutTypes).success).toBe(false);
+    expect(questionResponseSchema.safeParse({ ...question, answerTypes: [""] }).success).toBe(false);
+    // An empty list is valid — an entity could in principle carry no types.
+    expect(questionResponseSchema.safeParse({ ...question, answerTypes: [] }).success).toBe(true);
+  });
 });
 
 describe("answerRequestSchema", () => {
@@ -72,20 +82,119 @@ describe("answerRequestSchema", () => {
 
 describe("answerResponseSchema", () => {
   it("validates a well-formed response", () => {
-    const res = { correct: true, acceptedAnswer: "Japan" };
+    const res = { correct: true, acceptedAnswer: "Japan", acceptedAnswers: ["Japan"] };
     expect(answerResponseSchema.parse(res)).toEqual(res);
   });
 
+  it("validates a transcontinental response listing several accepted answers", () => {
+    const res = { correct: true, acceptedAnswer: "Asia", acceptedAnswers: ["Asia", "Europe"] };
+    expect(answerResponseSchema.parse(res)).toEqual(res);
+  });
+
+  it("rejects an empty acceptedAnswers list", () => {
+    expect(
+      answerResponseSchema.safeParse({ correct: true, acceptedAnswer: "Japan", acceptedAnswers: [] }).success,
+    ).toBe(false);
+  });
+
   it("rejects a non-boolean correct", () => {
-    expect(answerResponseSchema.safeParse({ correct: "yes", acceptedAnswer: "Japan" }).success).toBe(
-      false,
-    );
+    expect(
+      answerResponseSchema.safeParse({ correct: "yes", acceptedAnswer: "Japan", acceptedAnswers: ["Japan"] })
+        .success,
+    ).toBe(false);
   });
 
   it("rejects extra fields", () => {
     expect(
-      answerResponseSchema.safeParse({ correct: true, acceptedAnswer: "Japan", debug: 1 }).success,
+      answerResponseSchema.safeParse({
+        correct: true,
+        acceptedAnswer: "Japan",
+        acceptedAnswers: ["Japan"],
+        debug: 1,
+      }).success,
     ).toBe(false);
+  });
+
+  it("validates a response carrying a map revealVisual", () => {
+    const res = {
+      correct: true,
+      acceptedAnswer: "Tokyo",
+      acceptedAnswers: ["Tokyo"],
+      revealVisual: { kind: "map", entityId: "Q1490", lat: 35.6897, lon: 139.6922, label: "Tokyo" },
+    };
+    expect(answerResponseSchema.parse(res)).toEqual(res);
+  });
+
+  it("rejects a malformed revealVisual", () => {
+    const res = {
+      correct: true,
+      acceptedAnswer: "Tokyo",
+      acceptedAnswers: ["Tokyo"],
+      revealVisual: { kind: "map", entityId: "Q1490", lat: "north", lon: 139.6922, label: "Tokyo" },
+    };
+    expect(answerResponseSchema.safeParse(res).success).toBe(false);
+  });
+});
+
+describe("visualAidSchema", () => {
+  const map = { kind: "map", entityId: "Q1490", lat: 35.6897, lon: 139.6922, label: "Tokyo" };
+
+  it("validates a well-formed map descriptor", () => {
+    expect(visualAidSchema.parse(map)).toEqual(map);
+  });
+
+  it("rejects an unknown visual-aid kind", () => {
+    expect(visualAidSchema.safeParse({ ...map, kind: "flag" }).success).toBe(false);
+  });
+
+  it("rejects a missing field", () => {
+    const { label: _label, ...withoutLabel } = map;
+    expect(visualAidSchema.safeParse(withoutLabel).success).toBe(false);
+  });
+
+  it("validates a map descriptor carrying regional geometry + extent (#155)", () => {
+    const enriched = {
+      ...map,
+      localGeoJSON: {
+        type: "MultiPolygon",
+        coordinates: [[[[139, 35], [140, 35], [140, 36], [139, 35]]]],
+      },
+      regionExtent: { minLon: 138.19, minLat: 34.69, maxLon: 141.19, maxLat: 36.69 },
+    };
+    expect(visualAidSchema.parse(enriched)).toEqual(enriched);
+  });
+
+  it("rejects a localGeoJSON with the wrong geometry tag", () => {
+    const bad = { ...map, localGeoJSON: { type: "Polygon", coordinates: [] } };
+    expect(visualAidSchema.safeParse(bad).success).toBe(false);
+  });
+});
+
+describe("questionResponseSchema, promptVisual", () => {
+  const question = {
+    cardId: "S1:object",
+    prompt: "What country is Tokyo in?",
+    input: "text" as const,
+    packId: "core-cities",
+    packLabel: "Cities & Countries",
+    answerTypes: ["country"],
+  };
+
+  it("validates without a promptVisual", () => {
+    expect(questionResponseSchema.parse(question)).toEqual(question);
+  });
+
+  it("validates with a well-formed promptVisual", () => {
+    const withVisual = {
+      ...question,
+      promptVisual: { kind: "map", entityId: "Q1490", lat: 35.6897, lon: 139.6922, label: "Tokyo" },
+    };
+    expect(questionResponseSchema.parse(withVisual)).toEqual(withVisual);
+  });
+
+  it("rejects a malformed promptVisual", () => {
+    const withBadVisual = { ...question, promptVisual: { kind: "map" } };
+    expect(questionResponseSchema.safeParse(withBadVisual).success).toBe(false);
   });
 });
 

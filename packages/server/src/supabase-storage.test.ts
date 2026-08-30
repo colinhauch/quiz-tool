@@ -4,6 +4,7 @@ import type { AnswerRecord } from "./storage.js";
 import {
   createSupabaseAnswerStore,
   createSupabaseFeedbackStore,
+  createSupabaseRatingStore,
   createSupabaseSelectionStore,
 } from "./supabase-storage.js";
 
@@ -126,5 +127,36 @@ describe.skipIf(!ready)("Supabase stores (integration, RLS)", () => {
 
     // B's selection is untouched by A's writes.
     expect(await selB.read()).toBeNull();
+  });
+
+  it("round-trips a snapshot on the answer row", async () => {
+    const a = await signedInUser(admin);
+    createdUserIds.push(a.id);
+    const store = createSupabaseAnswerStore(a.client);
+
+    const withSnapshot = {
+      ...answer,
+      snapshot: { difficulty: 1500, ability: 1520, kApplied: 40, packId: "capital-cities" },
+    };
+    await store.record(withSnapshot);
+    expect(await store.all()).toEqual([withSnapshot]);
+  });
+
+  it("keeps ability per-user but difficulty global (shared across users)", async () => {
+    const a = await signedInUser(admin);
+    const b = await signedInUser(admin);
+    createdUserIds.push(a.id, b.id);
+    const ratingA = createSupabaseRatingStore(a.client);
+    const ratingB = createSupabaseRatingStore(b.client);
+    const card = `cc:tokyo-japan:object-${crypto.randomUUID()}`;
+
+    // Ability is isolated: A's write is invisible to B.
+    await ratingA.writeAbility("capital-cities", 1600);
+    expect(await ratingA.readAbility("capital-cities")).toBeCloseTo(1600, 6);
+    expect(await ratingB.readAbility("capital-cities")).toBe(1500); // seed — B has none
+
+    // Difficulty is global: A writes it, B reads the same value.
+    await ratingA.writeCard(card, 1480, 3);
+    expect(await ratingB.readCard(card)).toEqual({ difficulty: 1480, answerCount: 3 });
   });
 });

@@ -1,7 +1,8 @@
-import type { AnswerResponse, QuestionResponse } from "@geo/contract";
+import type { AnswerResponse, EntitySummary, QuestionResponse, VisualAid } from "@geo/contract";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { Quiz } from "./Quiz.js";
+import { clearSuggestionCache } from "./suggestions.js";
 
 const tokyo: QuestionResponse = {
   cardId: "cc:tokyo-japan:object",
@@ -9,6 +10,7 @@ const tokyo: QuestionResponse = {
   input: "text",
   packId: "core-cities",
   packLabel: "Cities & Countries",
+  answerTypes: ["country"],
 };
 const paris: QuestionResponse = {
   cardId: "cc:paris-france:object",
@@ -16,18 +18,39 @@ const paris: QuestionResponse = {
   input: "text",
   packId: "continental-countries",
   packLabel: "Continents & Countries",
+  answerTypes: ["country"],
 };
 
+const countries: EntitySummary[] = [
+  { id: "Q17", label: "Japan", aliases: [] },
+  { id: "Q148", label: "China", aliases: [] },
+  { id: "Q142", label: "France", aliases: [] },
+];
+
 /**
- * A fetch stub that serves a queue of questions on GET /api/question and a
- * fixed result on POST /api/answer. Returns the last question when the queue
- * runs dry, so repeated "Next" clicks stay defined.
+ * A fetch stub that serves a queue of questions on GET /api/question, the
+ * suggestion entities on GET /api/entities, and a fixed result on POST
+ * /api/answer. Returns the last question when the queue runs dry, so repeated
+ * "Next" clicks stay defined.
  */
-function stubFetch(questions: QuestionResponse[], result: AnswerResponse) {
+function stubFetch(
+  questions: QuestionResponse[],
+  // acceptedAnswers defaults to [acceptedAnswer] so single-answer tests stay terse;
+  // the transcontinental test passes the full list explicitly.
+  result: Omit<AnswerResponse, "acceptedAnswers"> & { acceptedAnswers?: string[] },
+  entities: EntitySummary[] = countries,
+) {
+  const answerResult: AnswerResponse = {
+    ...result,
+    acceptedAnswers: result.acceptedAnswers ?? [result.acceptedAnswer],
+  };
   const queue = [...questions];
   const fetchMock = vi.fn((url: string, init?: { method?: string }) => {
     if (url === "/api/answer" && init?.method === "POST") {
-      return Promise.resolve({ json: async () => result });
+      return Promise.resolve({ json: async () => answerResult });
+    }
+    if (url.startsWith("/api/entities")) {
+      return Promise.resolve({ json: async () => entities });
     }
     const next = queue.shift() ?? questions[questions.length - 1];
     return Promise.resolve({ json: async () => next });
@@ -37,6 +60,8 @@ function stubFetch(questions: QuestionResponse[], result: AnswerResponse) {
 }
 
 afterEach(() => {
+  clearSuggestionCache();
+  localStorage.clear();
   vi.restoreAllMocks();
 });
 
@@ -90,6 +115,16 @@ describe("Quiz", () => {
     expect(await screen.findByRole("status")).toHaveTextContent("Incorrect. The answer is Japan.");
   });
 
+  it("lists every accepted answer for a transcontinental card", async () => {
+    stubFetch([tokyo], { correct: true, acceptedAnswer: "Asia", acceptedAnswers: ["Asia", "Europe"] });
+    render(<Quiz />);
+
+    fireEvent.change(await screen.findByLabelText(/your answer/i), { target: { value: "Asia" } });
+    fireEvent.click(screen.getByRole("button", { name: /submit/i }));
+
+    expect(await screen.findByRole("status")).toHaveTextContent("Correct! The answer is Asia or Europe.");
+  });
+
   it("fetches a fresh question after answering", async () => {
     stubFetch([tokyo, paris], { correct: true, acceptedAnswer: "Japan" });
     render(<Quiz />);
@@ -102,5 +137,236 @@ describe("Quiz", () => {
     await waitFor(() =>
       expect(screen.queryByRole("status")).not.toBeInTheDocument(),
     );
+  });
+
+  it("suggests entities of the answer's type as the learner types", async () => {
+    stubFetch([tokyo], { correct: true, acceptedAnswer: "Japan" });
+    render(<Quiz />);
+
+    fireEvent.change(await screen.findByLabelText(/your answer/i), { target: { value: "jap" } });
+
+    const option = await screen.findByRole("option", { name: "Japan" });
+    expect(option).toBeInTheDocument();
+    // Scoped to what was typed — a non-matching country is not offered.
+    expect(screen.queryByRole("option", { name: "France" })).not.toBeInTheDocument();
+  });
+
+  it("fills the box with the canonical label on selection, without submitting", async () => {
+    const fetchMock = stubFetch([tokyo], { correct: true, acceptedAnswer: "Japan" });
+    render(<Quiz />);
+
+    const box = (await screen.findByLabelText(/your answer/i)) as HTMLInputElement;
+    fireEvent.change(box, { target: { value: "jap" } });
+    await screen.findByRole("option", { name: "Japan" });
+    fireEvent.click(screen.getByRole("button", { name: "Japan" }));
+
+    expect(box.value).toBe("Japan");
+    // Filling is not answering: no verdict yet, and no POST /answer fired.
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    expect(fetchMock).not.toHaveBeenCalledWith("/api/answer", expect.anything());
+    // The list closes once a suggestion is taken.
+    expect(screen.queryByRole("option", { name: "Japan" })).not.toBeInTheDocument();
+  });
+
+  it("fills a suggestion's short autocomplete form, not its verbose label", async () => {
+    const currencyQ: QuestionResponse = {
+      cardId: "cur:united-states:us-dollar:object",
+      prompt: "What currency does the United States use?",
+      input: "text",
+      packId: "currencies",
+      packLabel: "Currencies",
+      answerTypes: ["currency"],
+    };
+    const usd: EntitySummary = {
+      id: "Q4917",
+      label: "United States dollar",
+      aliases: ["dollar", "dollars", "USD"],
+      autocomplete: "dollar",
+    };
+    stubFetch([currencyQ], { correct: true, acceptedAnswer: "United States dollar" }, [usd]);
+    render(<Quiz />);
+
+    const box = (await screen.findByLabelText(/your answer/i)) as HTMLInputElement;
+    fireEvent.change(box, { target: { value: "doll" } });
+    // The row shows the short form, not "United States dollar".
+    const option = await screen.findByRole("button", { name: "dollar" });
+    fireEvent.click(option);
+    expect(box.value).toBe("dollar");
+  });
+
+  it("selects a keyboard-focused suggestion on Enter, then focus lands on Submit", async () => {
+    stubFetch([tokyo], { correct: true, acceptedAnswer: "Japan" });
+    render(<Quiz />);
+
+    const box = (await screen.findByLabelText(/your answer/i)) as HTMLInputElement;
+    fireEvent.change(box, { target: { value: "jap" } });
+    // Tab-navigating to the option focuses its button; Enter on a focused button
+    // fires a click (never mousedown), which must select it.
+    const option = await screen.findByRole("button", { name: "Japan" });
+    fireEvent.click(option); // Enter on a focused <button> dispatches click
+
+    expect(box.value).toBe("Japan");
+    // A keyboard learner's next Enter should submit, so focus moves to Submit.
+    expect(screen.getByRole("button", { name: /submit/i })).toHaveFocus();
+  });
+
+  it("still submits a free-text answer that is not in the suggestion list", async () => {
+    const fetchMock = stubFetch([tokyo], { correct: false, acceptedAnswer: "Japan" });
+    render(<Quiz />);
+
+    fireEvent.change(await screen.findByLabelText(/your answer/i), { target: { value: "Nippon" } });
+    fireEvent.click(screen.getByRole("button", { name: /submit/i }));
+
+    expect(await screen.findByRole("status")).toHaveTextContent("Incorrect. The answer is Japan.");
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/answer",
+      expect.objectContaining({ body: JSON.stringify({ cardId: tokyo.cardId, input: "Nippon" }) }),
+    );
+  });
+
+  it("shows the reveal map when the answer carries a revealVisual", async () => {
+    stubFetch([tokyo], {
+      correct: true,
+      acceptedAnswer: "Japan",
+      revealVisual: { kind: "map", entityId: "Q1490", lat: 35.6895, lon: 139.6917, label: "Tokyo" },
+    });
+    render(<Quiz />);
+
+    fireEvent.change(await screen.findByLabelText(/your answer/i), { target: { value: "Japan" } });
+    fireEvent.click(screen.getByRole("button", { name: /submit/i }));
+
+    await screen.findByRole("status");
+    expect(screen.getByRole("img")).toBeInTheDocument();
+  });
+
+  it("shows no map when the answer carries no revealVisual", async () => {
+    stubFetch([tokyo], { correct: true, acceptedAnswer: "Japan" });
+    render(<Quiz />);
+
+    fireEvent.change(await screen.findByLabelText(/your answer/i), { target: { value: "Japan" } });
+    fireEvent.click(screen.getByRole("button", { name: /submit/i }));
+
+    await screen.findByRole("status");
+    expect(screen.queryByRole("img")).not.toBeInTheDocument();
+  });
+
+  // #111: layout/presence-state coverage for the visual-aid slots. v1 never
+  // produces a promptVisual — these stubs exist only to prove the layout
+  // (container collapses when empty, both slots can render together) holds
+  // up for future card kinds. Never ship a stub descriptor like this outside
+  // a test.
+  const stubMap = (label: string): VisualAid => ({
+    kind: "map",
+    entityId: "Q999",
+    lat: 1,
+    lon: 2,
+    label,
+  });
+
+  describe("visual-aid presence states", () => {
+    it("reserves no space for either slot when neither the prompt nor the answer carries a visual", async () => {
+      stubFetch([tokyo], { correct: true, acceptedAnswer: "Japan" });
+      const { container } = render(<Quiz />);
+
+      fireEvent.change(await screen.findByLabelText(/your answer/i), {
+        target: { value: "Japan" },
+      });
+      fireEvent.click(screen.getByRole("button", { name: /submit/i }));
+      await screen.findByRole("status");
+
+      expect(container.querySelectorAll(".visual-aid")).toHaveLength(0);
+      expect(screen.queryByRole("img")).not.toBeInTheDocument();
+    });
+
+    it("shows only the reveal map when just the answer carries a visual (the v1 case)", async () => {
+      stubFetch([tokyo], {
+        correct: true,
+        acceptedAnswer: "Japan",
+        revealVisual: stubMap("Tokyo"),
+      });
+      const { container } = render(<Quiz />);
+
+      fireEvent.change(await screen.findByLabelText(/your answer/i), {
+        target: { value: "Japan" },
+      });
+      fireEvent.click(screen.getByRole("button", { name: /submit/i }));
+      await screen.findByRole("status");
+
+      expect(container.querySelectorAll(".visual-aid")).toHaveLength(1);
+      expect(screen.getAllByRole("img")).toHaveLength(1);
+    });
+
+    it("shows only the prompt map while asking when just the question carries a visual", async () => {
+      const withPromptVisual: QuestionResponse = { ...tokyo, promptVisual: stubMap("Japan") };
+      stubFetch([withPromptVisual], { correct: true, acceptedAnswer: "Japan" });
+      const { container } = render(<Quiz />);
+
+      await screen.findByText("What country is Tokyo in?");
+
+      expect(container.querySelectorAll(".visual-aid")).toHaveLength(1);
+      expect(screen.getAllByRole("img")).toHaveLength(1);
+    });
+
+    it("shows both the prompt and reveal maps once answered when both carry a visual", async () => {
+      const withPromptVisual: QuestionResponse = { ...tokyo, promptVisual: stubMap("Japan") };
+      stubFetch([withPromptVisual], {
+        correct: true,
+        acceptedAnswer: "Japan",
+        revealVisual: stubMap("Tokyo"),
+      });
+      const { container } = render(<Quiz />);
+
+      fireEvent.change(await screen.findByLabelText(/your answer/i), {
+        target: { value: "Japan" },
+      });
+      fireEvent.click(screen.getByRole("button", { name: /submit/i }));
+      await screen.findByRole("status");
+
+      expect(container.querySelectorAll(".visual-aid")).toHaveLength(2);
+      expect(screen.getAllByRole("img")).toHaveLength(2);
+    });
+  });
+
+  it("defaults the autocomplete toggle on", async () => {
+    stubFetch([tokyo], { correct: true, acceptedAnswer: "Japan" });
+    render(<Quiz />);
+    expect(await screen.findByRole("checkbox", { name: /autocomplete/i })).toBeChecked();
+  });
+
+  it("shows no suggestions and fetches no entities when the toggle is off", async () => {
+    const fetchMock = stubFetch([tokyo], { correct: true, acceptedAnswer: "Japan" });
+    render(<Quiz />);
+
+    fireEvent.click(await screen.findByRole("checkbox", { name: /autocomplete/i }));
+    fireEvent.change(screen.getByLabelText(/your answer/i), { target: { value: "jap" } });
+
+    await waitFor(() =>
+      expect(screen.queryByRole("option", { name: "Japan" })).not.toBeInTheDocument(),
+    );
+    expect(fetchMock).not.toHaveBeenCalledWith(
+      expect.stringContaining("/api/entities"),
+      expect.anything(),
+    );
+  });
+
+  it("still answers normally with the toggle off", async () => {
+    stubFetch([tokyo], { correct: true, acceptedAnswer: "Japan" });
+    render(<Quiz />);
+
+    fireEvent.click(await screen.findByRole("checkbox", { name: /autocomplete/i }));
+    fireEvent.change(screen.getByLabelText(/your answer/i), { target: { value: "Japan" } });
+    fireEvent.click(screen.getByRole("button", { name: /submit/i }));
+
+    expect(await screen.findByRole("status")).toHaveTextContent("Correct! The answer is Japan.");
+  });
+
+  it("persists the toggle choice across remounts", async () => {
+    stubFetch([tokyo], { correct: true, acceptedAnswer: "Japan" });
+    const first = render(<Quiz />);
+    fireEvent.click(await screen.findByRole("checkbox", { name: /autocomplete/i }));
+    first.unmount();
+
+    render(<Quiz />);
+    expect(await screen.findByRole("checkbox", { name: /autocomplete/i })).not.toBeChecked();
   });
 });

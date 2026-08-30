@@ -1,5 +1,5 @@
 import { type FormEvent, useState } from "react";
-import { apiClient, type ApiClient } from "./apiClient.js";
+import { submitFeedback } from "./apiClient.js";
 
 interface FeedbackProps {
   /**
@@ -9,8 +9,6 @@ interface FeedbackProps {
    * flow for real unauthed visitors is deferred.
    */
   isSignedIn?: boolean;
-  /** The client that performs the POST; injectable so tests can drive the seam. */
-  client?: ApiClient;
 }
 
 type Status = "editing" | "sending" | "sent" | "error";
@@ -22,7 +20,7 @@ type Status = "editing" | "sending" | "sent" | "error";
  * resets, so a second note can follow immediately — the learner can never read
  * feedback back, so the confirmation is the only signal it went through.
  */
-export function Feedback({ isSignedIn = true, client = apiClient }: FeedbackProps) {
+export function Feedback({ isSignedIn = true }: FeedbackProps) {
   const [comment, setComment] = useState("");
   const [status, setStatus] = useState<Status>("editing");
 
@@ -37,7 +35,7 @@ export function Feedback({ isSignedIn = true, client = apiClient }: FeedbackProp
     if (trimmed.length === 0) return;
     setStatus("sending");
     try {
-      await client.submitFeedback({ kind: "general", comment: trimmed });
+      await submitFeedback({ kind: "general", comment: trimmed });
       setComment("");
       setStatus("sent");
     } catch {

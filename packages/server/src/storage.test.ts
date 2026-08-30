@@ -6,6 +6,7 @@ import {
   type AnswerRecord,
   createAnswerStore,
   createFeedbackStore,
+  createRatingStore,
   type FeedbackRecord,
   openDatabase,
 } from "./storage.js";
@@ -35,6 +36,47 @@ describe("createAnswerStore (in-memory)", () => {
 
   it("starts empty", async () => {
     expect(await createAnswerStore(openDatabase(":memory:")).all()).toEqual([]);
+  });
+
+  it("round-trips the ask-time rating snapshot", async () => {
+    const store = createAnswerStore(openDatabase(":memory:"));
+    const withSnapshot: AnswerRecord = {
+      ...answer,
+      snapshot: { difficulty: 1500, ability: 1520.5, kApplied: 40, packId: "capital-cities" },
+    };
+    await store.record(withSnapshot);
+    expect(await store.all()).toEqual([withSnapshot]);
+  });
+
+  it("omits snapshot when the answer carried none (edge not in graph)", async () => {
+    const store = createAnswerStore(openDatabase(":memory:"));
+    await store.record(answer);
+    const [read] = await store.all();
+    expect(read).toEqual(answer);
+    expect(read?.snapshot).toBeUndefined();
+  });
+});
+
+describe("createRatingStore (in-memory)", () => {
+  it("seeds unseen card and pack at 1500", async () => {
+    const store = createRatingStore(openDatabase(":memory:"));
+    expect(await store.readCard("cc:tokyo-japan:object")).toEqual({ difficulty: 1500, answerCount: 0 });
+    expect(await store.readAbility("capital-cities")).toBe(1500);
+  });
+
+  it("round-trips difficulty, answer count, and ability", async () => {
+    const store = createRatingStore(openDatabase(":memory:"));
+    await store.writeCard("cc:tokyo-japan:object", 1480.25, 3);
+    await store.writeAbility("capital-cities", 1521.75);
+    expect(await store.readCard("cc:tokyo-japan:object")).toEqual({ difficulty: 1480.25, answerCount: 3 });
+    expect(await store.readAbility("capital-cities")).toBe(1521.75);
+  });
+
+  it("upserts rather than duplicating on repeated writes", async () => {
+    const store = createRatingStore(openDatabase(":memory:"));
+    await store.writeCard("cc:tokyo-japan:object", 1490, 1);
+    await store.writeCard("cc:tokyo-japan:object", 1470, 2);
+    expect(await store.readCard("cc:tokyo-japan:object")).toEqual({ difficulty: 1470, answerCount: 2 });
   });
 });
 

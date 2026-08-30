@@ -78,9 +78,72 @@ body {
   margin-bottom: 1.5rem;
 }
 
+.app-header__top {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 1rem;
+}
+
 .app-nav {
   display: flex;
   gap: 2rem;
+}
+
+/* ── Auth widget (sign in / sign out) ────────────────────── */
+.auth-widget {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.85rem;
+}
+
+.auth-widget__google,
+.auth-widget__signout {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(241, 242, 246, 0.4);
+  color: var(--platinum);
+  padding: 0.4rem 0.8rem;
+  border-radius: 0.3rem;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.auth-widget__google:hover,
+.auth-widget__signout:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.auth-widget__magic {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.auth-widget__magic input {
+  padding: 0.4rem 0.6rem;
+  border-radius: 0.3rem;
+  border: 1px solid rgba(241, 242, 246, 0.4);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--platinum);
+  font-size: 0.85rem;
+  width: 11rem;
+}
+
+.auth-widget__magic input::placeholder {
+  color: rgba(241, 242, 246, 0.6);
+}
+
+.auth-widget__magic button {
+  background: none;
+  border: none;
+  color: var(--periwinkle);
+  font-weight: 600;
+  font-size: 0.8rem;
+  cursor: pointer;
+  text-decoration: underline;
+  white-space: nowrap;
 }
 
 .app-nav button {
@@ -108,6 +171,80 @@ body {
   max-width: 680px;
   margin: 2.5rem auto;
   padding: 0 1.5rem;
+}
+
+/* ── Sign-in gate ────────────────────────────────────────── */
+.sign-in-gate {
+  background: #fff;
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 8px rgba(39, 24, 126, 0.08);
+  padding: 2.5rem 2rem;
+  max-width: 380px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.sign-in-gate__message {
+  margin: 0 0 1.75rem;
+  font-family: var(--serif);
+  font-size: 1.35rem;
+  color: var(--indigo);
+}
+
+/* The auth widget lives on the header's dark band by default (light text on
+   indigo); inside the white gate card it needs the inverse treatment, so these
+   scoped overrides restyle it as a readable stack with a clear primary action. */
+.sign-in-gate .auth-widget {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.85rem;
+}
+
+.sign-in-gate .auth-widget__google {
+  background: var(--indigo);
+  border: none;
+  color: #fff;
+  padding: 0.7rem 1rem;
+  font-size: 0.95rem;
+  border-radius: 0.375rem;
+}
+
+.sign-in-gate .auth-widget__google:hover {
+  background: #1d1260;
+}
+
+.sign-in-gate .auth-widget__magic {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.6rem;
+}
+
+.sign-in-gate .auth-widget__magic input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.7rem 0.8rem;
+  font-size: 0.95rem;
+  background: #fff;
+  border: 1px solid var(--periwinkle);
+  color: var(--indigo);
+}
+
+.sign-in-gate .auth-widget__magic input::placeholder {
+  color: #9aa0b3;
+}
+
+.sign-in-gate .auth-widget__magic button {
+  padding: 0.7rem 1rem;
+  border: 1px solid var(--indigo);
+  border-radius: 0.375rem;
+  background: #fff;
+  color: var(--indigo);
+  font-size: 0.9rem;
+  text-decoration: none;
+}
+
+.sign-in-gate .auth-widget__magic button:hover {
+  background: var(--platinum);
 }
 
 /* ── Quiz card ───────────────────────────────────────────── */
@@ -155,6 +292,28 @@ body {
   color: var(--indigo);
 }
 
+/* Autocomplete on/off, pushed to the right edge of the header strip. Sits above
+   the topo crop like the eyebrow. */
+.quiz-card__toggle {
+  position: relative;
+  z-index: 1;
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--sans);
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--indigo);
+  cursor: pointer;
+}
+
+.quiz-card__toggle input {
+  cursor: pointer;
+}
+
 .quiz-card__body {
   padding: 2rem 1.5rem;
 }
@@ -194,6 +353,59 @@ body {
 .quiz-input::placeholder {
   color: var(--indigo);
   opacity: 0.4;
+}
+
+/* ── Answer autocomplete ─────────────────────────────────────
+   The suggestion list sits inline, in normal flow directly under the input, so
+   it pushes the Submit button down instead of floating over content — a floated
+   dropdown gets hidden behind the on-screen keyboard on mobile. */
+.answer-combobox {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.answer-combobox .quiz-input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.answer-suggestions {
+  list-style: none;
+  margin: 0;
+  padding: 0.25rem;
+  border: 1px solid var(--periwinkle);
+  border-radius: 0.375rem;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(39, 24, 126, 0.08);
+  /* A long list scrolls within itself rather than pushing the button off-screen. */
+  max-height: 15rem;
+  overflow-y: auto;
+}
+
+.answer-suggestion {
+  margin: 0;
+}
+
+.answer-suggestion__button {
+  display: block;
+  width: 100%;
+  /* Comfortable touch target on mobile. */
+  min-height: 44px;
+  padding: 0.55rem 0.75rem;
+  border: none;
+  border-radius: 0.25rem;
+  background: transparent;
+  color: var(--indigo);
+  font-family: var(--sans);
+  font-size: 1rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.answer-suggestion__button:hover,
+.answer-suggestion--active .answer-suggestion__button {
+  background: var(--platinum);
 }
 
 /* ── Primary button (the one orange thing) ───────────────── */
@@ -251,6 +463,108 @@ body {
 
 .quiz-result--incorrect .quiz-result__verdict {
   color: var(--red);
+}
+
+/* ── Visual aid slot (prompt- and reveal-time) ──────────────
+   `.visual-aid` only exists in the DOM when there's a descriptor to draw —
+   VisualAid renders null otherwise — so an empty slot adds zero margin and
+   zero height instead of reserving space. The modifiers only tweak which
+   side carries the gap, since the prompt slot sits above content and the
+   reveal slot sits below it. */
+.visual-aid {
+  margin-bottom: 2rem;
+}
+
+.visual-aid--prompt {
+  margin-top: -0.75rem;
+}
+
+/* The viewport: map + zoom slider as one capped-width composition, centered
+   under the verdict text; goes full-width at mobile widths (responsive block
+   below). The wrapper owns the width so the slider tracks the map's edges. */
+.map-aid-viewport {
+  width: 100%;
+  max-width: 26rem;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.map-aid {
+  display: block;
+  width: 100%;
+  /* The viewBox holds a constant 2:1 aspect through the whole zoom (the regional
+     target is aspect-fitted), so the box keeps a fixed height and never reflows
+     the Next button below it. Pinned explicitly as a guard. */
+  aspect-ratio: 2 / 1;
+  height: auto;
+  border-radius: 0.375rem;
+  background: var(--platinum);
+}
+
+/* 1-D zoom track (spec #156): whole-world at the left, the pinned region at the
+   right. Aimed at the one server-fixed target — this is zoom, not panning. */
+.map-aid__zoom {
+  width: 100%;
+  accent-color: var(--orange);
+  cursor: pointer;
+}
+
+.map-aid__ocean {
+  fill: var(--cornflower);
+  opacity: 0.35;
+}
+
+.map-aid__land {
+  fill: var(--green);
+  fill-opacity: 0.9;
+  stroke: var(--green-text);
+  stroke-width: 0.3;
+  stroke-linejoin: round;
+}
+
+/* The hi-res regional overlay (spec #152, #155): the server-clipped local land,
+   composited over the coarse 110m base in the same lon/lat space. Slightly
+   deeper than the base so the crisp coastline reads as the focused layer. */
+.map-aid__local {
+  fill: var(--green);
+  fill-opacity: 1;
+  stroke: var(--green-text);
+  stroke-width: 0.75;
+  stroke-linejoin: round;
+}
+
+.map-aid__frame {
+  fill: none;
+  stroke: var(--indigo);
+  stroke-width: 0.6;
+  opacity: 0.4;
+}
+
+.map-aid__point {
+  fill: var(--orange);
+  stroke: var(--platinum);
+  stroke-width: 1;
+}
+
+.map-aid__label {
+  fill: var(--orange);
+  /* Halo so the label stays legible over land or water. */
+  stroke: var(--platinum);
+  stroke-width: 2;
+  paint-order: stroke;
+  stroke-linejoin: round;
+  font-family: var(--sans);
+  font-size: 8px;
+  font-weight: 700;
+}
+
+.map-aid__coords {
+  fill: var(--indigo);
+  opacity: 0.5;
+  font-family: var(--sans);
+  font-size: 6px;
 }
 
 /* ── Status / transient messages ─────────────────────────── */
@@ -615,7 +929,22 @@ body {
   .quiz-prompt {
     font-size: 1.25rem;
   }
+  .map-aid-viewport {
+    max-width: 100%;
+  }
+  .visual-aid {
+    margin-bottom: 1.5rem;
+  }
   .packs__title {
     font-size: 1.6rem;
+  }
+  .app-header__top {
+    justify-content: flex-start;
+  }
+  .auth-widget {
+    flex-wrap: wrap;
+  }
+  .auth-widget__magic input {
+    width: 8.5rem;
   }
 }

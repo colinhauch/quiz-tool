@@ -1,4 +1,5 @@
 import type { FeedbackContext } from "@geo/contract";
+import { SEED_RATING } from "@geo/engine";
 import Database from "better-sqlite3";
 
 /**
@@ -12,6 +13,22 @@ export interface AnswerRecord {
   correct: boolean;
   /** ISO-8601 timestamp of when the answer was recorded. */
   askedAt: string;
+  /**
+   * The scheduler's rating belief the moment it asked (spec #118). Denormalized
+   * telemetry — rebuildable by replaying the log, never the source of truth — so
+   * "difficulty vs. outcome" analysis needs no replay. Absent when the card had
+   * no owning pack (an edge not in the graph), which moves no rating. `P(success)`
+   * is deliberately not stored: it is a pure function of difficulty and ability.
+   */
+  snapshot?: RatingSnapshotRow;
+}
+
+/** The rating inputs recorded on an answer row: pre-answer difficulty, ability, K, and the pack the ability came from. */
+export interface RatingSnapshotRow {
+  difficulty: number;
+  ability: number;
+  kApplied: number;
+  packId: string;
 }
 
 /**
@@ -36,6 +53,36 @@ interface AnswerRow {
   input: string;
   correct: number;
   askedAt: string;
+  difficulty: number | null;
+  ability: number | null;
+  kApplied: number | null;
+  ratingPackId: string | null;
+}
+
+/**
+ * The cached Elo ratings (spec #118). Difficulty and its answer count are global
+ * (keyed by card id); ability is per-`(learner, pack)`. This store holds one
+ * learner's view — the Supabase store scopes ability by RLS, the sqlite store is
+ * single-user — so `readAbility`/`writeAbility` take only a pack id. Both are a
+ * cache: the answer log replays back to the same numbers.
+ */
+export interface RatingStore {
+  /** A card's difficulty and global answer count; seed (1500) and 0 if unseen. */
+  readCard(cardId: string): Promise<{ difficulty: number; answerCount: number }>;
+  /**
+   * Every rated card, keyed by card id — the whole difficulty cache in one read.
+   * The scheduler bins the eligible pool by `P(success)`, so it needs every
+   * card's difficulty at once; unrated cards are simply absent (the reader
+   * defaults them to the seed). Bounded by the number of *answered* cards, not
+   * the graph, since the cache only holds cards an answer has moved.
+   */
+  readAllCards(): Promise<Map<string, { difficulty: number; answerCount: number }>>;
+  /** The learner's ability for a pack; seed (1500) if unseen. */
+  readAbility(packId: string): Promise<number>;
+  /** Persist a card's post-answer difficulty and answer count. */
+  writeCard(cardId: string, difficulty: number, answerCount: number): Promise<void>;
+  /** Persist the learner's post-answer ability for a pack. */
+  writeAbility(packId: string, ability: number): Promise<void>;
 }
 
 /**
@@ -199,28 +246,118 @@ export function createAnswerStore(db: Database.Database): AnswerStore {
       card_id TEXT NOT NULL,
       input TEXT NOT NULL,
       correct INTEGER NOT NULL,
-      asked_at TEXT NOT NULL
+      asked_at TEXT NOT NULL,
+      card_difficulty REAL,
+      pack_ability REAL,
+      k_applied REAL,
+      rating_pack_id TEXT
     )
   `);
 
   const insert = db.prepare(
-    "INSERT INTO answers (card_id, input, correct, asked_at) VALUES (@cardId, @input, @correct, @askedAt)",
+    `INSERT INTO answers (card_id, input, correct, asked_at, card_difficulty, pack_ability, k_applied, rating_pack_id)
+     VALUES (@cardId, @input, @correct, @askedAt, @difficulty, @ability, @kApplied, @ratingPackId)`,
   );
   const selectAll = db.prepare(
-    "SELECT card_id AS cardId, input, correct, asked_at AS askedAt FROM answers ORDER BY id",
+    `SELECT card_id AS cardId, input, correct, asked_at AS askedAt,
+            card_difficulty AS difficulty, pack_ability AS ability,
+            k_applied AS kApplied, rating_pack_id AS ratingPackId
+     FROM answers ORDER BY id`,
   );
 
   return {
     async record(answer) {
-      insert.run({ ...answer, correct: answer.correct ? 1 : 0 });
+      insert.run({
+        cardId: answer.cardId,
+        input: answer.input,
+        correct: answer.correct ? 1 : 0,
+        askedAt: answer.askedAt,
+        difficulty: answer.snapshot?.difficulty ?? null,
+        ability: answer.snapshot?.ability ?? null,
+        kApplied: answer.snapshot?.kApplied ?? null,
+        ratingPackId: answer.snapshot?.packId ?? null,
+      });
     },
     async all() {
-      return (selectAll.all() as AnswerRow[]).map((row) => ({
-        cardId: row.cardId,
-        input: row.input,
-        correct: row.correct === 1,
-        askedAt: row.askedAt,
-      }));
+      return (selectAll.all() as AnswerRow[]).map(rowToRecord);
+    },
+  };
+}
+
+/** Reassembles an {@link AnswerRecord} from a row, folding the four snapshot columns back into `snapshot` (present only when the row carried one). */
+function rowToRecord(row: AnswerRow): AnswerRecord {
+  const record: AnswerRecord = {
+    cardId: row.cardId,
+    input: row.input,
+    correct: row.correct === 1,
+    askedAt: row.askedAt,
+  };
+  if (row.ratingPackId !== null && row.difficulty !== null && row.ability !== null && row.kApplied !== null) {
+    record.snapshot = {
+      difficulty: row.difficulty,
+      ability: row.ability,
+      kApplied: row.kApplied,
+      packId: row.ratingPackId,
+    };
+  }
+  return record;
+}
+
+/**
+ * Opens (or creates) a rating store over a better-sqlite3 database — the local
+ * mirror of the two Supabase cache tables. `card_difficulty` is global (single
+ * learner locally); `pack_ability` is this learner's ability per pack. Both are
+ * a cache the answer log can rebuild.
+ */
+export function createRatingStore(db: Database.Database): RatingStore {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS card_difficulty (
+      card_id TEXT PRIMARY KEY,
+      difficulty REAL NOT NULL,
+      answer_count INTEGER NOT NULL
+    )
+  `);
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS pack_ability (
+      pack_id TEXT PRIMARY KEY,
+      ability REAL NOT NULL
+    )
+  `);
+
+  const selectCard = db.prepare(
+    "SELECT difficulty, answer_count AS answerCount FROM card_difficulty WHERE card_id = ?",
+  );
+  const selectAllCards = db.prepare(
+    "SELECT card_id AS cardId, difficulty, answer_count AS answerCount FROM card_difficulty",
+  );
+  const selectAbility = db.prepare("SELECT ability FROM pack_ability WHERE pack_id = ?");
+  const upsertCard = db.prepare(
+    `INSERT INTO card_difficulty (card_id, difficulty, answer_count) VALUES (@cardId, @difficulty, @answerCount)
+     ON CONFLICT(card_id) DO UPDATE SET difficulty = excluded.difficulty, answer_count = excluded.answer_count`,
+  );
+  const upsertAbility = db.prepare(
+    `INSERT INTO pack_ability (pack_id, ability) VALUES (@packId, @ability)
+     ON CONFLICT(pack_id) DO UPDATE SET ability = excluded.ability`,
+  );
+
+  return {
+    async readCard(cardId) {
+      const row = selectCard.get(cardId) as { difficulty: number; answerCount: number } | undefined;
+      return row ?? { difficulty: SEED_RATING, answerCount: 0 };
+    },
+    async readAllCards() {
+      const rows = selectAllCards.all() as { cardId: string; difficulty: number; answerCount: number }[];
+      return new Map(rows.map((r) => [r.cardId, { difficulty: r.difficulty, answerCount: r.answerCount }]));
+    },
+    async readAbility(packId) {
+      const row = selectAbility.get(packId) as { ability: number } | undefined;
+      return row?.ability ?? SEED_RATING;
+    },
+    async writeCard(cardId, difficulty, answerCount) {
+      upsertCard.run({ cardId, difficulty, answerCount });
+    },
+    async writeAbility(packId, ability) {
+      upsertAbility.run({ packId, ability });
     },
   };
 }

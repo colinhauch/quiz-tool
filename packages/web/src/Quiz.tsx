@@ -1,9 +1,13 @@
 import type { AnswerResponse, QuestionResponse } from "@geo/contract";
-import { type FormEvent, useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { AnswerBox } from "./AnswerBox.js";
+import { getQuestion, submitAnswer as submitAnswerRequest } from "./apiClient.js";
+import { readAutocompletePref, writeAutocompletePref } from "./autocompletePref.js";
+import { readAutoZoomPref, writeAutoZoomPref } from "./autoZoomPref.js";
+import { VisualAid } from "./VisualAid.js";
 
-/** Where the browser reaches the Node server; `/api` is proxied in dev (see vite.config.ts). */
-const QUESTION_URL = "/api/question";
-const ANSWER_URL = "/api/answer";
+// "Asia or Europe" for a transcontinental country; "Japan" for a single answer.
+const answerList = new Intl.ListFormat("en", { type: "disjunction" });
 
 type View =
   | { state: "loading" }
@@ -14,13 +18,25 @@ type View =
 export function Quiz() {
   const [view, setView] = useState<View>({ state: "loading" });
   const [input, setInput] = useState("");
+  const [suggestEnabled, setSuggestEnabled] = useState(readAutocompletePref);
+  const [autoZoomEnabled, setAutoZoomEnabled] = useState(readAutoZoomPref);
   const nextButtonRef = useRef<HTMLButtonElement>(null);
+
+  function toggleSuggest(enabled: boolean) {
+    setSuggestEnabled(enabled);
+    writeAutocompletePref(enabled);
+  }
+
+  function toggleAutoZoom(enabled: boolean) {
+    setAutoZoomEnabled(enabled);
+    writeAutoZoomPref(enabled);
+  }
 
   const loadQuestion = useCallback(async () => {
     setView({ state: "loading" });
     setInput("");
     try {
-      const question = (await (await fetch(QUESTION_URL)).json()) as QuestionResponse;
+      const question = await getQuestion();
       setView({ state: "asking", question });
     } catch {
       setView({ state: "error" });
@@ -37,15 +53,9 @@ export function Quiz() {
     }
   }, [view.state]);
 
-  async function submitAnswer(event: FormEvent, question: QuestionResponse) {
-    event.preventDefault();
+  async function submitAnswer(question: QuestionResponse) {
     try {
-      const res = await fetch(ANSWER_URL, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ cardId: question.cardId, input }),
-      });
-      const result = (await res.json()) as AnswerResponse;
+      const result = await submitAnswerRequest(question.cardId, input);
       setView({ state: "answered", question, result });
     } catch {
       setView({ state: "error" });
@@ -61,23 +71,35 @@ export function Quiz() {
     <div className="quiz-card">
       <div className="quiz-card__strip">
         <span className="quiz-card__eyebrow">{view.question.packLabel}</span>
+        <label className="quiz-card__toggle">
+          <input
+            type="checkbox"
+            checked={suggestEnabled}
+            onChange={(e) => toggleSuggest(e.target.checked)}
+          />
+          Autocomplete
+        </label>
+        <label className="quiz-card__toggle">
+          <input
+            type="checkbox"
+            checked={autoZoomEnabled}
+            onChange={(e) => toggleAutoZoom(e.target.checked)}
+          />
+          Auto-zoom
+        </label>
       </div>
       <div className="quiz-card__body">
         <p className="quiz-prompt">{view.question.prompt}</p>
+        <VisualAid visual={view.question.promptVisual} slot="prompt" />
 
         {view.state === "asking" ? (
-          <form className="quiz-form" onSubmit={(e) => submitAnswer(e, view.question)}>
-            <input
-              className="quiz-input"
-              aria-label="Your answer"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              autoFocus
-            />
-            <button className="btn-primary" type="submit">
-              Submit
-            </button>
-          </form>
+          <AnswerBox
+            value={input}
+            onChange={setInput}
+            onSubmit={() => void submitAnswer(view.question)}
+            answerTypes={view.question.answerTypes}
+            suggestEnabled={suggestEnabled}
+          />
         ) : (
           <>
             <p
@@ -89,8 +111,9 @@ export function Quiz() {
               <strong className="quiz-result__verdict">
                 {view.result.correct ? "Correct!" : "Incorrect."}
               </strong>{" "}
-              The answer is {view.result.acceptedAnswer}.
+              The answer is {answerList.format(view.result.acceptedAnswers)}.
             </p>
+            <VisualAid visual={view.result.revealVisual} slot="reveal" autoZoom={autoZoomEnabled} />
             <button
               ref={nextButtonRef}
               className="btn-primary"

@@ -16,6 +16,24 @@ export interface Card {
 }
 
 /**
+ * The id of the entity a card's hidden slot conceals — the answer's identity.
+ * An object-hidden card targets the object (the country in "what country is
+ * Tokyo in?"), a subject-hidden card the subject. One place derives this so
+ * grading and answer-type exposure can never disagree on which entity is the
+ * answer. A hidden literal object has no entity to name and is unsupported.
+ */
+export function targetEntityId(statement: Statement, hiddenSlot: HiddenSlot): string {
+  if (hiddenSlot === "subject") return statement.subject;
+  if (hiddenSlot === "object") {
+    if (statement.object.kind !== "entity") {
+      throw new Error(`card ${makeCardId(statement.id, hiddenSlot)} hides a literal object, unsupported in MVP`);
+    }
+    return statement.object.id;
+  }
+  throw new Error(`card ${makeCardId(statement.id, hiddenSlot)} hides ${hiddenSlot}, unsupported in MVP`);
+}
+
+/**
  * Which hidden slots a relation can be quizzed on. Declared per-relation by the
  * pack (`pack.hiddenSlots`); a relation that declares nothing is object-hidden
  * only, the MVP default. Both selection and card-resolution read this, so a

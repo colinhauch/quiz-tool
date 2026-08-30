@@ -4,10 +4,25 @@ import { join } from "node:path";
 import {
   answerLogSchema,
   answerResponseSchema,
+  entityListSchema,
   packListSchema,
   questionResponseSchema,
 } from "@geo/contract";
-import { type Entity, enumerateCards, type Generator, type Pack, type Statement } from "@geo/engine";
+import {
+  abilityOf,
+  difficultyOf,
+  type Entity,
+  enumerateCards,
+  type Generator,
+  ownerPackId,
+  type Pack,
+  PROVISIONAL_K,
+  type RatingEvent,
+  replay,
+  SEED_RATING,
+  SETTLED_K,
+  type Statement,
+} from "@geo/engine";
 import { type CryptoKey, generateKeyPair, SignJWT } from "jose";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import { createApp } from "./app.js";
@@ -16,8 +31,10 @@ import {
   type AnswerStore,
   createAnswerStore,
   createFeedbackStore,
+  createRatingStore,
   createSelectionStore,
   openDatabase,
+  type RatingStore,
   type SelectionStore,
 } from "./storage.js";
 
@@ -101,6 +118,7 @@ describe("server app", () => {
       input: "text",
       packId: TEST_PACK.id,
       packLabel: TEST_PACK.labels.en,
+      answerTypes: ["country"],
     });
   });
 
@@ -109,6 +127,70 @@ describe("server app", () => {
       "/question",
     );
     expect(JSON.stringify(await res.json())).not.toContain("Japan");
+  });
+});
+
+describe("GET /entities", () => {
+  function app() {
+    return createApp({ pack: fixturePack(), store: memoryStore(), rng: () => 0 });
+  }
+
+  it("returns every entity of the requested type as { id, label, aliases }", async () => {
+    const res = await app().request("/entities?type=city");
+    expect(res.status).toBe(200);
+    expect(entityListSchema.parse(await res.json())).toEqual([
+      { id: "Q1490", label: "Tokyo", aliases: [] },
+    ]);
+  });
+
+  it("scopes to the requested type", async () => {
+    const res = await app().request("/entities?type=country");
+    expect(entityListSchema.parse(await res.json())).toEqual([
+      { id: "Q17", label: "Japan", aliases: [] },
+    ]);
+  });
+
+  it("returns an empty list for an unknown type", async () => {
+    const res = await app().request("/entities?type=continent");
+    expect(res.status).toBe(200);
+    expect(entityListSchema.parse(await res.json())).toEqual([]);
+  });
+
+  it("flattens an entity's aliases into the list", async () => {
+    const pack = fixturePack();
+    pack.entities.set("Q1490", {
+      id: "Q1490",
+      labels: { en: "Tokyo" },
+      aliases: { en: ["Tōkyō", "Edo"] },
+      types: ["city"],
+    });
+    const res = await createApp({ pack, store: memoryStore(), rng: () => 0 }).request(
+      "/entities?type=city",
+    );
+    expect(entityListSchema.parse(await res.json())).toEqual([
+      { id: "Q1490", label: "Tokyo", aliases: ["Tōkyō", "Edo"] },
+    ]);
+  });
+
+  it("surfaces an entity's short autocomplete form when it has one", async () => {
+    const pack = fixturePack();
+    pack.entities.set("Q4917", {
+      id: "Q4917",
+      labels: { en: "United States dollar" },
+      aliases: { en: ["dollar", "dollars", "USD"] },
+      autocomplete: "dollar",
+      types: ["currency"],
+    });
+    const res = await createApp({ pack, store: memoryStore(), rng: () => 0 }).request(
+      "/entities?type=currency",
+    );
+    expect(entityListSchema.parse(await res.json())).toEqual([
+      { id: "Q4917", label: "United States dollar", aliases: ["dollar", "dollars", "USD"], autocomplete: "dollar" },
+    ]);
+  });
+
+  it("rejects a request with no type", async () => {
+    expect((await app().request("/entities")).status).toBe(400);
   });
 });
 
@@ -130,6 +212,7 @@ describe("POST /answer", () => {
     expect(answerResponseSchema.parse(await res.json())).toEqual({
       correct: true,
       acceptedAnswer: "Japan",
+      acceptedAnswers: ["Japan"],
     });
   });
 
@@ -138,6 +221,7 @@ describe("POST /answer", () => {
     expect(answerResponseSchema.parse(await res.json())).toEqual({
       correct: false,
       acceptedAnswer: "Japan",
+      acceptedAnswers: ["Japan"],
     });
   });
 
@@ -375,7 +459,32 @@ describe("full loop over the real fixture pack and a temp-file database", () => 
       body: JSON.stringify({ cardId: question.cardId, input: "Japan" }),
     });
     const result = answerResponseSchema.parse(await res.json());
-    expect(result).toEqual({ correct: true, acceptedAnswer: "Japan" });
+    expect(result).toMatchObject({
+      correct: true,
+      acceptedAnswer: "Japan",
+      acceptedAnswers: ["Japan"],
+      // The map pins the card's most locatable entity: Tokyo (city) over Japan
+      // (country), even though the answer is Japan — the specific place is the
+      // memory hook. Tokyo (Q1490) carries a real P625 coordinate (#110).
+      revealVisual: {
+        kind: "map",
+        entityId: "Q1490",
+        lat: 35.68944444444445,
+        lon: 139.69166666666666,
+        label: "Tokyo",
+      },
+    });
+    // The reveal payload carries the stored regional geometry + extent (#155),
+    // fully hydrated from the entity's import-time clip. Asserted by shape, not
+    // by exact polygon — the geometry is large and lives in the pack data.
+    expect(result.revealVisual?.regionExtent).toMatchObject({
+      minLon: expect.any(Number),
+      minLat: expect.any(Number),
+      maxLon: expect.any(Number),
+      maxLat: expect.any(Number),
+    });
+    expect(result.revealVisual?.localGeoJSON?.type).toBe("MultiPolygon");
+    expect(result.revealVisual?.localGeoJSON?.coordinates.length).toBeGreaterThan(0);
 
     const recorded = await store.all();
     expect(recorded).toHaveLength(1);
@@ -473,11 +582,14 @@ describe("GET /packs", () => {
     expect(list.packs.map((p) => p.id)).not.toContain("core-geo");
   });
 
-  it("reports how many questions are queued", async () => {
+  it("reports the eligible-pool size, stable across draws", async () => {
+    // The scheduler allows re-draws (no within-session exclusion), so `queued`
+    // is a property of the selection — how many distinct cards it quizzes on —
+    // not of how far a pass has run. Drawing does not shrink it.
     const app = createApp({ pack: pickerGraph(), store: memoryStore() });
     expect((await packList(app)).queued).toBe(3);
     await app.request("/question");
-    expect((await packList(app)).queued).toBe(2);
+    expect((await packList(app)).queued).toBe(3);
   });
 
   // First run selects everything, so adding the picker regresses nothing.
@@ -522,7 +634,7 @@ describe("PUT /packs", () => {
     expect(list.packs.find((p) => p.id === "continents")?.included).toBe(true);
   });
 
-  it("folds a re-included pack back into the queue", async () => {
+  it("draws a re-included pack's cards again (eligible pool restored)", async () => {
     const app = createApp({ pack: pickerGraph(), store: memoryStore() });
     await putPacks(app, ["continents"]);
     await putPacks(app, ["cities", "continents"]);
@@ -744,5 +856,118 @@ describe("multi-user mode", () => {
     );
     expect(aLog).toHaveLength(1);
     expect(bLog).toEqual([]);
+  });
+});
+
+describe("POST /answer — Elo ratings computed live (#119)", () => {
+  const CARD = "S1:object"; // Tokyo located_in Japan, object-hidden
+  const at = "2026-07-19T12:00:00.000Z";
+
+  /** One app over a shared in-memory db, with both the answer log and the rating cache. */
+  function ratingApp() {
+    const db = openDatabase(":memory:");
+    const store = createAnswerStore(db);
+    const rating = createRatingStore(db);
+    const app = createApp({ pack: fixturePack(), store, rating, now: () => new Date(at) });
+    const answer = (input: string) =>
+      app.request("/answer", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ cardId: CARD, input }),
+      });
+    return { app, store, rating, answer };
+  }
+
+  it("a correct answer lowers the card's difficulty and raises the pack's ability", async () => {
+    const { rating, answer } = ratingApp();
+    await answer("japan");
+    // Seed vs seed => P=0.5, provisional K=40, step = 20.
+    expect((await rating.readCard(CARD)).difficulty).toBeCloseTo(SEED_RATING - 20, 6);
+    expect(await rating.readAbility(TEST_PACK.id)).toBeCloseTo(SEED_RATING + 20, 6);
+    expect((await rating.readCard(CARD)).answerCount).toBe(1);
+  });
+
+  it("a wrong answer raises the card's difficulty and lowers the pack's ability", async () => {
+    const { rating, answer } = ratingApp();
+    await answer("china");
+    expect((await rating.readCard(CARD)).difficulty).toBeCloseTo(SEED_RATING + 20, 6);
+    expect(await rating.readAbility(TEST_PACK.id)).toBeCloseTo(SEED_RATING - 20, 6);
+  });
+
+  it("records the ask-time snapshot on the answer row (pre-answer ratings, K, pack)", async () => {
+    const { store, answer } = ratingApp();
+    await answer("japan");
+    const [row] = await store.all();
+    expect(row?.snapshot).toEqual({
+      difficulty: SEED_RATING,
+      ability: SEED_RATING,
+      kApplied: PROVISIONAL_K,
+      packId: TEST_PACK.id,
+    });
+  });
+
+  it("applies provisional K for the card's first answers and settles it after", async () => {
+    const { store, answer } = ratingApp();
+    for (let i = 0; i < 11; i++) await answer("japan");
+    const rows = await store.all();
+    expect(rows.slice(0, 10).every((r) => r.snapshot?.kApplied === PROVISIONAL_K)).toBe(true);
+    expect(rows[10]?.snapshot?.kApplied).toBe(SETTLED_K);
+  });
+
+  it("persists ratings across app instances sharing a database", async () => {
+    const db = openDatabase(":memory:");
+    const first = createApp({
+      pack: fixturePack(),
+      store: createAnswerStore(db),
+      rating: createRatingStore(db),
+      now: () => new Date(at),
+    });
+    await first.request("/answer", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ cardId: CARD, input: "japan" }),
+    });
+    // A fresh store over the same db reads the ratings the first app wrote.
+    expect((await createRatingStore(db).readCard(CARD)).difficulty).toBeCloseTo(SEED_RATING - 20, 6);
+  });
+
+  it("replaying the answer log from empty reconstructs the online rating tables", async () => {
+    const { store, rating, answer } = ratingApp();
+    for (const input of ["japan", "china", "japan", "nippon", "japan"]) await answer(input);
+
+    const pack = fixturePack();
+    const events: RatingEvent[] = (await store.all()).map((r) => ({
+      cardId: r.cardId,
+      learnerId: "single",
+      correct: r.correct,
+    }));
+    const rebuilt = replay(events, (cardId) => ownerPackId(pack, cardId));
+
+    expect(difficultyOf(rebuilt, CARD)).toBeCloseTo((await rating.readCard(CARD)).difficulty, 6);
+    expect(abilityOf(rebuilt, "single", TEST_PACK.id)).toBeCloseTo(await rating.readAbility(TEST_PACK.id), 6);
+  });
+
+  it("selection responds to the live ratings — re-tiering a card shifts the mix (#120)", async () => {
+    // The bag-of-bags scheduler draws over the ratings, so changing a card's
+    // difficulty changes which bag it sits in and thus the drawn sequence. Both
+    // runs use an identical seeded rng, so any difference is the ratings' doing,
+    // not the randomness. A fixed cycling rng is deterministic and shared.
+    const seq = async (seed?: (r: RatingStore) => Promise<void>) => {
+      const rating = createRatingStore(openDatabase(":memory:"));
+      if (seed) await seed(rating);
+      let i = 0;
+      const values = [0.17, 0.83, 0.41, 0.62, 0.29, 0.94, 0.08, 0.55, 0.36, 0.71];
+      const rng = () => values[i++ % values.length] as number;
+      const app = createApp({ pack: pickerGraph(), store: memoryStore(), rating, rng });
+      const out: string[] = [];
+      for (let n = 0; n < 20; n++) {
+        out.push(questionResponseSchema.parse(await (await app.request("/question")).json()).cardId);
+      }
+      return out;
+    };
+    const baseline = await seq();
+    // Drive the first-drawn card deep into the hard tier; the mix must respond.
+    const shifted = await seq(async (r) => r.writeCard(baseline[0] as string, 2600, 20));
+    expect(shifted).not.toEqual(baseline);
   });
 });

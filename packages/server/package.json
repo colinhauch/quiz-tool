@@ -3,12 +3,18 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "exports": {
+    "./pack-loader": "./src/pack-loader.ts"
+  },
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "bundle-packs": "tsx scripts/bundle-packs.ts",
+    "packs:import-coordinates": "tsx scripts/import-wikidata-coordinates.ts",
+    "packs:import-geometry": "tsx scripts/import-regional-geometry.ts",
     "pretest": "tsx scripts/bundle-packs.ts",
     "test": "vitest run",
-    "deploy": "wrangler deploy"
+    "deploy": "wrangler deploy",
+    "deploy:ci": "case \"$WORKERS_CI_BRANCH\" in dev) wrangler deploy --env dev ;; test) wrangler deploy --env test ;; *) echo \"No env deploy for branch '$WORKERS_CI_BRANCH'; uploading preview version\" && wrangler versions upload ;; esac"
   },
   "dependencies": {
     "@geo/contract": "workspace:*",
@@ -21,8 +27,11 @@
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.12",
+    "@types/topojson-client": "^3.1.5",
+    "topojson-client": "^3.1.0",
     "tsx": "^4.19.2",
     "vitest": "^3.2.7",
+    "world-atlas": "^2.0.2",
     "wrangler": "^4.124.0"
   }
 }

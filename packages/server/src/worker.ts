@@ -13,11 +13,13 @@
  */
 import { createApp } from "./app.js";
 import { supabaseJwks } from "./auth.js";
+import { parseCatalog } from "./catalog.js";
 import { assembleLoaded } from "./pack-loader.js";
-import { loadedPacks } from "./packs.generated.js";
+import { loadedCatalog, loadedPacks } from "./packs.generated.js";
 import {
   createSupabaseAnswerStore,
   createSupabaseFeedbackStore,
+  createSupabaseRatingStore,
   createSupabaseSelectionStore,
 } from "./supabase-storage.js";
 
@@ -26,6 +28,12 @@ interface Env {
   SUPABASE_URL: string;
   /** Low-privilege publishable key; the forwarded user JWT is what RLS keys on. */
   SUPABASE_PUBLISHABLE_KEY: string;
+  /**
+   * Postgres schema this deploy reads/writes, set per Worker environment
+   * (dev→`dev`, test→`test`). Unset on prod so it keeps the default `public`.
+   * One project, one auth pool — only the data tables differ. See wrangler.toml.
+   */
+  DB_SCHEMA?: string;
 }
 
 // The pack graph is static per deploy, so assemble it once per isolate rather
@@ -39,16 +47,19 @@ function getApp(env: Env) {
     const pack = assembleLoaded(loadedPacks);
     app = createApp({
       pack,
+      catalog: parseCatalog(loadedCatalog),
       auth: {
         jwks: supabaseJwks(env.SUPABASE_URL),
         supabaseUrl: env.SUPABASE_URL,
         supabaseKey: env.SUPABASE_PUBLISHABLE_KEY,
         issuer: `${env.SUPABASE_URL}/auth/v1`,
         audience: "authenticated",
+        schema: env.DB_SCHEMA,
       },
       storesForUser: (client) => ({
         store: createSupabaseAnswerStore(client),
         selection: createSupabaseSelectionStore(client),
+        rating: createSupabaseRatingStore(client),
         feedback: createSupabaseFeedbackStore(client),
       }),
     });
@@ -57,8 +68,24 @@ function getApp(env: Env) {
   return app;
 }
 
+/**
+ * Strip a leading `/api` so the UI's production paths (`/api/question`, …) match
+ * the root-mounted Hono routes — the same rewrite the Vite dev proxy does. Any
+ * other path (e.g. `/health`) passes through unchanged. Only `/api/*` and
+ * `/health` reach this Worker at all (wrangler.toml `run_worker_first`); every
+ * other path is served as a static asset or the SPA fallback.
+ */
+function toAppRequest(request: Request): Request {
+  const url = new URL(request.url);
+  if (url.pathname === "/api" || url.pathname.startsWith("/api/")) {
+    url.pathname = url.pathname.slice("/api".length) || "/";
+    return new Request(url, request);
+  }
+  return request;
+}
+
 export default {
   fetch(request: Request, env: Env): Response | Promise<Response> {
-    return getApp(env).fetch(request);
+    return getApp(env).fetch(toAppRequest(request));
   },
 };

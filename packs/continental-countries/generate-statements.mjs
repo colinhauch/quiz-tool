@@ -57,6 +57,10 @@ async function fetchContinents(countryIds) {
   }
 
   const json = await res.json();
+  // A country maps to *every* continent P30 gives it, not one: a transcontinental
+  // country like Kazakhstan or Turkey spans two, and the pack should teach that
+  // (any-of grading accepts either, and the reveal lists both). De-duplicated,
+  // in first-seen order.
   const mapping = {};
   for (const binding of json.results.bindings) {
     const countryUri = binding.country.value;
@@ -67,9 +71,8 @@ async function fetchContinents(countryIds) {
       const countryId = countryMatch[1];
       const continentId =
         CONTINENT_ALIASES[continentMatch[1]] ?? continentMatch[1];
-      if (!mapping[countryId]) {
-        mapping[countryId] = continentId;
-      }
+      const continents = (mapping[countryId] ??= []);
+      if (!continents.includes(continentId)) continents.push(continentId);
     }
   }
   return mapping;
@@ -115,37 +118,41 @@ async function main() {
       .map((e) => e.id)
   );
 
-  // Generate statements
+  const slugify = (text) =>
+    text
+      .toLowerCase()
+      .replace(/\s+/g, "-")
+      .replace(/[^a-z0-9-]/g, "");
+
+  // Generate statements — one per (country, continent), so a transcontinental
+  // country yields several. Ids carry the continent slug to stay unique.
   const statements = [];
   for (const countryId of countries) {
-    const continentId = mapping[countryId];
-    if (!continentId) {
+    const continentIds = mapping[countryId];
+    if (!continentIds || continentIds.length === 0) {
       console.error(
         `Warning: no continent mapping for ${countryId} (${entities[countryId]?.labels?.en || "unknown"})`
       );
       continue;
     }
-    if (!ownedContinents.has(continentId)) {
-      console.error(
-        `Warning: ${countryId} (${entities[countryId]?.labels?.en || "unknown"}) maps to ${continentId}, which core-geo does not own — skipped`
-      );
-      continue;
-    }
 
     const country = entities[countryId];
-    const countrySlug = country.labels.en
-      .toLowerCase()
-      .replace(/\s+/g, "-")
-      .replace(/[^a-z0-9-]/g, "");
+    const countrySlug = slugify(country.labels.en);
 
-    const statement = {
-      id: `cc:${countrySlug}`,
-      subject: countryId,
-      relation: "located_in_continent",
-      object: { kind: "entity", id: continentId },
-    };
-
-    statements.push(statement);
+    for (const continentId of continentIds) {
+      if (!ownedContinents.has(continentId)) {
+        console.error(
+          `Warning: ${countryId} (${entities[countryId]?.labels?.en || "unknown"}) maps to ${continentId}, which core-geo does not own — skipped`
+        );
+        continue;
+      }
+      statements.push({
+        id: `cc:${countrySlug}-${slugify(entities[continentId].labels.en)}`,
+        subject: countryId,
+        relation: "located_in_continent",
+        object: { kind: "entity", id: continentId },
+      });
+    }
   }
 
   // Sort by ID for stable output
