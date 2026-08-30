@@ -104,4 +104,33 @@ describe("Feedback surface", () => {
     expect(screen.queryByRole("button", { name: /resolve/i })).not.toBeInTheDocument();
     expect(screen.getAllByRole("combobox")).toHaveLength(2);
   });
+
+  // A flag raised before answering has no accepted answers by design; saying so
+  // stops the operator reading the empty cell as missing data (#162).
+  it("says a report was raised before the question was answered", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        new Response(
+          JSON.stringify([
+            {
+              id: 2,
+              createdAt: "2026-08-29T00:00:00.000Z",
+              userId: "u3",
+              userEmail: "c@example.com",
+              kind: "question",
+              comment: "The prompt is ambiguous",
+              context: { prompt: "Capital of Japan?", packId: "capital-cities", answered: false },
+              status: "unresolved",
+            },
+          ]),
+          { status: 200 },
+        ),
+      ),
+    );
+    render(<Feedback />);
+
+    const row = (await screen.findByText("The prompt is ambiguous")).closest("tr");
+    expect(row?.textContent).toMatch(/not yet answered/i);
+  });
 });

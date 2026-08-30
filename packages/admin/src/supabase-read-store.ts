@@ -75,8 +75,12 @@ interface FeedbackRow {
  * could carry an extra key. The route parses rows through a `.strict()`
  * contract schema, so an unexpected key would fail the whole request; picking
  * the known fields here keeps one bad row from taking the surface down.
+ *
+ * The cost of that whitelist is that a new context field is dropped here in
+ * silence until it is added — exported so `feedbackContext.test.ts` can hold it
+ * to the contract's shape without needing real credentials.
  */
-function toFeedbackContext(context: Record<string, unknown>): AdminFeedbackContext {
+export function toFeedbackContext(context: Record<string, unknown>): AdminFeedbackContext {
   const out: AdminFeedbackContext = {};
   if (typeof context.prompt === "string") out.prompt = context.prompt;
   if (typeof context.packLabel === "string") out.packLabel = context.packLabel;
@@ -85,6 +89,7 @@ function toFeedbackContext(context: Record<string, unknown>): AdminFeedbackConte
     out.acceptedAnswers = context.acceptedAnswers.filter((a): a is string => typeof a === "string");
   }
   if (typeof context.input === "string") out.input = context.input;
+  if (typeof context.answered === "boolean") out.answered = context.answered;
   return out;
 }
 

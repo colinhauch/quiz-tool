@@ -262,6 +262,9 @@ export const adminFeedbackContextSchema = z
     packId: z.string().optional(),
     acceptedAnswers: z.array(z.string()).optional(),
     input: z.string().optional(),
+    // Which card state the flag was raised from (#162). Without it, a missing
+    // `input` is ambiguous: flagged before answering, or captured and lost?
+    answered: z.boolean().optional(),
   })
   .strict();
 

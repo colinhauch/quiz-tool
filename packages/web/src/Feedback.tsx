@@ -1,17 +1,16 @@
 import { type FormEvent, useState } from "react";
-import { submitFeedback } from "./apiClient.js";
+import { readSignedIn } from "./auth.js";
+import { useFeedbackSubmission } from "./feedbackSubmission.js";
 
 interface FeedbackProps {
   /**
-   * Whether a learner is signed in. Feedback is attributable, so an unauthed
-   * visitor is guarded out here rather than allowed to submit (spec #160). The
-   * app is signed-in-only today, so this defaults to true; the sign-in-request
-   * flow for real unauthed visitors is deferred.
+   * Whether a learner is signed in, read from the auth boundary by default.
+   * Feedback is attributable, so this surface checks for itself rather than
+   * trusting the app-wide gate — anonymous visitors are coming, and the answer
+   * has to stay no here. The sign-in-request flow for them is still deferred.
    */
   isSignedIn?: boolean;
 }
-
-type Status = "editing" | "sending" | "sent" | "error";
 
 /**
  * The general feedback view: a single textarea a signed-in learner types
@@ -20,9 +19,9 @@ type Status = "editing" | "sending" | "sent" | "error";
  * resets, so a second note can follow immediately — the learner can never read
  * feedback back, so the confirmation is the only signal it went through.
  */
-export function Feedback({ isSignedIn = true }: FeedbackProps) {
+export function Feedback({ isSignedIn = readSignedIn() }: FeedbackProps) {
   const [comment, setComment] = useState("");
-  const [status, setStatus] = useState<Status>("editing");
+  const { phase, send, reset } = useFeedbackSubmission(isSignedIn);
 
   if (!isSignedIn) {
     return <p className="quiz-message">Sign in to send feedback.</p>;
@@ -33,14 +32,8 @@ export function Feedback({ isSignedIn = true }: FeedbackProps) {
   async function submit(event: FormEvent) {
     event.preventDefault();
     if (trimmed.length === 0) return;
-    setStatus("sending");
-    try {
-      await submitFeedback({ kind: "general", comment: trimmed });
-      setComment("");
-      setStatus("sent");
-    } catch {
-      setStatus("error");
-    }
+    // A failed send keeps the note in the box so it is not lost to a retry.
+    if (await send({ kind: "general", comment: trimmed })) setComment("");
   }
 
   return (
@@ -60,29 +53,40 @@ export function Feedback({ isSignedIn = true }: FeedbackProps) {
           value={comment}
           onChange={(e) => {
             setComment(e.target.value);
-            if (status !== "editing") setStatus("editing");
+            if (phase !== "editing") reset();
           }}
           rows={6}
           autoFocus
         />
         <div className="feedback__bar">
-          {status === "sent" && (
+          {phase === "sent" && (
             <p role="status" className="feedback__note feedback__note--sent">
               Thanks — your feedback was sent.
             </p>
           )}
-          {status === "error" && (
+          {phase === "error" && (
             <p role="status" className="feedback__note feedback__note--error">
               Couldn’t send that. Try again.
             </p>
           )}
           <div className="feedback__bar-spacer" />
           <button
+            type="button"
+            className="feedback__cancel"
+            onClick={() => {
+              setComment("");
+              reset();
+            }}
+            disabled={comment.length === 0}
+          >
+            Cancel
+          </button>
+          <button
             className="btn-primary"
             type="submit"
-            disabled={trimmed.length === 0 || status === "sending"}
+            disabled={trimmed.length === 0 || phase === "sending"}
           >
-            {status === "sending" ? "Sending…" : "Send feedback"}
+            {phase === "sending" ? "Sending…" : "Send feedback"}
           </button>
         </div>
       </form>

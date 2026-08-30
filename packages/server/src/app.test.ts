@@ -329,6 +329,32 @@ describe("POST /feedback", () => {
     ]);
   });
 
+  // The third link in the chain the two parity tests guard: the route must let
+  // the flag through to the store, or the operator never sees it (#162).
+  it("stores a flag raised before the question was answered", async () => {
+    const feedback = memoryFeedback();
+    const app = createApp({
+      pack: fixturePack(),
+      store: memoryStore(),
+      feedback,
+      now: () => new Date("2026-08-29T12:00:00.000Z"),
+    });
+    const context = {
+      prompt: "What country is Tokyo in?",
+      packLabel: "Test Pack",
+      packId: "test-pack",
+      answered: false,
+    };
+    const res = await post(app, {
+      kind: "question",
+      card_id: "S1:object",
+      comment: "The prompt is ambiguous",
+      context,
+    });
+    expect(res.status).toBe(200);
+    expect((await feedback.all())[0]?.context).toEqual(context);
+  });
+
   it("returns 400 on a body that fails the contract, and records nothing", async () => {
     const feedback = memoryFeedback();
     const app = createApp({ pack: fixturePack(), store: memoryStore(), feedback });

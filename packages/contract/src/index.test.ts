@@ -263,6 +263,18 @@ describe("feedbackRequestSchema", () => {
     ).toBe(true);
   });
 
+  // `answered: false` is what makes a missing input readable as "flagged before
+  // answering" rather than "the client dropped it".
+  it("carries whether the card had been answered when the flag was raised", () => {
+    const req = {
+      kind: "question",
+      card_id: "c",
+      comment: "broken prompt",
+      context: { prompt: "What country is Tokyo in?", packId: "core-cities", answered: false },
+    };
+    expect(feedbackRequestSchema.parse(req)).toEqual(req);
+  });
+
   it("rejects an unknown kind", () => {
     expect(feedbackRequestSchema.safeParse({ kind: "praise", comment: "hi" }).success).toBe(false);
   });

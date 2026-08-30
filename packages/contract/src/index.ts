@@ -274,6 +274,10 @@ export const feedbackContextSchema = z
     packId: z.string().optional(),
     acceptedAnswers: z.array(z.string()).optional(),
     input: z.string().optional(),
+    // Which card state the flag was raised from. Without it, a missing `input`
+    // is ambiguous — flagged before answering, or captured and lost? Optional
+    // because the first feedback rows predate this field.
+    answered: z.boolean().optional(),
   })
   .strict();
 
