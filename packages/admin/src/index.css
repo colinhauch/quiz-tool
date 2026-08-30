@@ -61,6 +61,30 @@ body {
   color: var(--admin-nav-ink-active);
 }
 
+/* Environment selector (#172): sits between the brand and the surface list —
+   see App.tsx. Styled to read as part of the nav chrome, not a stray form
+   control, while still being an obviously interactive `<select>`. */
+.admin-env-select {
+  width: 100%;
+  margin: 0 0 12px;
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--admin-nav-ink-active);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 6px;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.admin-env-select:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+/* The schema half of each option's label — dimmed so the environment name
+   reads as the primary identity. Most browsers flatten `<option>` content to
+   plain text (see EnvironmentSelector.tsx's comment on why the span is there
+   regardless), so this rule takes effect wherever the renderer keeps it. */
 .admin-nav ul {
   list-style: none;
   margin: 0;
@@ -173,6 +197,7 @@ body {
 /* A single visible focus ring for everything keyboard-reachable. */
 .admin-link:focus-visible,
 .admin-nav button:focus-visible,
+.admin-env-select:focus-visible,
 .admin-surface input:focus-visible,
 .admin-surface select:focus-visible,
 .admin-surface button:focus-visible {

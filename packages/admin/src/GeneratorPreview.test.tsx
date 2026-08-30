@@ -72,6 +72,14 @@ const NON_QUIZZABLE_PREVIEW = {
   cards: [{ hiddenSlot: "object", quizzable: false, reason: 'relation "unquizzed" has no generator' }],
 };
 
+// apiClient (#172) appends `?env=` to every request; matching drops it so
+// these fixtures stay keyed by the bare route, which is what's actually
+// under test here — not the environment plumbing (covered separately by
+// `apiClient.test.ts` and the BFF route tests).
+function withoutEnv(path: string): string {
+  return path.replace(/([?&])env=[^&]*&?/, "$1").replace(/[?&]$/, "");
+}
+
 function mockFetch() {
   const responses = new Map<string, unknown>([
     ["/api/packs", PACKS_LIST],
@@ -83,7 +91,7 @@ function mockFetch() {
   vi.stubGlobal(
     "fetch",
     vi.fn(async (input: string) => {
-      const body = responses.get(String(input));
+      const body = responses.get(withoutEnv(String(input)));
       if (body === undefined) return new Response(null, { status: 404 });
       return new Response(JSON.stringify(body), { status: 200 });
     }),

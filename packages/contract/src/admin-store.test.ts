@@ -11,7 +11,20 @@ import {
   adminUserAggregateSchema,
   adminUserDetailSchema,
   adminUserListSchema,
+  environmentSchema,
 } from "./admin-store.js";
+
+describe("environmentSchema", () => {
+  it("accepts prod, test, and dev", () => {
+    expect(environmentSchema.parse("prod")).toBe("prod");
+    expect(environmentSchema.parse("test")).toBe("test");
+    expect(environmentSchema.parse("dev")).toBe("dev");
+  });
+
+  it("rejects an unrecognized environment", () => {
+    expect(() => environmentSchema.parse("staging")).toThrow();
+  });
+});
 
 describe("adminUserListSchema", () => {
   it("accepts a list of users, including a never-signed-in one", () => {

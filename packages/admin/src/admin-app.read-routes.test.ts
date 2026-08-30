@@ -26,6 +26,9 @@ const ANSWERS: AdminAnswerRow[] = [
   { userId: "u2", cardId: "S2:object", input: "wrong", correct: false, askedAt: "2026-08-21T00:00:00.000Z" },
 ];
 
+// `readStores` is a map now (#172), keyed by Environment; `buildApp()` seeds
+// only `prod`, since every pre-existing test below never sends `?env=` and
+// must keep exercising exactly today's behavior (absent env => prod).
 function buildApp() {
   const readStore = createInMemoryReadStore({
     users: USERS,
@@ -39,7 +42,7 @@ function buildApp() {
       { cardId: "S2:object", difficulty: 1400, answerCount: 2 },
     ],
   });
-  return createAdminApp({ pack: fixtureReadStorePack(), readStore });
+  return createAdminApp({ pack: fixtureReadStorePack(), readStores: { prod: readStore } });
 }
 
 describe("GET /users", () => {
@@ -120,5 +123,67 @@ describe("GET /results/charts", () => {
     const res = await buildApp().request("/results/charts?userId=u1");
     const body = adminResultsChartsSchema.parse(await res.json());
     expect(body.accuracyOverTime.every((p) => p.count <= 1)).toBe(true);
+  });
+});
+
+/**
+ * The environment plumbing itself (#172): `readStores` is a map of
+ * Environment => store, and every cross-user route reads `?env=` to pick
+ * which one. This is the assertion that makes the feature real — the same
+ * route, with two different environments, must return two different answers,
+ * proving the BFF isn't quietly reading one schema for everything.
+ */
+describe("environment routing", () => {
+  const PROD_USERS: AdminUser[] = [
+    { id: "prod-u1", email: "prod@example.com", createdAt: "2026-08-01T00:00:00.000Z", lastSignInAt: null },
+  ];
+  const DEV_USERS: AdminUser[] = [
+    { id: "dev-u1", email: "dev1@example.com", createdAt: "2026-08-05T00:00:00.000Z", lastSignInAt: null },
+    { id: "dev-u2", email: "dev2@example.com", createdAt: "2026-08-06T00:00:00.000Z", lastSignInAt: null },
+  ];
+
+  function buildTwoEnvApp() {
+    return createAdminApp({
+      pack: fixtureReadStorePack(),
+      readStores: {
+        prod: createInMemoryReadStore({ users: PROD_USERS }),
+        dev: createInMemoryReadStore({ users: DEV_USERS }),
+      },
+    });
+  }
+
+  it("returns different data for different environments on the same route", async () => {
+    const app = buildTwoEnvApp();
+
+    const prodRes = await app.request("/users");
+    const devRes = await app.request("/users?env=dev");
+
+    expect(adminUserListSchema.parse(await prodRes.json())).toEqual(PROD_USERS);
+    expect(adminUserListSchema.parse(await devRes.json())).toEqual(DEV_USERS);
+  });
+
+  it("treats an absent env exactly as prod, unmodified from today's behavior", async () => {
+    const app = buildTwoEnvApp();
+    const noEnv = await app.request("/users");
+    const explicitProd = await app.request("/users?env=prod");
+    expect(await noEnv.json()).toEqual(await explicitProd.json());
+  });
+
+  it("rejects an unrecognized environment as a client error rather than defaulting", async () => {
+    const app = buildTwoEnvApp();
+    const res = await app.request("/users?env=staging");
+    expect(res.status).toBe(400);
+  });
+
+  it("fails a route for an environment with no configured store, naming that environment, while other environments still work", async () => {
+    const app = buildTwoEnvApp(); // no `test` store configured
+
+    const testRes = await app.request("/users?env=test");
+    expect(testRes.status).toBe(500);
+    const testBody = (await testRes.json()) as { error?: string };
+    expect(testBody.error).toContain("test");
+
+    const devRes = await app.request("/users?env=dev");
+    expect(devRes.status).toBe(200);
   });
 });

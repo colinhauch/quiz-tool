@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { SURFACES, type SurfaceId } from "./surfaces.js";
 import { usePacksFocus } from "./navigation.js";
+import { EnvironmentSelector } from "./EnvironmentSelector.js";
 
 /**
  * The admin shell: a persistent left nav across the five surfaces — Packs,
@@ -11,6 +12,13 @@ import { usePacksFocus } from "./navigation.js";
  * An always-visible read-only badge states the app's stance in this iteration
  * (the BFF exposes reads only). It is chrome the shell owns, so every surface
  * carries it without each having to remember to.
+ *
+ * The {@link EnvironmentSelector} (#172) sits directly beneath the brand and
+ * above the surface list, per spec #171 — always visible, on every surface,
+ * because "which environment am I looking at" is a question the operator
+ * should never have to go hunting for. It is entirely self-contained: it
+ * reads/writes its own persisted choice and reloads the page on switch,
+ * so nothing here threads an environment prop to `ActiveSurface`.
  */
 export function App() {
   const [active, setActive] = useState<SurfaceId>("packs");
@@ -35,6 +43,7 @@ export function App() {
     <div className="admin-shell">
       <nav className="admin-nav" aria-label="Admin surfaces">
         <div className="admin-brand">Geo Admin</div>
+        <EnvironmentSelector />
         <ul>
           {SURFACES.map((s) => (
             <li key={s.id}>

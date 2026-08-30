@@ -44,11 +44,19 @@ const CHARTS_ALL = {
   easiestCards: [{ cardId: "S2:object", difficulty: 1400, answerCount: 2 }],
 };
 
+// apiClient (#172) appends `?env=` to every request; matching drops it so
+// these fixtures stay keyed by the bare route + filter, which is what's
+// actually under test here — not the environment plumbing (covered
+// separately by `apiClient.test.ts` and the BFF route tests).
+function withoutEnv(path: string): string {
+  return path.replace(/([?&])env=[^&]*&?/, "$1").replace(/[?&]$/, "");
+}
+
 function mockFetchSequence() {
   vi.stubGlobal(
     "fetch",
     vi.fn(async (input: string) => {
-      const path = String(input);
+      const path = withoutEnv(String(input));
       if (path === "/api/results") return new Response(JSON.stringify({ rows: ALL_ROWS, total: 2, accuracy: 0.5 }), { status: 200 });
       if (path === "/api/results?userId=u1")
         return new Response(JSON.stringify({ rows: FILTERED_ROWS, total: 1, accuracy: 1 }), { status: 200 });

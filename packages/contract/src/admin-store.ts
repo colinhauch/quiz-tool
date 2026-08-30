@@ -11,6 +11,21 @@ import { z } from "zod";
  * one: Users).
  */
 
+/**
+ * The three environments the admin can read from — `prod`, `test`, `dev` —
+ * distinct from the Postgres *schema* each one binds to (`prod` → `public`;
+ * `test`/`dev` name their own schema of the same name). Two words because
+ * `prod → public` is the one place they diverge, and that divergence is the
+ * whole reason CONTEXT.md records them as separate terms. Every cross-user
+ * route below accepts this as `?env=`; absent means `prod` (today's
+ * behaviour), present-and-unrecognized is a client error. The graph-only
+ * surfaces in `admin.ts` (Packs, Entity, Graph Health, Generator Preview)
+ * never see it — they read the local pack graph, not a schema.
+ */
+export const environmentSchema = z.enum(["prod", "test", "dev"]);
+
+export type Environment = z.infer<typeof environmentSchema>;
+
 /** One user, as `auth.users` reports it through the service-role Admin API. */
 export const adminUserSchema = z
   .object({
