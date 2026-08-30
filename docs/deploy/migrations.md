@@ -20,10 +20,44 @@ Two facts make this riskier than it looks, and everything below follows from the
 
 ## The procedure
 
-### 1. Read the SQL and classify it
+### 1. Take a backup — always, before anything else
 
-Before anything else, decide which kind of change this is. It determines whether
-steps 3 and 6 are optional or mandatory.
+**Back up before every migration, including ones that look obviously safe.**
+
+This is step 1 rather than a conditional later step, and that ordering is the
+point. It is tempting to classify the change first and back up only if it looks
+dangerous — but the backup's entire job is to protect you when that judgment is
+*wrong*, and a misclassification is invisible precisely when it matters. Making
+the safety net conditional on your own correctness defeats the safety net.
+
+Two facts make this non-negotiable here:
+
+- **The project is on the Supabase free plan**, which has no self-serve restore
+  and no point-in-time recovery. If a migration eats data, there is nothing
+  underneath to fall back on. Confirm current backup options in the dashboard
+  before relying on any of them.
+- **The database is tiny** — 528 kB across all 18 tables as of 2026-08-30. A full
+  snapshot costs seconds. There is no efficiency argument for skipping it.
+
+Snapshot every table carrying real data, into timestamped scratch tables:
+
+```sql
+create table dev.answers_backup_20260830          as select * from dev.answers;
+create table dev.card_difficulty_backup_20260830  as select * from dev.card_difficulty;
+create table dev.pack_ability_backup_20260830     as select * from dev.pack_ability;
+create table dev.pack_selection_backup_20260830   as select * from dev.pack_selection;
+create table dev.feedback_backup_20260830         as select * from dev.feedback;
+```
+
+Today only `dev` holds real rows; extend to `public` once prod has users. Drop
+the scratch tables once the change has survived a few days of real use — not
+immediately, and not in the same session.
+
+### 2. Read the SQL and classify it
+
+With the backup already taken, classify the change. This no longer decides
+*whether* you are protected — it tells you what to expect in step 6, and how
+alarmed to be if the numbers disagree.
 
 **Additive — safe.** Cannot destroy data because it only creates things that do
 not exist yet:
@@ -38,9 +72,13 @@ not exist yet:
 - any `update` / `delete` backfill
 - `rename` (breaks running code mid-deploy)
 
-If it is destructive, take a backup and read the rollback section before going on.
+Note that "additive" is a weaker guarantee than it sounds. The feedback
+migration was purely additive, yet it added `references auth.users(id) on delete
+cascade` — creating a *new* deletion path, where removing a user now also removes
+their feedback. Additive DDL can install destructive future behaviour. Read the
+rollback section before applying anything in the destructive list.
 
-### 2. Baseline the row counts
+### 3. Baseline the row counts
 
 Run this **before** applying, across all three schemas, and keep the output. This
 is the single step that turns "I think it was fine" into proof.
@@ -70,20 +108,6 @@ union all select 'test',
 ```
 
 Add a line whenever a table is added, or the baseline stops covering the database.
-
-### 3. Back up, if the change is destructive
-
-There is no automated backup step and no point-in-time restore on the current
-plan. For a destructive change, snapshot the affected tables into scratch tables
-in the same schema *in the same session as the migration*, so a bad result can be
-restored without a support ticket:
-
-```sql
-create table dev.answers_backup_20260830 as select * from dev.answers;
-```
-
-Drop the scratch tables once the change is verified and has survived a few days
-of real use — not immediately.
 
 ### 4. Write the SQL to hit every schema
 
@@ -173,16 +197,15 @@ prepared in step 3:
 
 - **Additive change:** usually nothing to undo. `drop table <schema>.<name>` if
   the table is genuinely new and unused. Verify it is empty first.
-- **Destructive change with a backup:** restore from the scratch table.
-- **Destructive change without a backup:** you are relying on Supabase's own
-  backups and their retention window. Do not end up here — this is the entire
-  reason step 3 exists.
+- **Any change, backup in hand:** restore from the scratch tables as above.
+- **No backup:** on the free plan there is no self-serve restore, so recovery may
+  simply not be available. Step 1 exists so this row never applies to you.
 
 ## Checklist
 
+- [ ] **Backup taken — every migration, no exceptions**
 - [ ] SQL read and classified additive vs destructive
 - [ ] Row counts baselined across all three schemas, output saved
-- [ ] Backup taken (destructive changes only)
 - [ ] SQL loops over `['public','dev','test']` and is re-runnable
 - [ ] Applied via `apply_migration`, name matching the filename
 - [ ] Counts re-run and diffed — pre-existing data unchanged
