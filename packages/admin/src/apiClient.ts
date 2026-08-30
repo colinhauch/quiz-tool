@@ -1,5 +1,7 @@
 import type {
   AdminEntityDetail,
+  AdminFeedbackFilter,
+  AdminFeedbackList,
   AdminGeneratorPreview,
   AdminGraphHealthReport,
   AdminHealth,
@@ -117,4 +119,19 @@ export async function getResults(filter: AdminResultsFilter = {}): Promise<Admin
 export async function getResultsCharts(filter: AdminResultsFilter = {}): Promise<AdminResultsCharts> {
   const res = await adminFetch(`/results/charts${resultsQuery(filter)}`);
   return (await res.json()) as AdminResultsCharts;
+}
+
+/** Turns a Feedback filter into a query string; an absent filter means "all" (#163). */
+function feedbackQuery(filter: AdminFeedbackFilter): string {
+  const params = new URLSearchParams();
+  if (filter.status !== undefined) params.set("status", filter.status);
+  if (filter.kind !== undefined) params.set("kind", filter.kind);
+  const qs = params.toString();
+  return qs ? `?${qs}` : "";
+}
+
+/** Every learner-submitted feedback report, newest-first, optionally filtered by status and kind (#163). */
+export async function getFeedback(filter: AdminFeedbackFilter = {}): Promise<AdminFeedbackList> {
+  const res = await adminFetch(`/feedback${feedbackQuery(filter)}`);
+  return (await res.json()) as AdminFeedbackList;
 }

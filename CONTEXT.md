@@ -73,3 +73,13 @@ _Avoid_: Selected, active, current, highlighted
 **Answer Log**:
 The append-only record of every answer, keyed by card. It records what *was* asked; selection governs what *will be*. Never filtered or rewritten when a pack is deselected.
 _Avoid_: History, results, attempts
+
+### Feedback
+
+**Feedback**:
+One report a learner submits to the operator — either *general* (about the app) or *question* (flagging the card on screen, with a snapshot of what the learner saw). Submit-only: learners can never read feedback back, and only the operator does.
+_Avoid_: Report, comment, ticket, bug
+
+**Status**:
+Where a piece of feedback stands with the operator: `unresolved` or `resolved`. New feedback is always unresolved; flipping it is out-of-band SQL in v1, never an app write.
+_Avoid_: State, triage state, done flag
