@@ -61,6 +61,8 @@ export interface AdminFeedbackContext {
   packId?: string;
   acceptedAnswers?: string[];
   input?: string;
+  /** Whether the card had been answered when the flag was raised (#162). */
+  answered?: boolean;
 }
 
 /**

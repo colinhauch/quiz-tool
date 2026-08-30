@@ -85,6 +85,7 @@ function toFeedbackContext(context: Record<string, unknown>): AdminFeedbackConte
     out.acceptedAnswers = context.acceptedAnswers.filter((a): a is string => typeof a === "string");
   }
   if (typeof context.input === "string") out.input = context.input;
+  if (typeof context.answered === "boolean") out.answered = context.answered;
   return out;
 }
 

@@ -21,7 +21,7 @@ interface FeedbackProps {
  */
 export function Feedback({ isSignedIn = readSignedIn() }: FeedbackProps) {
   const [comment, setComment] = useState("");
-  const { status, send, reset } = useFeedbackSubmission(isSignedIn);
+  const { phase, send, reset } = useFeedbackSubmission(isSignedIn);
 
   if (!isSignedIn) {
     return <p className="quiz-message">Sign in to send feedback.</p>;
@@ -53,18 +53,18 @@ export function Feedback({ isSignedIn = readSignedIn() }: FeedbackProps) {
           value={comment}
           onChange={(e) => {
             setComment(e.target.value);
-            if (status !== "editing") reset();
+            if (phase !== "editing") reset();
           }}
           rows={6}
           autoFocus
         />
         <div className="feedback__bar">
-          {status === "sent" && (
+          {phase === "sent" && (
             <p role="status" className="feedback__note feedback__note--sent">
               Thanks — your feedback was sent.
             </p>
           )}
-          {status === "error" && (
+          {phase === "error" && (
             <p role="status" className="feedback__note feedback__note--error">
               Couldn’t send that. Try again.
             </p>
@@ -84,9 +84,9 @@ export function Feedback({ isSignedIn = readSignedIn() }: FeedbackProps) {
           <button
             className="btn-primary"
             type="submit"
-            disabled={trimmed.length === 0 || status === "sending"}
+            disabled={trimmed.length === 0 || phase === "sending"}
           >
-            {status === "sending" ? "Sending…" : "Send feedback"}
+            {phase === "sending" ? "Sending…" : "Send feedback"}
           </button>
         </div>
       </form>

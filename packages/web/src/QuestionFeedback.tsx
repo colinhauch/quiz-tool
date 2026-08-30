@@ -34,9 +34,9 @@ interface QuestionFeedbackProps {
 /**
  * The per-question feedback control on the quiz card: a small text button that
  * opens an inline comment box. Present in both the asking and answered states,
- * so a broken prompt and a wrong accepted answer are equally reportable. On
+ * so a broken prompt and a wrong accepted answer are equally flaggable. On
  * success the box closes and an inline confirmation takes its place — the only
- * signal the report landed, since learners can never read feedback back. On
+ * signal the feedback landed, since learners can never read it back. On
  * failure the box stays open so nothing typed is lost.
  */
 export function QuestionFeedback({
@@ -46,7 +46,7 @@ export function QuestionFeedback({
 }: QuestionFeedbackProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [comment, setComment] = useState("");
-  const { status, send, reset } = useFeedbackSubmission(isSignedIn);
+  const { phase, send, reset } = useFeedbackSubmission(isSignedIn);
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -56,7 +56,7 @@ export function QuestionFeedback({
       comment: comment.trim() || DEFAULT_QUESTION_COMMENT,
       context,
     });
-    // Only a landed report closes the box; a refusal or a failure leaves what
+    // Only landed feedback closes the box; a refusal or a failure leaves what
     // the learner wrote where they can retry it.
     if (sent) {
       setComment("");
@@ -67,7 +67,7 @@ export function QuestionFeedback({
   if (!isOpen) {
     return (
       <div className="question-feedback">
-        {status === "sent" && (
+        {phase === "sent" && (
           <p role="status" className="feedback__note feedback__note--sent">
             Thanks — we’ll take a look at this question.
           </p>
@@ -95,17 +95,17 @@ export function QuestionFeedback({
         value={comment}
         onChange={(e) => {
           setComment(e.target.value);
-          if (status === "error" || status === "signed-out") reset();
+          if (phase === "error" || phase === "signed-out") reset();
         }}
         rows={3}
       />
       <div className="question-feedback__bar">
-        {status === "error" && (
+        {phase === "error" && (
           <p role="status" className="feedback__note feedback__note--error">
             Couldn’t send that. Try again.
           </p>
         )}
-        {status === "signed-out" && (
+        {phase === "signed-out" && (
           <p role="status" className="feedback__note feedback__note--error">
             Sign in to send feedback.
           </p>
@@ -122,8 +122,8 @@ export function QuestionFeedback({
         >
           Cancel
         </button>
-        <button className="btn-primary" type="submit" disabled={status === "sending"}>
-          {status === "sending" ? "Sending…" : "Send"}
+        <button className="btn-primary" type="submit" disabled={phase === "sending"}>
+          {phase === "sending" ? "Sending…" : "Send"}
         </button>
       </div>
     </form>

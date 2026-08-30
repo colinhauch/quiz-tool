@@ -44,6 +44,17 @@ function packOf(row: AdminFeedbackRow): string | undefined {
   return row.context?.packLabel ?? row.context?.packId;
 }
 
+/**
+ * What the report captured as the correct answer. A flag raised before the
+ * learner answered never had one, so say that rather than showing a bare dash —
+ * the empty cell would otherwise read as missing data (#162).
+ */
+function acceptedAnswerOf(row: AdminFeedbackRow): string {
+  const accepted = row.context?.acceptedAnswers?.join(", ");
+  if (accepted) return accepted;
+  return row.context?.answered === false ? "not yet answered" : "—";
+}
+
 function FeedbackTable({ rows }: { rows: AdminFeedbackList }) {
   if (rows.length === 0) return <p className="admin-muted">No feedback matches the current filters.</p>;
   return (
@@ -69,7 +80,7 @@ function FeedbackTable({ rows }: { rows: AdminFeedbackList }) {
             <td>{row.comment}</td>
             <td>{packOf(row) ?? "—"}</td>
             <td>{row.context?.prompt ?? "—"}</td>
-            <td>{row.context?.acceptedAnswers?.join(", ") ?? "—"}</td>
+            <td>{acceptedAnswerOf(row)}</td>
             <td>{row.status}</td>
           </tr>
         ))}
