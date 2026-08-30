@@ -1,6 +1,6 @@
 import { type FormEvent, useState } from "react";
-import { submitFeedback } from "./apiClient.js";
 import { readSignedIn } from "./auth.js";
+import { useFeedbackSubmission } from "./feedbackSubmission.js";
 
 interface FeedbackProps {
   /**
@@ -12,8 +12,6 @@ interface FeedbackProps {
   isSignedIn?: boolean;
 }
 
-type Status = "editing" | "sending" | "sent" | "error";
-
 /**
  * The general feedback view: a single textarea a signed-in learner types
  * freeform thoughts into and submits. Empty text is refused (the app never
@@ -23,7 +21,7 @@ type Status = "editing" | "sending" | "sent" | "error";
  */
 export function Feedback({ isSignedIn = readSignedIn() }: FeedbackProps) {
   const [comment, setComment] = useState("");
-  const [status, setStatus] = useState<Status>("editing");
+  const { status, send, reset } = useFeedbackSubmission(isSignedIn);
 
   if (!isSignedIn) {
     return <p className="quiz-message">Sign in to send feedback.</p>;
@@ -34,14 +32,8 @@ export function Feedback({ isSignedIn = readSignedIn() }: FeedbackProps) {
   async function submit(event: FormEvent) {
     event.preventDefault();
     if (trimmed.length === 0) return;
-    setStatus("sending");
-    try {
-      await submitFeedback({ kind: "general", comment: trimmed });
-      setComment("");
-      setStatus("sent");
-    } catch {
-      setStatus("error");
-    }
+    // A failed send keeps the note in the box so it is not lost to a retry.
+    if (await send({ kind: "general", comment: trimmed })) setComment("");
   }
 
   return (
@@ -61,7 +53,7 @@ export function Feedback({ isSignedIn = readSignedIn() }: FeedbackProps) {
           value={comment}
           onChange={(e) => {
             setComment(e.target.value);
-            if (status !== "editing") setStatus("editing");
+            if (status !== "editing") reset();
           }}
           rows={6}
           autoFocus
@@ -83,7 +75,7 @@ export function Feedback({ isSignedIn = readSignedIn() }: FeedbackProps) {
             className="feedback__cancel"
             onClick={() => {
               setComment("");
-              setStatus("editing");
+              reset();
             }}
             disabled={comment.length === 0}
           >

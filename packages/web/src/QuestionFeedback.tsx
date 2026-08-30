@@ -1,7 +1,7 @@
 import type { FeedbackContext } from "@geo/contract";
 import { type FormEvent, useState } from "react";
-import { submitFeedback } from "./apiClient.js";
 import { readSignedIn } from "./auth.js";
+import { useFeedbackSubmission } from "./feedbackSubmission.js";
 
 /**
  * What an empty box submits. A learner flagging a bad question should need two
@@ -31,8 +31,6 @@ interface QuestionFeedbackProps {
   isSignedIn?: boolean;
 }
 
-type Status = "editing" | "sending" | "sent" | "error" | "signed-out";
-
 /**
  * The per-question feedback control on the quiz card: a small text button that
  * opens an inline comment box. Present in both the asking and answered states,
@@ -48,27 +46,21 @@ export function QuestionFeedback({
 }: QuestionFeedbackProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [comment, setComment] = useState("");
-  const [status, setStatus] = useState<Status>("editing");
+  const { status, send, reset } = useFeedbackSubmission(isSignedIn);
 
   async function submit(event: FormEvent) {
     event.preventDefault();
-    if (!isSignedIn) {
-      setStatus("signed-out");
-      return;
-    }
-    setStatus("sending");
-    try {
-      await submitFeedback({
-        kind: "question",
-        card_id: cardId,
-        comment: comment.trim() || DEFAULT_QUESTION_COMMENT,
-        context,
-      });
+    const sent = await send({
+      kind: "question",
+      card_id: cardId,
+      comment: comment.trim() || DEFAULT_QUESTION_COMMENT,
+      context,
+    });
+    // Only a landed report closes the box; a refusal or a failure leaves what
+    // the learner wrote where they can retry it.
+    if (sent) {
       setComment("");
       setIsOpen(false);
-      setStatus("sent");
-    } catch {
-      setStatus("error");
     }
   }
 
@@ -84,7 +76,7 @@ export function QuestionFeedback({
           type="button"
           className="question-feedback__open"
           onClick={() => {
-            setStatus("editing");
+            reset();
             setIsOpen(true);
           }}
         >
@@ -103,7 +95,7 @@ export function QuestionFeedback({
         value={comment}
         onChange={(e) => {
           setComment(e.target.value);
-          if (status === "error" || status === "signed-out") setStatus("editing");
+          if (status === "error" || status === "signed-out") reset();
         }}
         rows={3}
       />
@@ -125,7 +117,7 @@ export function QuestionFeedback({
           onClick={() => {
             setComment("");
             setIsOpen(false);
-            setStatus("editing");
+            reset();
           }}
         >
           Cancel
