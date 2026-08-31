@@ -68,4 +68,21 @@ describe("apiClient environment attachment", () => {
 
     expect(requestedPath).toBe("/api/users?env=dev");
   });
+
+  it("getEnvironmentComparison does not attach ?env= — it reads every environment at once (#174)", async () => {
+    localStorage.setItem("geo-admin-env", "test");
+    let requestedPath = "";
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: string) => {
+        requestedPath = String(input);
+        return new Response(JSON.stringify({ registeredUsers: 0, environments: {} }), { status: 200 });
+      }),
+    );
+
+    const { getEnvironmentComparison } = await import("./apiClient.js");
+    await getEnvironmentComparison();
+
+    expect(requestedPath).toBe("/api/environments");
+  });
 });

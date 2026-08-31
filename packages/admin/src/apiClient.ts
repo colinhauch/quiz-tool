@@ -1,5 +1,6 @@
 import type {
   AdminEntityDetail,
+  AdminEnvironmentComparison,
   AdminGeneratorPreview,
   AdminGraphHealthReport,
   AdminHealth,
@@ -138,4 +139,19 @@ export async function getResults(filter: AdminResultsFilter = {}): Promise<Admin
 export async function getResultsCharts(filter: AdminResultsFilter = {}): Promise<AdminResultsCharts> {
   const res = await adminFetch(`/results/charts${resultsQuery(filter)}`);
   return (await res.json()) as AdminResultsCharts;
+}
+
+/**
+ * All three environments side by side (#174). Deliberately bypasses
+ * {@link adminFetch} — the one call in this file that does — because
+ * `GET /environments` reads every environment at once and takes no `?env=`
+ * at all (`admin-app.ts`'s doc comment on the route says the same). Attaching
+ * the module-load-time environment here would be misleading: it would look
+ * like this call is scoped to one environment when the whole point of the
+ * route is that it isn't.
+ */
+export async function getEnvironmentComparison(): Promise<AdminEnvironmentComparison> {
+  const res = await fetch("/api/environments");
+  if (!res.ok) throw new Error(`admin request failed: ${res.status} /environments`);
+  return (await res.json()) as AdminEnvironmentComparison;
 }

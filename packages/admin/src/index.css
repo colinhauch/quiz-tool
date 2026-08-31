@@ -416,3 +416,15 @@ body {
   flex-wrap: wrap;
   gap: 6px 14px;
 }
+
+/* Environments comparison surface (#174). The selected environment's column is
+   tinted rather than boxed: it is a pointer back to the left-nav selector, not
+   a state the operator has to act on. */
+.admin-env-comparison th[scope="row"] {
+  text-align: left;
+  font-weight: 500;
+}
+
+.admin-env-comparison .admin-env-column-selected {
+  background: var(--admin-accent-soft);
+}

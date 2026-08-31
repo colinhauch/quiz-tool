@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   adminAccuracyByKeySchema,
   adminCardDifficultySchema,
+  adminEnvironmentComparisonSchema,
   adminLeaderboardSchema,
   adminPopulationSchema,
   adminResultRowSchema,
@@ -125,5 +126,62 @@ describe("adminResultsChartsSchema", () => {
       easiestCards: [card],
     };
     expect(adminResultsChartsSchema.parse(payload)).toEqual(payload);
+  });
+});
+
+describe("adminEnvironmentComparisonSchema", () => {
+  it("accepts a healthy column for every environment plus the shared registered-user count", () => {
+    const okColumn = {
+      status: "ok" as const,
+      usersWithAnswers: 2,
+      totalAnswers: 5,
+      accuracy: 0.6,
+      distinctCardsAnswered: 3,
+      firstAnswerAt: "2026-08-20T00:00:00.000Z",
+      lastAnswerAt: "2026-08-21T00:00:00.000Z",
+      packsWithAbilityRows: 1,
+      ratedCards: 2,
+    };
+    const payload = {
+      registeredUsers: 4,
+      environments: { prod: okColumn, test: okColumn, dev: okColumn },
+    };
+    expect(adminEnvironmentComparisonSchema.parse(payload)).toEqual(payload);
+  });
+
+  it("accepts an unavailable column carrying only a reason", () => {
+    const okColumn = {
+      status: "ok" as const,
+      usersWithAnswers: 0,
+      totalAnswers: 0,
+      accuracy: 0,
+      distinctCardsAnswered: 0,
+      firstAnswerAt: null,
+      lastAnswerAt: null,
+      packsWithAbilityRows: 0,
+      ratedCards: 0,
+    };
+    const payload = {
+      registeredUsers: 1,
+      environments: {
+        prod: okColumn,
+        test: { status: "unavailable" as const, reason: "AdminReadStore is not configured for environment: test" },
+        dev: okColumn,
+      },
+    };
+    expect(adminEnvironmentComparisonSchema.parse(payload)).toEqual(payload);
+  });
+
+  it("rejects an unavailable column that also carries stats fields", () => {
+    expect(() =>
+      adminEnvironmentComparisonSchema.parse({
+        registeredUsers: 0,
+        environments: {
+          prod: { status: "unavailable", reason: "down", totalAnswers: 0 },
+          test: { status: "unavailable", reason: "down" },
+          dev: { status: "unavailable", reason: "down" },
+        },
+      }),
+    ).toThrow();
   });
 });

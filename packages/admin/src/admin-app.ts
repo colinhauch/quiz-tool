@@ -1,5 +1,6 @@
 import {
   adminEntityDetailSchema,
+  adminEnvironmentComparisonSchema,
   adminGeneratorPreviewSchema,
   adminGraphHealthReportSchema,
   adminHealthSchema,
@@ -12,12 +13,14 @@ import {
   adminUserDetailSchema,
   adminUserListSchema,
   environmentSchema,
+  type AdminEnvironmentColumn,
   type AdminResultsFilter,
   type Environment,
 } from "@geo/contract";
 import type { Pack } from "@geo/engine";
 import type { LoadedPack } from "@geo/server/pack-loader";
 import { Hono, type Context } from "hono";
+import { buildEnvironmentStats } from "./environmentComparisonProjection.js";
 import { getEntityDetail } from "./entityProjection.js";
 import { previewGenerator } from "./generatorPreviewProjection.js";
 import { computeGraphHealth } from "./healthChecks.js";
@@ -35,6 +38,9 @@ import { buildPopulation } from "./populationProjection.js";
 import type { AdminReadStore } from "./read-store.js";
 import { buildResultRows, buildResultsResponse, filterResultRows } from "./resultsProjection.js";
 import { buildUserDetail } from "./userDetailProjection.js";
+
+/** Every `Environment`, in the fixed order the comparison surface fans out to and renders. */
+const ALL_ENVIRONMENTS: readonly Environment[] = ["prod", "test", "dev"];
 
 /**
  * The admin BFF's dependencies, passed in rather than reached for — the same
@@ -294,6 +300,61 @@ export function createAdminApp(options: AdminAppOptions) {
       easiestCards,
     };
     return c.json(adminResultsChartsSchema.parse(charts));
+  });
+
+  // Environments comparison surface (#174): all three environments side by
+  // side in one response. Unlike every route above, this one never reads
+  // `?env=` — comparing every environment at once is the whole point, so
+  // there is no single environment to resolve.
+  app.get("/environments", async (c) => {
+    // `Promise.allSettled`, not `Promise.all`: one environment's store being
+    // unconfigured or unreachable must never fail the other two — that
+    // tolerance is the acceptance criterion this route exists to satisfy.
+    // Each settled entry captures both the environment it belongs to and,
+    // when it resolved, the `listUsers()` length alongside the computed
+    // stats — `listUsers()` is only read here to source the shared
+    // registered-user count below (`auth.users` is one table shared by all
+    // three schemas), not because the stats themselves need it.
+    const settled = await Promise.allSettled(
+      ALL_ENVIRONMENTS.map(async (env) => {
+        const store = options.readStores?.[env];
+        if (!store) throw new Error(`AdminReadStore is not configured for environment: ${env}`);
+        const [users, answers, packAbilities, cardDifficulties] = await Promise.all([
+          store.listUsers(),
+          store.listAllAnswers(),
+          store.listAllPackAbilities(),
+          store.listCardDifficulties(),
+        ]);
+        return { userCount: users.length, stats: buildEnvironmentStats(answers, packAbilities, cardDifficulties) };
+      }),
+    );
+
+    const environments = {} as Record<Environment, AdminEnvironmentColumn>;
+    // `auth.users` is one shared table, not one per environment (CONTEXT.md),
+    // so every healthy environment reports the same count; the first one to
+    // resolve is as good a source as any. Stays 0 only if every environment
+    // failed, which the "unavailable" columns already explain individually.
+    let registeredUsers = 0;
+    let registeredUsersFound = false;
+
+    ALL_ENVIRONMENTS.forEach((env, i) => {
+      const result = settled[i];
+      if (result?.status === "fulfilled") {
+        environments[env] = { status: "ok", ...result.value.stats };
+        if (!registeredUsersFound) {
+          registeredUsers = result.value.userCount;
+          registeredUsersFound = true;
+        }
+      } else {
+        const reason = result?.status === "rejected" ? result.reason : undefined;
+        environments[env] = {
+          status: "unavailable",
+          reason: reason instanceof Error ? reason.message : String(reason),
+        };
+      }
+    });
+
+    return c.json(adminEnvironmentComparisonSchema.parse({ registeredUsers, environments }));
   });
 
   return app;
