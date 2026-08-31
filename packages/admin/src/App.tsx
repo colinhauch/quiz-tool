@@ -5,8 +5,8 @@ import { readEnvironmentPref } from "./environmentPref.js";
 import { EnvironmentSelector } from "./EnvironmentSelector.js";
 
 /**
- * The admin shell: a persistent left nav across the five surfaces — Packs,
- * Users, Results, Graph Health, Generator Preview — and the active surface
+ * The admin shell: a persistent left nav across the six surfaces — Packs,
+ * Users, Results, Feedback, Graph Health, Generator Preview — and the active surface
  * beside it. The selected surface is component state, so moving between them
  * preserves place; each surface owns its own data fetching.
  *

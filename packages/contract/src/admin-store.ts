@@ -348,3 +348,69 @@ export const adminEnvironmentComparisonSchema = z
   .strict();
 
 export type AdminEnvironmentComparison = z.infer<typeof adminEnvironmentComparisonSchema>;
+
+/**
+ * The snapshot a question-feedback row carries — what the learner saw on the
+ * card at submission time (spec #160). Deliberately its own shape rather than
+ * the player-facing `feedbackContextSchema` in `index.ts`: the two seams stay
+ * apart so a change to what learners submit cannot silently redefine what the
+ * operator reads. Every field is optional — a flag raised before answering has
+ * no `input`/`acceptedAnswers`, and general feedback carries no context at all.
+ */
+export const adminFeedbackContextSchema = z
+  .object({
+    prompt: z.string().optional(),
+    packLabel: z.string().optional(),
+    packId: z.string().optional(),
+    acceptedAnswers: z.array(z.string()).optional(),
+    input: z.string().optional(),
+    // Which card state the flag was raised from (#162). Without it, a missing
+    // `input` is ambiguous: flagged before answering, or captured and lost?
+    answered: z.boolean().optional(),
+  })
+  .strict();
+
+export type AdminFeedbackContext = z.infer<typeof adminFeedbackContextSchema>;
+
+/**
+ * One learner-submitted feedback row, resolved for display (#163): the stored
+ * row plus the submitter's email, joined from `auth.users` at read time (the
+ * feedback row itself stores only `user_id`, keeping one source of truth for
+ * identity). `status` is read-only in v1 — the admin exposes no route that
+ * writes it. The stored `card_id` is deliberately not carried: the operator's
+ * table shows what the learner saw (prompt, pack, accepted answers), and
+ * tracing a report back to its Card is an out-of-band SQL job in v1 (#160).
+ */
+export const adminFeedbackRowSchema = z
+  .object({
+    id: z.number().int(),
+    createdAt: z.string().min(1),
+    userId: z.string().min(1),
+    userEmail: z.string().min(1).nullable(),
+    kind: z.enum(["general", "question"]),
+    comment: z.string().min(1),
+    context: adminFeedbackContextSchema.optional(),
+    status: z.enum(["unresolved", "resolved"]),
+  })
+  .strict();
+
+export type AdminFeedbackRow = z.infer<typeof adminFeedbackRowSchema>;
+
+/** `GET /feedback` — every submitted report, newest-first (#163). */
+export const adminFeedbackListSchema = z.array(adminFeedbackRowSchema);
+
+export type AdminFeedbackList = z.infer<typeof adminFeedbackListSchema>;
+
+/**
+ * `GET /feedback`'s filters (#163): status and kind, each optional and
+ * composable. "All" is simply the absence of the filter, so the operator's
+ * default view (no query string) is everything.
+ */
+export const adminFeedbackFilterSchema = z
+  .object({
+    status: z.enum(["unresolved", "resolved"]).optional(),
+    kind: z.enum(["general", "question"]).optional(),
+  })
+  .strict();
+
+export type AdminFeedbackFilter = z.infer<typeof adminFeedbackFilterSchema>;

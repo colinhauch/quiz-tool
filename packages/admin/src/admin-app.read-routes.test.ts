@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  adminFeedbackListSchema,
   adminPopulationSchema,
   adminResultsChartsSchema,
   adminResultsResponseSchema,
@@ -7,7 +8,12 @@ import {
   adminUserListSchema,
 } from "@geo/contract";
 import { createAdminApp } from "./admin-app.js";
-import { createInMemoryReadStore, type AdminAnswerRow, type AdminUser } from "./read-store.js";
+import {
+  createInMemoryReadStore,
+  type AdminAnswerRow,
+  type AdminFeedbackRecord,
+  type AdminUser,
+} from "./read-store.js";
 import { fixtureReadStorePack } from "./test-fixtures.js";
 
 /**
@@ -29,6 +35,30 @@ const ANSWERS: AdminAnswerRow[] = [
 // `readStores` is a map now (#172), keyed by Environment; `buildApp()` seeds
 // only `prod`, since every pre-existing test below never sends `?env=` and
 // must keep exercising exactly today's behavior (absent env => prod).
+
+const FEEDBACK: AdminFeedbackRecord[] = [
+  { id: 1, userId: "u1", kind: "general", comment: "Love the app", status: "resolved", createdAt: "2026-08-28T00:00:00.000Z" },
+  {
+    id: 2,
+    userId: "u2",
+    kind: "question",
+    cardId: "S2:object",
+    comment: "The prompt is broken",
+    status: "unresolved",
+    createdAt: "2026-08-29T00:00:00.000Z",
+  },
+  {
+    id: 3,
+    userId: "u1",
+    kind: "question",
+    cardId: "S1:object",
+    comment: "This question is wrong",
+    status: "unresolved",
+    createdAt: "2026-08-30T00:00:00.000Z",
+    context: { prompt: "Capital of Japan?", packLabel: "Test Pack", packId: "test-pack", acceptedAnswers: ["Tokyo"], input: "Kyoto" },
+  },
+];
+
 function buildApp() {
   const readStore = createInMemoryReadStore({
     users: USERS,
@@ -41,6 +71,7 @@ function buildApp() {
       { cardId: "S1:object", difficulty: 1600, answerCount: 4 },
       { cardId: "S2:object", difficulty: 1400, answerCount: 2 },
     ],
+    feedback: FEEDBACK,
   });
   return createAdminApp({ pack: fixtureReadStorePack(), readStores: { prod: readStore } });
 }
@@ -196,3 +227,65 @@ describe("environment routing", () => {
     expect(devRes.status).toBe(200);
   });
 });
+
+describe("GET /feedback", () => {
+  it("lists every report newest-first with the submitter's email resolved", async () => {
+    const res = await buildApp().request("/feedback");
+    expect(res.status).toBe(200);
+    const body = adminFeedbackListSchema.parse(await res.json());
+    expect(body.map((r) => r.id)).toEqual([3, 2, 1]);
+    expect(body[2]?.userEmail).toBe("a@example.com");
+    expect(body[0]?.context?.acceptedAnswers).toEqual(["Tokyo"]);
+  });
+
+  it("filters by status", async () => {
+    const res = await buildApp().request("/feedback?status=resolved");
+    const body = adminFeedbackListSchema.parse(await res.json());
+    expect(body.map((r) => r.id)).toEqual([1]);
+  });
+
+  it("filters by kind", async () => {
+    const res = await buildApp().request("/feedback?kind=question");
+    const body = adminFeedbackListSchema.parse(await res.json());
+    expect(body.map((r) => r.id)).toEqual([3, 2]);
+  });
+
+  it("500s when no read store is configured", async () => {
+    const res = await createAdminApp({ pack: fixtureReadStorePack() }).request("/feedback");
+    expect(res.status).toBe(500);
+  });
+});
+
+/**
+ * Feedback arrived on `dev` (#163) while the environment plumbing (#172) was
+ * being built, so the two met at merge. Feedback rows live in the Environment's
+ * own schema like every other cross-user read, which makes this route
+ * environment-scoped too: a report submitted against dev must not surface
+ * while prod is selected.
+ */
+describe("GET /feedback is environment-scoped", () => {
+  function buildApp() {
+    return createAdminApp({
+      pack: fixtureReadStorePack(),
+      readStores: {
+        prod: createInMemoryReadStore({ users: USERS, feedback: [FEEDBACK[0]!] }),
+        dev: createInMemoryReadStore({ users: USERS, feedback: [FEEDBACK[1]!, FEEDBACK[2]!] }),
+      },
+    });
+  }
+
+  it("returns each environment's own reports, not one schema's for all of them", async () => {
+    const app = buildApp();
+
+    const prod = adminFeedbackListSchema.parse(await (await app.request("/feedback")).json());
+    const dev = adminFeedbackListSchema.parse(await (await app.request("/feedback?env=dev")).json());
+
+    expect(prod.map((row) => row.id)).toEqual([1]);
+    expect(dev.map((row) => row.id).sort()).toEqual([2, 3]);
+  });
+
+  it("rejects an unrecognized environment rather than falling back to prod", async () => {
+    expect((await buildApp().request("/feedback?env=staging")).status).toBe(400);
+  });
+});
+

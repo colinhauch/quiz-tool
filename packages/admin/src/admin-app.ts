@@ -1,6 +1,8 @@
 import {
   adminEntityDetailSchema,
   adminEnvironmentComparisonSchema,
+  adminFeedbackFilterSchema,
+  adminFeedbackListSchema,
   adminGeneratorPreviewSchema,
   adminGraphHealthReportSchema,
   adminHealthSchema,
@@ -14,6 +16,7 @@ import {
   adminUserListSchema,
   environmentSchema,
   type AdminEnvironmentColumn,
+  type AdminFeedbackFilter,
   type AdminResultsFilter,
   type Environment,
 } from "@geo/contract";
@@ -32,6 +35,7 @@ import {
   buildLeaderboard,
   buildVolumeOverTime,
 } from "./leaderboard.js";
+import { buildFeedbackRows, filterFeedbackRows } from "./feedbackProjection.js";
 import { computeOwnership, type Ownership } from "./ownership.js";
 import { getPackDetail, listPacks } from "./packProjection.js";
 import { buildPopulation } from "./populationProjection.js";
@@ -266,6 +270,16 @@ export function createAdminApp(options: AdminAppOptions) {
     return adminResultsFilterSchema.parse(raw);
   }
 
+  /** Parses `/feedback`'s status/kind filters (#163). "All" is the absence of the parameter, so there is nothing to spell out for it. */
+  function parseFeedbackFilter(c: { req: { query: (key: string) => string | undefined } }): AdminFeedbackFilter {
+    const raw: Record<string, unknown> = {};
+    const status = c.req.query("status");
+    const kind = c.req.query("kind");
+    if (status !== undefined) raw.status = status;
+    if (kind !== undefined) raw.kind = kind;
+    return adminFeedbackFilterSchema.parse(raw);
+  }
+
   // Results surface (#143): every answer across every user, with composable filters.
   app.get("/results", async (c) => {
     const env = resolveEnvironment(c);
@@ -304,6 +318,22 @@ export function createAdminApp(options: AdminAppOptions) {
       easiestCards,
     };
     return c.json(adminResultsChartsSchema.parse(charts));
+  });
+
+  // Feedback surface (#163): every learner-submitted report, newest-first,
+  // filterable by status and kind. Read-only — the admin exposes no route that
+  // writes `status`; resolving is done out-of-band (spec #160).
+  app.get("/feedback", async (c) => {
+    // Feedback rows live in the Environment's own schema, so this route is
+    // environment-scoped like every other cross-user read (#172) — a report
+    // submitted against dev must not surface while prod is selected.
+    const env = resolveEnvironment(c);
+    if (env instanceof Response) return env;
+    const readStore = requireReadStore(env);
+    const filter = parseFeedbackFilter(c);
+    const [users, feedback] = await Promise.all([readStore.listUsers(), readStore.listFeedback()]);
+    const rows = filterFeedbackRows(buildFeedbackRows(users, feedback), filter);
+    return c.json(adminFeedbackListSchema.parse(rows));
   });
 
   // Environments comparison surface (#174): all three environments side by

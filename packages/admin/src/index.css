@@ -319,7 +319,8 @@ body {
 
 /* --------------------------------------------------- results filters */
 
-.admin-results-filters {
+.admin-results-filters,
+.admin-feedback-filters {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
@@ -331,7 +332,8 @@ body {
   margin-bottom: 16px;
 }
 
-.admin-results-filters label {
+.admin-results-filters label,
+.admin-feedback-filters label {
   display: flex;
   flex-direction: column;
   gap: 4px;

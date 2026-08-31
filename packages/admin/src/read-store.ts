@@ -54,6 +54,34 @@ export interface AdminCardDifficultyRow {
   answerCount: number;
 }
 
+/** The snapshot a question-feedback row captured at submission time (mirrors the `context` jsonb column). */
+export interface AdminFeedbackContext {
+  prompt?: string;
+  packLabel?: string;
+  packId?: string;
+  acceptedAnswers?: string[];
+  input?: string;
+  /** Whether the card had been answered when the flag was raised (#162). */
+  answered?: boolean;
+}
+
+/**
+ * One row of the `feedback` table, as the service role reads it (#163). It
+ * carries `userId` only — the email is joined in by the projection, so
+ * identity has one source of truth (`auth.users`) rather than a denormalized
+ * copy on the feedback row.
+ */
+export interface AdminFeedbackRecord {
+  id: number;
+  userId: string;
+  kind: "general" | "question";
+  cardId?: string;
+  comment: string;
+  context?: AdminFeedbackContext;
+  status: "unresolved" | "resolved";
+  createdAt: string;
+}
+
 export interface AdminReadStore {
   /** Every user in the system. */
   listUsers(): Promise<AdminUser[]>;
@@ -65,6 +93,8 @@ export interface AdminReadStore {
   listAllPackAbilities(): Promise<AdminPackAbilityRow[]>;
   /** The global card-difficulty cache — every rated Card. */
   listCardDifficulties(): Promise<AdminCardDifficultyRow[]>;
+  /** Every learner-submitted feedback row, across every user (#163). */
+  listFeedback(): Promise<AdminFeedbackRecord[]>;
 }
 
 /** In-memory seed data for {@link createInMemoryReadStore}. */
@@ -73,6 +103,7 @@ export interface InMemoryReadStoreSeed {
   answers?: AdminAnswerRow[];
   packAbilities?: AdminPackAbilityRow[];
   cardDifficulties?: AdminCardDifficultyRow[];
+  feedback?: AdminFeedbackRecord[];
 }
 
 /**
@@ -86,6 +117,7 @@ export function createInMemoryReadStore(seed: InMemoryReadStoreSeed = {}): Admin
   const answers = seed.answers ?? [];
   const packAbilities = seed.packAbilities ?? [];
   const cardDifficulties = seed.cardDifficulties ?? [];
+  const feedback = seed.feedback ?? [];
 
   return {
     async listUsers() {
@@ -102,6 +134,9 @@ export function createInMemoryReadStore(seed: InMemoryReadStoreSeed = {}): Admin
     },
     async listCardDifficulties() {
       return cardDifficulties;
+    },
+    async listFeedback() {
+      return feedback;
     },
   };
 }

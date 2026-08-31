@@ -1,7 +1,7 @@
 # @geo/admin — read-only operator visualizer
 
 A localhost tool for looking into the data quiz-tool manages: **Packs**, **Users**,
-**Results**, **Graph Health**, **Generator Preview**, and **Environments**. A Vite + React SPA plus a
+**Results**, **Feedback**, **Graph Health**, **Generator Preview**, and **Environments**. A Vite + React SPA plus a
 thin local Hono BFF, mirroring `@geo/web` + `@geo/server`. Deployed separately from
 the player app and kept out of its bundle. **Read-only — no route writes.** See spec
 #133 for the reasoning.
@@ -25,7 +25,7 @@ and ties their lifecycles together — no `concurrently` dependency.
   page. Every surface that is not scoped to the selected Environment says so
   on the page itself (`EnvironmentNote.tsx`, #173) — including Users, whose
   roster is the shared auth pool while the figures beside it are per-Environment.
-- **Users, Results, Population** read across all users, in whichever
+- **Users, Results, Population, Feedback** read across all users, in whichever
   Environment is selected in the SPA's left-nav selector (`prod`/`test`/`dev`
   — CONTEXT.md), and need Supabase credentials (below); without them those
   routes return a clear 500 for every Environment, the rest of the app is fine.
@@ -59,7 +59,7 @@ cp packages/admin/.env.example packages/admin/.env.local   # then fill it in
   with no network — the primary integration seam.
 - **`AdminReadStore`** (`src/read-store.ts`) — the single interface every
   cross-user read funnels through (`listUsers`, cross-user answers, `pack_ability`,
-  `card_difficulty`). Service-role impl in `src/supabase-read-store.ts`; an
+  `card_difficulty`, `feedback`). Service-role impl in `src/supabase-read-store.ts`; an
   in-memory fake for route tests. A future internet deploy swaps this one class
   for an RLS-extension impl without touching the SPA or the route contract.
 - **Environment** (`prod`/`test`/`dev`, #172) — every cross-user route takes
@@ -79,7 +79,7 @@ cp packages/admin/.env.example packages/admin/.env.local   # then fill it in
   `@geo/engine` primitives (`enumerateCards`, `ownerPackId`, `generateQuestion`,
   `replay`). The projection logic (`packProjection`, `healthChecks`,
   `generatorPreviewProjection`, `ownership`, the replay-based trajectory, the
-  results/population/leaderboard aggregations) lives here as pure functions — the
+  results/population/leaderboard aggregations, `feedbackProjection`) lives here as pure functions — the
   engine's public surface is not widened with admin concerns. Owner/relation
   attribution reads the pre-merge `LoadedPack[]` from `@geo/server/pack-loader`,
   since the assembled graph merges provenance away.

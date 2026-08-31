@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { setSignedInSource } from "./auth.js";
 import { Feedback } from "./Feedback.js";
 
 /**
@@ -19,7 +20,12 @@ function stubFetch(ok = true) {
   return posts;
 }
 
+beforeEach(() => {
+  setSignedInSource(() => true);
+});
+
 afterEach(() => {
+  setSignedInSource(() => false);
   vi.restoreAllMocks();
 });
 
@@ -90,5 +96,24 @@ describe("Feedback", () => {
 
     fireEvent.change(box, { target: { value: "second" } });
     await waitFor(() => expect(screen.queryByRole("status")).not.toBeInTheDocument());
+  });
+
+  // The gate on the app as a whole is about to loosen for anonymous play, so
+  // this surface has to read the sign-in state itself rather than assume it.
+  it("reads the sign-in state from the auth boundary when no prop is given", () => {
+    setSignedInSource(() => false);
+    stubFetch();
+    render(<Feedback />);
+    expect(screen.getByText(/sign in to send feedback/i)).toBeInTheDocument();
+    expect(screen.queryByLabelText(/your feedback/i)).toBeNull();
+  });
+
+  it("clears the box when the learner cancels", () => {
+    stubFetch();
+    render(<Feedback />);
+    const box = screen.getByLabelText(/your feedback/i);
+    fireEvent.change(box, { target: { value: "never mind" } });
+    fireEvent.click(screen.getByRole("button", { name: /cancel/i }));
+    expect(box).toHaveValue("");
   });
 });

@@ -3,6 +3,10 @@ import {
   adminAccuracyByKeySchema,
   adminCardDifficultySchema,
   adminEnvironmentComparisonSchema,
+
+  adminFeedbackFilterSchema,
+  adminFeedbackListSchema,
+  adminFeedbackRowSchema,
   adminLeaderboardSchema,
   adminPopulationSchema,
   adminResultRowSchema,
@@ -207,5 +211,83 @@ describe("adminEnvironmentComparisonSchema", () => {
         },
       }),
     ).toThrow();
+  });
+});
+
+describe("adminFeedbackRowSchema", () => {
+  it("accepts a question-feedback row with its captured context", () => {
+    const payload = {
+      id: 7,
+      createdAt: "2026-08-30T10:00:00.000Z",
+      userId: "u1",
+      userEmail: "a@example.com",
+      kind: "question",
+      comment: "This question is wrong",
+      context: {
+        prompt: "What is the capital of Japan?",
+        packLabel: "Capital Cities",
+        packId: "capital-cities",
+        acceptedAnswers: ["Tokyo"],
+        input: "Kyoto",
+      },
+      status: "unresolved",
+    };
+    expect(adminFeedbackRowSchema.parse(payload)).toEqual(payload);
+  });
+
+  // A flag raised before answering: `answered: false` is what tells the operator
+  // the missing input is expected rather than lost (#162).
+  it("accepts a row flagged before the question was answered", () => {
+    const payload = {
+      id: 10,
+      createdAt: "2026-08-30T10:30:00.000Z",
+      userId: "u1",
+      userEmail: "a@example.com",
+      kind: "question",
+      comment: "The prompt is ambiguous",
+      context: { prompt: "What is the capital of Japan?", packId: "capital-cities", answered: false },
+      status: "unresolved",
+    };
+    expect(adminFeedbackRowSchema.parse(payload)).toEqual(payload);
+  });
+
+  it("accepts a general-feedback row with no card or context", () => {
+    const payload = {
+      id: 8,
+      createdAt: "2026-08-30T11:00:00.000Z",
+      userId: "u2",
+      userEmail: null,
+      kind: "general",
+      comment: "Love the app",
+      status: "resolved",
+    };
+    expect(adminFeedbackListSchema.parse([payload])).toEqual([payload]);
+  });
+
+  it("rejects an unknown status", () => {
+    expect(() =>
+      adminFeedbackRowSchema.parse({
+        id: 9,
+        createdAt: "2026-08-30T11:00:00.000Z",
+        userId: "u2",
+        userEmail: null,
+        kind: "general",
+        comment: "Hi",
+        status: "wontfix",
+      }),
+    ).toThrow();
+  });
+});
+
+
+describe("adminFeedbackFilterSchema", () => {
+  it("accepts an empty filter and each single filter", () => {
+    expect(adminFeedbackFilterSchema.parse({})).toEqual({});
+    expect(adminFeedbackFilterSchema.parse({ status: "unresolved" })).toEqual({ status: "unresolved" });
+    expect(adminFeedbackFilterSchema.parse({ kind: "question" })).toEqual({ kind: "question" });
+  });
+
+  it("rejects an unknown kind", () => {
+    expect(() => adminFeedbackFilterSchema.parse({ kind: "bug" })).toThrow();
   });
 });

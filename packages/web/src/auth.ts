@@ -154,6 +154,26 @@ function resolveSupabaseConfig(): { url: string; key: string } {
   );
 }
 
+/**
+ * Where the feedback surfaces read whether a learner is signed in. Feedback is
+ * attributable, so each surface asks this itself rather than trusting that the
+ * app-wide gate kept signed-out visitors away — the gate is about to loosen for
+ * anonymous play, and the answer must stay no for feedback. The setter exists so
+ * component tests can drive both answers without a real session (the same seam
+ * shape as apiClient's `setAccessTokenSource`).
+ */
+let signedInSource: () => boolean = () => getAuthBoundary().getState().status === "signed-in";
+
+/** Overrides the sign-in reading. Production reads the auth boundary; tests inject a fake. */
+export function setSignedInSource(source: () => boolean): void {
+  signedInSource = source;
+}
+
+/** Whether a learner is signed in right now. */
+export function readSignedIn(): boolean {
+  return signedInSource();
+}
+
 let singleton: AuthBoundary | undefined;
 
 /** The app-wide boundary, built once around the real `supabase-js` client. */

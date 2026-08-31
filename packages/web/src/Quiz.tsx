@@ -4,6 +4,7 @@ import { AnswerBox } from "./AnswerBox.js";
 import { getQuestion, submitAnswer as submitAnswerRequest } from "./apiClient.js";
 import { readAutocompletePref, writeAutocompletePref } from "./autocompletePref.js";
 import { readAutoZoomPref, writeAutoZoomPref } from "./autoZoomPref.js";
+import { QuestionFeedback } from "./QuestionFeedback.js";
 import { VisualAid } from "./VisualAid.js";
 
 // "Asia or Europe" for a transcontinental country; "Japan" for a single answer.
@@ -124,6 +125,30 @@ export function Quiz() {
             </button>
           </>
         )}
+
+        {/*
+          Flagging the card the learner is looking at. Keyed on the card so
+          moving to the next question starts from a closed, empty box rather
+          than carrying the last card's draft or confirmation. The snapshot is
+          built here because only this component knows the state: what was typed
+          and what was accepted exist only once the question has been answered.
+        */}
+        <QuestionFeedback
+          key={view.question.cardId}
+          cardId={view.question.cardId}
+          context={{
+            prompt: view.question.prompt,
+            packId: view.question.packId,
+            packLabel: view.question.packLabel,
+            // `answered` is what makes the absent input readable: the learner
+            // flagged the card before answering, rather than the client losing
+            // what they typed.
+            answered: view.state === "answered",
+            ...(view.state === "answered"
+              ? { input, acceptedAnswers: view.result.acceptedAnswers }
+              : {}),
+          }}
+        />
       </div>
     </div>
   );
