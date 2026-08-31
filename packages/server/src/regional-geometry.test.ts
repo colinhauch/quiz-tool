@@ -42,6 +42,13 @@ describe("regionExtentFor", () => {
     expect(mixed.maxLat - mixed.minLat).toBeGreaterThan(city.maxLat - city.minLat);
   });
 
+  it("makes the window twice as wide as it is tall, matching the 2:1 frame", () => {
+    const extent = regionExtentFor({ lat: 0, lon: 0 }, ["city"]);
+    const lonSpan = extent.maxLon - extent.minLon;
+    const latSpan = extent.maxLat - extent.minLat;
+    expect(lonSpan / latSpan).toBeCloseTo(2);
+  });
+
   it("clamps to valid lon/lat ranges near the poles and antimeridian", () => {
     const extent = regionExtentFor({ lat: 89, lon: 179 }, ["continent"]);
     expect(extent.maxLat).toBeLessThanOrEqual(90);

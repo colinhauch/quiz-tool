@@ -29,6 +29,16 @@ const HALF_SPAN_DEG: Record<string, number> = {
 const DEFAULT_HALF_SPAN_DEG = 10;
 
 /**
+ * Frame aspect (width:height) the clip window is grown to match. The reveal map
+ * is an equirectangular world — a 360×180 projected box, so 2:1 — and the client
+ * frames every zoom at that ratio. Clipping to the *same* ratio (lon half-span =
+ * `FRAME_ASPECT` × lat half-span) makes the stored region fill the frame instead
+ * of sitting as a narrower box inside it (spec #152). Kept here, not imported
+ * from the web package, so the server carries no web dependency.
+ */
+const FRAME_ASPECT = 2;
+
+/**
  * Output coordinates are rounded to this many decimals (~110 m at 3) to bound
  * stored size — far finer than 50m coastlines resolve, so invisible on the card.
  */
@@ -49,11 +59,12 @@ const clampLon = (lon: number) => Math.max(-180, Math.min(180, lon));
  * yields an in-range rectangle).
  */
 export function regionExtentFor(coordinate: { lat: number; lon: number }, types: string[]): RegionExtent {
-  const half = halfSpanFor(types);
+  const half = halfSpanFor(types); // vertical (lat) half-span
+  const lonHalf = half * FRAME_ASPECT; // widen so the window matches the 2:1 frame
   return {
-    minLon: clampLon(coordinate.lon - half),
+    minLon: clampLon(coordinate.lon - lonHalf),
     minLat: clampLat(coordinate.lat - half),
-    maxLon: clampLon(coordinate.lon + half),
+    maxLon: clampLon(coordinate.lon + lonHalf),
     maxLat: clampLat(coordinate.lat + half),
   };
 }
