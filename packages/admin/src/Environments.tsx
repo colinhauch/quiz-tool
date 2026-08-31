@@ -3,13 +3,8 @@ import type { AdminEnvironmentComparison, Environment } from "@geo/contract";
 import { getEnvironmentComparison } from "./apiClient.js";
 import { readEnvironmentPref } from "./environmentPref.js";
 import { EnvironmentNote } from "./EnvironmentNote.js";
+import { ENVIRONMENT_SCHEMAS } from "./environmentSchemas.js";
 
-/** The three Environments in nav order, paired with the schema each binds to — the `prod` → `public` divergence CONTEXT.md records as two terms. */
-const COLUMNS: { readonly id: Environment; readonly schema: string }[] = [
-  { id: "prod", schema: "public" },
-  { id: "test", schema: "test" },
-  { id: "dev", schema: "dev" },
-];
 
 /** One comparison row: a label and how to read it off a healthy column. Kept as data so the table's shape lives in one place. */
 const ROWS: {
@@ -74,7 +69,7 @@ export function Environments({ selectedEnvironment }: { selectedEnvironment?: En
         <thead>
           <tr>
             <th scope="col">Measure</th>
-            {COLUMNS.map((col) => (
+            {ENVIRONMENT_SCHEMAS.map((col) => (
               <th key={col.id} scope="col" className={col.id === selected ? "admin-env-column-selected" : undefined}>
                 {col.id} <span className="admin-muted">({col.schema})</span>
                 {col.id === selected ? " (selected)" : ""}
@@ -86,7 +81,7 @@ export function Environments({ selectedEnvironment }: { selectedEnvironment?: En
           {ROWS.map((row) => (
             <tr key={row.label}>
               <th scope="row">{row.label}</th>
-              {COLUMNS.map((col) => {
+              {ENVIRONMENT_SCHEMAS.map((col) => {
                 const column = comparison.environments[col.id];
                 const marked = col.id === selected ? "admin-env-column-selected" : undefined;
                 if (!column || column.status === "unavailable") {
@@ -110,7 +105,7 @@ export function Environments({ selectedEnvironment }: { selectedEnvironment?: En
       {/* A dead environment is one column's problem, never the page's: its
           reason is stated below the table while the healthy columns render
           their figures normally. */}
-      {COLUMNS.map((col) => {
+      {ENVIRONMENT_SCHEMAS.map((col) => {
         const column = comparison.environments[col.id];
         if (!column) return <p key={col.id} className="admin-muted">{col.id}: no data returned.</p>;
         if (column.status !== "unavailable") return null;

@@ -28,10 +28,10 @@ import { readEnvironmentPref } from "./environmentPref.js";
 /**
  * The operator's chosen Environment, read from `localStorage` exactly once at
  * module load rather than on every call (#172). This is deliberate: it means
- * a switch (`EnvironmentSelector.ts`, which writes the new choice and then
+ * a switch (`EnvironmentSelector.tsx`, which writes the new choice and then
  * reloads the page) is what makes a new choice take effect, not some live
  * subscription — consistent with "switching reloads" being this ticket's
- * chosen first step (see `EnvironmentSelector.ts`'s own doc comment for what
+ * chosen first step (see `EnvironmentSelector.tsx`'s own doc comment for what
  * replaces the reload later). No component reads this directly; it only ever
  * flows into outgoing requests through {@link adminFetch}/
  * {@link adminFetchOptional} below, which is what "single choke point" means.

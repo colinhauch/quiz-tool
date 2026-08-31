@@ -81,10 +81,6 @@ body {
   background: rgba(255, 255, 255, 0.14);
 }
 
-/* The schema half of each option's label — dimmed so the environment name
-   reads as the primary identity. Most browsers flatten `<option>` content to
-   plain text (see EnvironmentSelector.tsx's comment on why the span is there
-   regardless), so this rule takes effect wherever the renderer keeps it. */
 .admin-nav ul {
   list-style: none;
   margin: 0;

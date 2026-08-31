@@ -1,13 +1,8 @@
 import { useState, type ChangeEvent } from "react";
 import type { Environment } from "@geo/contract";
 import { readEnvironmentPref, writeEnvironmentPref } from "./environmentPref.js";
+import { ENVIRONMENT_SCHEMAS } from "./environmentSchemas.js";
 
-/** The three environments, in nav order, paired with the schema each binds to (`environmentPref.ts`/`admin-app.ts` — the `prod` → `public` divergence is why the two are separate words at all; see CONTEXT.md). */
-const ENVIRONMENTS: { readonly id: Environment; readonly schema: string }[] = [
-  { id: "prod", schema: "public" },
-  { id: "test", schema: "test" },
-  { id: "dev", schema: "dev" },
-];
 
 /** `window.location.reload()`, the real seam's default — overridden in tests. */
 function defaultReload(): void {
@@ -47,7 +42,7 @@ export function EnvironmentSelector({ onReload = defaultReload }: { onReload?: (
   // label carries both names, which is the part that actually matters.
   return (
     <select className="admin-env-select" aria-label="Environment" value={selected} onChange={handleChange}>
-      {ENVIRONMENTS.map((env) => (
+      {ENVIRONMENT_SCHEMAS.map((env) => (
         <option key={env.id} value={env.id}>
           {env.id} ({env.schema})
         </option>
