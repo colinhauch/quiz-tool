@@ -528,10 +528,11 @@ body {
    composited over the coarse 110m base in the same lon/lat space. Fill only, no
    stroke — the ring includes straight segments along the clip-window box, and
    stroking them draws dark border lines around the region. The crisp coastline
-   is the fill boundary itself, so it stays sharp without an outline. */
+   is the fill boundary itself, so it stays sharp without an outline. Matches the
+   base land's fill-opacity so the detail is the same green, not a deeper patch. */
 .map-aid__local {
   fill: var(--green);
-  fill-opacity: 1;
+  fill-opacity: 0.9;
 }
 
 .map-aid__frame {
