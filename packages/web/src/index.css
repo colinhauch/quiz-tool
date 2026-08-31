@@ -525,14 +525,13 @@ body {
 }
 
 /* The hi-res regional overlay (spec #152, #155): the server-clipped local land,
-   composited over the coarse 110m base in the same lon/lat space. Slightly
-   deeper than the base so the crisp coastline reads as the focused layer. */
+   composited over the coarse 110m base in the same lon/lat space. Fill only, no
+   stroke — the ring includes straight segments along the clip-window box, and
+   stroking them draws dark border lines around the region. The crisp coastline
+   is the fill boundary itself, so it stays sharp without an outline. */
 .map-aid__local {
   fill: var(--green);
   fill-opacity: 1;
-  stroke: var(--green-text);
-  stroke-width: 0.75;
-  stroke-linejoin: round;
 }
 
 .map-aid__frame {
