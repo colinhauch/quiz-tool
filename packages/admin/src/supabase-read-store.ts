@@ -107,7 +107,14 @@ function toFeedbackRecord(row: FeedbackRow): AdminFeedbackRecord {
   return record;
 }
 
-export function createSupabaseReadStore(client: SupabaseClient): AdminReadStore {
+// The schema generic is deliberately loosened from `SupabaseClient`'s default
+// (`"public"` only) to `any`: `index.ts` builds one client per Environment
+// via `createClient(url, key, { db: { schema } })` with `schema` a plain
+// runtime string (`SCHEMA_BY_ENVIRONMENT[env]`), so the schema a given client
+// is bound to isn't known at the type level — only at the call site that
+// constructs it. This function works identically no matter which schema the
+// client is bound to; that's the entire point of the interface (#172).
+export function createSupabaseReadStore(client: SupabaseClient<any, any, any>): AdminReadStore {
   return {
     async listUsers() {
       // The Admin API paginates; loop until a short page proves the end, same

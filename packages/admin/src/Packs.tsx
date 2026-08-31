@@ -3,6 +3,7 @@ import type { AdminPackDetail, AdminPackList, AdminRelationGroup } from "@geo/co
 import { getPackDetail, getPacks } from "./apiClient.js";
 import { EntityDetail } from "./EntityDetail.js";
 import { consumePacksFocus } from "./navigation.js";
+import { EnvironmentNote } from "./EnvironmentNote.js";
 
 type View =
   | { kind: "list" }
@@ -36,6 +37,7 @@ export function Packs() {
       <h1 id="surface-Packs" className="admin-surface__title">
         Packs
       </h1>
+      <EnvironmentNote kind="pack-graph" />
       <nav aria-label="Breadcrumb" className="admin-breadcrumb">
         <button type="button" className="admin-link" onClick={() => setView({ kind: "list" })}>
           All packs

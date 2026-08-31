@@ -22,11 +22,19 @@ const USER_DETAIL = {
   trajectory: [{ askedAt: "2026-08-20T00:00:00.000Z", packId: "test-pack", ability: 1550 }],
 };
 
+// apiClient (#172) appends `?env=` to every request; matching drops it so
+// this fixture stays keyed by the bare route, which is what's actually under
+// test here — not the environment plumbing (covered separately by
+// `apiClient.test.ts` and the BFF route tests).
+function withoutEnv(path: string): string {
+  return path.replace(/([?&])env=[^&]*&?/, "$1").replace(/[?&]$/, "");
+}
+
 function mockFetch() {
   vi.stubGlobal(
     "fetch",
     vi.fn(async (input: string) => {
-      if (String(input) === "/api/users/u1") return new Response(JSON.stringify(USER_DETAIL), { status: 200 });
+      if (withoutEnv(String(input)) === "/api/users/u1") return new Response(JSON.stringify(USER_DETAIL), { status: 200 });
       return new Response(null, { status: 404 });
     }),
   );

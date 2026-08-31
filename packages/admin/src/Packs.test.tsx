@@ -40,6 +40,14 @@ const ENTITY_DETAIL = {
   statements: [],
 };
 
+// apiClient (#172) appends `?env=` to every request; matching drops it so
+// these fixtures stay keyed by the bare route, which is what's actually
+// under test here — not the environment plumbing (covered separately by
+// `apiClient.test.ts` and the BFF route tests).
+function withoutEnv(path: string): string {
+  return path.replace(/([?&])env=[^&]*&?/, "$1").replace(/[?&]$/, "");
+}
+
 function mockFetchSequence() {
   const responses = new Map<string, unknown>([
     ["/api/packs", PACKS_LIST],
@@ -49,7 +57,7 @@ function mockFetchSequence() {
   vi.stubGlobal(
     "fetch",
     vi.fn(async (input: string) => {
-      const path = String(input);
+      const path = withoutEnv(String(input));
       const body = responses.get(path);
       if (body === undefined) return new Response(null, { status: 404 });
       return new Response(JSON.stringify(body), { status: 200 });

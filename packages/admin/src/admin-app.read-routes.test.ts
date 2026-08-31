@@ -32,6 +32,10 @@ const ANSWERS: AdminAnswerRow[] = [
   { userId: "u2", cardId: "S2:object", input: "wrong", correct: false, askedAt: "2026-08-21T00:00:00.000Z" },
 ];
 
+// `readStores` is a map now (#172), keyed by Environment; `buildApp()` seeds
+// only `prod`, since every pre-existing test below never sends `?env=` and
+// must keep exercising exactly today's behavior (absent env => prod).
+
 const FEEDBACK: AdminFeedbackRecord[] = [
   { id: 1, userId: "u1", kind: "general", comment: "Love the app", status: "resolved", createdAt: "2026-08-28T00:00:00.000Z" },
   {
@@ -69,14 +73,19 @@ function buildApp() {
     ],
     feedback: FEEDBACK,
   });
-  return createAdminApp({ pack: fixtureReadStorePack(), readStore });
+  return createAdminApp({ pack: fixtureReadStorePack(), readStores: { prod: readStore } });
 }
 
 describe("GET /users", () => {
-  it("lists every user through the read store", async () => {
+  it("lists every user through the read store, with their activity in this environment", async () => {
     const res = await buildApp().request("/users");
     expect(res.status).toBe(200);
-    expect(adminUserListSchema.parse(await res.json())).toEqual(USERS);
+    // The roster is the shared auth pool; the two activity fields beside each
+    // user come from the requested Environment's schema alone (#173).
+    expect(adminUserListSchema.parse(await res.json())).toEqual([
+      { ...USERS[0], answerCount: 1, lastAnsweredAt: "2026-08-20T00:00:00.000Z" },
+      { ...USERS[1], answerCount: 1, lastAnsweredAt: "2026-08-21T00:00:00.000Z" },
+    ]);
   });
 
   it("500s when no read store is configured", async () => {
@@ -153,6 +162,72 @@ describe("GET /results/charts", () => {
   });
 });
 
+/**
+ * The environment plumbing itself (#172): `readStores` is a map of
+ * Environment => store, and every cross-user route reads `?env=` to pick
+ * which one. This is the assertion that makes the feature real — the same
+ * route, with two different environments, must return two different answers,
+ * proving the BFF isn't quietly reading one schema for everything.
+ */
+describe("environment routing", () => {
+  const PROD_USERS: AdminUser[] = [
+    { id: "prod-u1", email: "prod@example.com", createdAt: "2026-08-01T00:00:00.000Z", lastSignInAt: null },
+  ];
+  const DEV_USERS: AdminUser[] = [
+    { id: "dev-u1", email: "dev1@example.com", createdAt: "2026-08-05T00:00:00.000Z", lastSignInAt: null },
+    { id: "dev-u2", email: "dev2@example.com", createdAt: "2026-08-06T00:00:00.000Z", lastSignInAt: null },
+  ];
+
+  function buildTwoEnvApp() {
+    return createAdminApp({
+      pack: fixtureReadStorePack(),
+      readStores: {
+        prod: createInMemoryReadStore({ users: PROD_USERS }),
+        dev: createInMemoryReadStore({ users: DEV_USERS }),
+      },
+    });
+  }
+
+  it("returns different data for different environments on the same route", async () => {
+    const app = buildTwoEnvApp();
+
+    const prodRes = await app.request("/users");
+    const devRes = await app.request("/users?env=dev");
+
+    // Neither environment's fake was seeded with answers, so every row is a
+    // real zero — which is itself the #173 behavior: registered, never played
+    // here, still listed.
+    const inactive = { answerCount: 0, lastAnsweredAt: null };
+    expect(adminUserListSchema.parse(await prodRes.json())).toEqual(PROD_USERS.map((u) => ({ ...u, ...inactive })));
+    expect(adminUserListSchema.parse(await devRes.json())).toEqual(DEV_USERS.map((u) => ({ ...u, ...inactive })));
+  });
+
+  it("treats an absent env exactly as prod, unmodified from today's behavior", async () => {
+    const app = buildTwoEnvApp();
+    const noEnv = await app.request("/users");
+    const explicitProd = await app.request("/users?env=prod");
+    expect(await noEnv.json()).toEqual(await explicitProd.json());
+  });
+
+  it("rejects an unrecognized environment as a client error rather than defaulting", async () => {
+    const app = buildTwoEnvApp();
+    const res = await app.request("/users?env=staging");
+    expect(res.status).toBe(400);
+  });
+
+  it("fails a route for an environment with no configured store, naming that environment, while other environments still work", async () => {
+    const app = buildTwoEnvApp(); // no `test` store configured
+
+    const testRes = await app.request("/users?env=test");
+    expect(testRes.status).toBe(500);
+    const testBody = (await testRes.json()) as { error?: string };
+    expect(testBody.error).toContain("test");
+
+    const devRes = await app.request("/users?env=dev");
+    expect(devRes.status).toBe(200);
+  });
+});
+
 describe("GET /feedback", () => {
   it("lists every report newest-first with the submitter's email resolved", async () => {
     const res = await buildApp().request("/feedback");
@@ -180,3 +255,37 @@ describe("GET /feedback", () => {
     expect(res.status).toBe(500);
   });
 });
+
+/**
+ * Feedback arrived on `dev` (#163) while the environment plumbing (#172) was
+ * being built, so the two met at merge. Feedback rows live in the Environment's
+ * own schema like every other cross-user read, which makes this route
+ * environment-scoped too: a report submitted against dev must not surface
+ * while prod is selected.
+ */
+describe("GET /feedback is environment-scoped", () => {
+  function buildApp() {
+    return createAdminApp({
+      pack: fixtureReadStorePack(),
+      readStores: {
+        prod: createInMemoryReadStore({ users: USERS, feedback: [FEEDBACK[0]!] }),
+        dev: createInMemoryReadStore({ users: USERS, feedback: [FEEDBACK[1]!, FEEDBACK[2]!] }),
+      },
+    });
+  }
+
+  it("returns each environment's own reports, not one schema's for all of them", async () => {
+    const app = buildApp();
+
+    const prod = adminFeedbackListSchema.parse(await (await app.request("/feedback")).json());
+    const dev = adminFeedbackListSchema.parse(await (await app.request("/feedback?env=dev")).json());
+
+    expect(prod.map((row) => row.id)).toEqual([1]);
+    expect(dev.map((row) => row.id).sort()).toEqual([2, 3]);
+  });
+
+  it("rejects an unrecognized environment rather than falling back to prod", async () => {
+    expect((await buildApp().request("/feedback?env=staging")).status).toBe(400);
+  });
+});
+

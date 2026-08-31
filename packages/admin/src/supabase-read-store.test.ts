@@ -93,6 +93,39 @@ describe.skipIf(!ready)("createSupabaseReadStore (integration, service role)", (
     expect(difficulties).toContainEqual({ cardId, difficulty: 1470, answerCount: 2 });
   });
 
+  /**
+   * The one thing an in-memory fake can't prove (#172): that binding the
+   * client to a non-default schema via supabase-js's `db.schema` actually
+   * changes which rows `.from(...)` reads. `admin` (from `beforeAll`) is
+   * unscoped — the project's default schema, `public`, i.e. what the BFF
+   * calls the `prod` Environment. `testSchema` below is bound to `test`, one
+   * of the other two schemas the admin's environment selector can choose
+   * (CONTEXT.md's "Environment"/"schema" entries) — mirroring exactly what
+   * `index.ts`'s `buildReadStores` does per-Environment at runtime.
+   */
+  it("reads from the schema its client is bound to, not the default (public/prod) schema", async () => {
+    const testSchemaClient = createClient(url as string, serviceKey as string, {
+      auth: { persistSession: false, autoRefreshToken: false },
+      db: { schema: "test" },
+    });
+
+    const userId = await createUser();
+    const packId = `read-store-schema-${crypto.randomUUID()}`;
+    const { error } = await testSchemaClient.from("pack_ability").insert({ user_id: userId, pack_id: packId, ability: 1500 });
+    if (error) throw new Error(`insert into test schema failed: ${error.message}`);
+
+    const testStore = createSupabaseReadStore(testSchemaClient);
+    const inTestSchema = await testStore.listAllPackAbilities();
+    expect(inTestSchema).toContainEqual({ userId, packId, ability: 1500 });
+
+    // The default-schema (public/prod) store must not see a row that only
+    // exists in `test` — proving the binding actually scopes the read,
+    // rather than `db.schema` being silently ignored.
+    const prodStore = createSupabaseReadStore(admin);
+    const inProdSchema = await prodStore.listAllPackAbilities();
+    expect(inProdSchema.some((row) => row.packId === packId)).toBe(false);
+  });
+
   it("reads feedback across users, including the captured context (#163)", async () => {
     const a = await createUser();
     const cardId = `cc:read-store-${crypto.randomUUID()}:object`;

@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { SURFACES, type SurfaceId } from "./surfaces.js";
 import { usePacksFocus } from "./navigation.js";
+import { readEnvironmentPref } from "./environmentPref.js";
+import { EnvironmentSelector } from "./EnvironmentSelector.js";
 
 /**
  * The admin shell: a persistent left nav across the six surfaces — Packs,
@@ -11,6 +13,13 @@ import { usePacksFocus } from "./navigation.js";
  * An always-visible read-only badge states the app's stance in this iteration
  * (the BFF exposes reads only). It is chrome the shell owns, so every surface
  * carries it without each having to remember to.
+ *
+ * The {@link EnvironmentSelector} (#172) sits directly beneath the brand and
+ * above the surface list, per spec #171 — always visible, on every surface,
+ * because "which environment am I looking at" is a question the operator
+ * should never have to go hunting for. It is entirely self-contained: it
+ * reads/writes its own persisted choice and reloads the page on switch,
+ * so nothing here threads an environment prop to `ActiveSurface`.
  */
 export function App() {
   const [active, setActive] = useState<SurfaceId>("packs");
@@ -31,10 +40,19 @@ export function App() {
   const surface = SURFACES.find((s) => s.id === active) ?? SURFACES[0]!;
   const ActiveSurface = surface.component;
 
+  // The shell states which Environment it is showing, and the stylesheet keys
+  // a subtle accent off it (warm prod / neutral test / cool dev) so a
+  // screenshot is self-documenting. A tint, not a banner: the admin is
+  // read-only, so looking at the wrong Environment is a misreading, not a
+  // mistake you cannot undo. Read once, like `apiClient` does — switching
+  // reloads the page (#172), so it cannot go stale under us.
+  const environment = readEnvironmentPref();
+
   return (
-    <div className="admin-shell">
+    <div className="admin-shell" data-environment={environment}>
       <nav className="admin-nav" aria-label="Admin surfaces">
         <div className="admin-brand">Geo Admin</div>
+        <EnvironmentSelector />
         <ul>
           {SURFACES.map((s) => (
             <li key={s.id}>

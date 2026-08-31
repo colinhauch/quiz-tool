@@ -43,4 +43,13 @@ describe("admin shell", () => {
 
     expect(screen.getByRole("button", { name: "Packs" })).toHaveAttribute("aria-current", "page");
   });
+
+  // The tint exists so a screenshot says which environment it was taken
+  // against; the honest behavioural assertion is that the shell declares the
+  // environment it is showing, which is also what the tint is keyed off.
+  it("declares which environment the shell is showing", () => {
+    render(<App />);
+    expect(screen.getByRole("navigation", { name: "Admin surfaces" })).toBeInTheDocument();
+    expect(document.querySelector(".admin-shell")).toHaveAttribute("data-environment", "dev");
+  });
 });

@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   adminAccuracyByKeySchema,
   adminCardDifficultySchema,
+  adminEnvironmentComparisonSchema,
+
   adminFeedbackFilterSchema,
   adminFeedbackListSchema,
   adminFeedbackRowSchema,
@@ -14,19 +16,56 @@ import {
   adminUserAggregateSchema,
   adminUserDetailSchema,
   adminUserListSchema,
+  environmentSchema,
 } from "./admin-store.js";
 
+describe("environmentSchema", () => {
+  it("accepts prod, test, and dev", () => {
+    expect(environmentSchema.parse("prod")).toBe("prod");
+    expect(environmentSchema.parse("test")).toBe("test");
+    expect(environmentSchema.parse("dev")).toBe("dev");
+  });
+
+  it("rejects an unrecognized environment", () => {
+    expect(() => environmentSchema.parse("staging")).toThrow();
+  });
+});
+
 describe("adminUserListSchema", () => {
-  it("accepts a list of users, including a never-signed-in one", () => {
+  it("accepts a list of users, including a never-signed-in one and one with no activity in this environment", () => {
     const payload = [
-      { id: "u1", email: "a@example.com", createdAt: "2026-08-01T00:00:00.000Z", lastSignInAt: "2026-08-20T00:00:00.000Z" },
-      { id: "u2", email: null, createdAt: "2026-08-02T00:00:00.000Z", lastSignInAt: null },
+      {
+        id: "u1",
+        email: "a@example.com",
+        createdAt: "2026-08-01T00:00:00.000Z",
+        lastSignInAt: "2026-08-20T00:00:00.000Z",
+        answerCount: 12,
+        lastAnsweredAt: "2026-08-20T00:00:00.000Z",
+      },
+      {
+        id: "u2",
+        email: null,
+        createdAt: "2026-08-02T00:00:00.000Z",
+        lastSignInAt: null,
+        answerCount: 0,
+        lastAnsweredAt: null,
+      },
     ];
     expect(adminUserListSchema.parse(payload)).toEqual(payload);
   });
 
   it("rejects an entry missing a field", () => {
     expect(() => adminUserListSchema.parse([{ id: "u1", email: null }])).toThrow();
+  });
+
+  // The activity half is per-Environment, so it is not optional: a row without
+  // it would leave the SPA unable to tell "no activity here" from "not asked".
+  it("rejects a user row carrying identity but no activity", () => {
+    expect(() =>
+      adminUserListSchema.parse([
+        { id: "u1", email: null, createdAt: "2026-08-01T00:00:00.000Z", lastSignInAt: null },
+      ]),
+    ).toThrow();
   });
 });
 
@@ -118,6 +157,63 @@ describe("adminResultsChartsSchema", () => {
   });
 });
 
+describe("adminEnvironmentComparisonSchema", () => {
+  it("accepts a healthy column for every environment plus the shared registered-user count", () => {
+    const okColumn = {
+      status: "ok" as const,
+      usersWithAnswers: 2,
+      totalAnswers: 5,
+      accuracy: 0.6,
+      distinctCardsAnswered: 3,
+      firstAnswerAt: "2026-08-20T00:00:00.000Z",
+      lastAnswerAt: "2026-08-21T00:00:00.000Z",
+      packsWithAbilityRows: 1,
+      ratedCards: 2,
+    };
+    const payload = {
+      registeredUsers: 4,
+      environments: { prod: okColumn, test: okColumn, dev: okColumn },
+    };
+    expect(adminEnvironmentComparisonSchema.parse(payload)).toEqual(payload);
+  });
+
+  it("accepts an unavailable column carrying only a reason", () => {
+    const okColumn = {
+      status: "ok" as const,
+      usersWithAnswers: 0,
+      totalAnswers: 0,
+      accuracy: 0,
+      distinctCardsAnswered: 0,
+      firstAnswerAt: null,
+      lastAnswerAt: null,
+      packsWithAbilityRows: 0,
+      ratedCards: 0,
+    };
+    const payload = {
+      registeredUsers: 1,
+      environments: {
+        prod: okColumn,
+        test: { status: "unavailable" as const, reason: "AdminReadStore is not configured for environment: test" },
+        dev: okColumn,
+      },
+    };
+    expect(adminEnvironmentComparisonSchema.parse(payload)).toEqual(payload);
+  });
+
+  it("rejects an unavailable column that also carries stats fields", () => {
+    expect(() =>
+      adminEnvironmentComparisonSchema.parse({
+        registeredUsers: 0,
+        environments: {
+          prod: { status: "unavailable", reason: "down", totalAnswers: 0 },
+          test: { status: "unavailable", reason: "down" },
+          dev: { status: "unavailable", reason: "down" },
+        },
+      }),
+    ).toThrow();
+  });
+});
+
 describe("adminFeedbackRowSchema", () => {
   it("accepts a question-feedback row with its captured context", () => {
     const payload = {
@@ -182,6 +278,7 @@ describe("adminFeedbackRowSchema", () => {
     ).toThrow();
   });
 });
+
 
 describe("adminFeedbackFilterSchema", () => {
   it("accepts an empty filter and each single filter", () => {

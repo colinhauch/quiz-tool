@@ -1,5 +1,6 @@
 import type {
   AdminEntityDetail,
+  AdminEnvironmentComparison,
   AdminFeedbackFilter,
   AdminFeedbackList,
   AdminGeneratorPreview,
@@ -14,6 +15,7 @@ import type {
   AdminUserDetail,
   AdminUserList,
 } from "@geo/contract";
+import { readEnvironmentPref } from "./environmentPref.js";
 
 /**
  * The single choke point every admin SPA→BFF call passes through, mirroring the
@@ -24,8 +26,28 @@ import type {
  * Every call hits the BFF under `/api`, which Vite proxies to the Node backend
  * (see `vite.config.ts`).
  */
+
+/**
+ * The operator's chosen Environment, read from `localStorage` exactly once at
+ * module load rather than on every call (#172). This is deliberate: it means
+ * a switch (`EnvironmentSelector.tsx`, which writes the new choice and then
+ * reloads the page) is what makes a new choice take effect, not some live
+ * subscription — consistent with "switching reloads" being this ticket's
+ * chosen first step (see `EnvironmentSelector.tsx`'s own doc comment for what
+ * replaces the reload later). No component reads this directly; it only ever
+ * flows into outgoing requests through {@link adminFetch}/
+ * {@link adminFetchOptional} below, which is what "single choke point" means.
+ */
+const ENVIRONMENT = readEnvironmentPref();
+
+/** Appends `?env=<the module-load-time environment>` to `path`, merging into an existing query string instead of producing a second `?`. */
+function withEnvironment(path: string): string {
+  const separator = path.includes("?") ? "&" : "?";
+  return `${path}${separator}env=${ENVIRONMENT}`;
+}
+
 async function adminFetch(path: string, init?: RequestInit): Promise<Response> {
-  const res = await fetch(`/api${path}`, init);
+  const res = await fetch(`/api${withEnvironment(path)}`, init);
   if (!res.ok) throw new Error(`admin request failed: ${res.status} ${path}`);
   return res;
 }
@@ -36,7 +58,7 @@ async function adminFetch(path: string, init?: RequestInit): Promise<Response> {
  * statement no longer in the graph) rather than a broken request.
  */
 async function adminFetchOptional(path: string): Promise<Response | null> {
-  const res = await fetch(`/api${path}`);
+  const res = await fetch(`/api${withEnvironment(path)}`);
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(`admin request failed: ${res.status} ${path}`);
   return res;
@@ -119,6 +141,21 @@ export async function getResults(filter: AdminResultsFilter = {}): Promise<Admin
 export async function getResultsCharts(filter: AdminResultsFilter = {}): Promise<AdminResultsCharts> {
   const res = await adminFetch(`/results/charts${resultsQuery(filter)}`);
   return (await res.json()) as AdminResultsCharts;
+}
+
+/**
+ * All three environments side by side (#174). Deliberately bypasses
+ * {@link adminFetch} — the one call in this file that does — because
+ * `GET /environments` reads every environment at once and takes no `?env=`
+ * at all (`admin-app.ts`'s doc comment on the route says the same). Attaching
+ * the module-load-time environment here would be misleading: it would look
+ * like this call is scoped to one environment when the whole point of the
+ * route is that it isn't.
+ */
+export async function getEnvironmentComparison(): Promise<AdminEnvironmentComparison> {
+  const res = await fetch("/api/environments");
+  if (!res.ok) throw new Error(`admin request failed: ${res.status} /environments`);
+  return (await res.json()) as AdminEnvironmentComparison;
 }
 
 /** Turns a Feedback filter into a query string; an absent filter means "all" (#163). */
