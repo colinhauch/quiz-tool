@@ -1,0 +1,11 @@
+{
+  "_readme": "Curated country-name aliases unioned into core-geo entities on top of the ones Wikidata's altLabels supply (ticket #183). Author-supplied, because these are the short/common/official forms Wikidata omits OR that the answer normalizer can't reach: it keeps a leading 'the' and turns 'U. S. A.' into 'u s a' (spaced), so bare 'USA'/'US'/'UK' are not accepted from the existing altLabels alone. Applied by apply-alias-overrides.mjs (label-preserving) and re-applied on a full fetch-entities.mjs run. Additive and idempotent: an alias already accepted is a harmless no-op. Keyed by Wikidata Q-id; `country` is a comment for reviewers.",
+  "aliases": {
+    "Q30": { "country": "United States", "add": ["USA", "US", "United States of America"] },
+    "Q145": { "country": "United Kingdom", "add": ["UK", "Britain"] },
+    "Q213": { "country": "Czech Republic", "add": ["Czechia"] },
+    "Q884": { "country": "South Korea", "add": ["Republic of Korea", "ROK"] },
+    "Q836": { "country": "Myanmar", "add": ["Burma"] },
+    "Q754": { "country": "Trinidad and Tobago", "add": ["Trinidad"] }
+  }
+}

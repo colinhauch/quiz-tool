@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 450" role="img" aria-label="Flag">
-  <rect width="300" height="450" x="0" fill="#008751"/>
-  <rect width="300" height="450" x="300" fill="#fff"/>
-  <rect width="300" height="450" x="600" fill="#008751"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="600" viewBox="0 0 6 3">
+	<title>Flag of Nigeria</title>
+	<path fill="#008751" d="m0 0h6v3H0z"/>
+	<path fill="#fff" d="m2 0h2v3H2z"/>
 </svg>

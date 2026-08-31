@@ -16,6 +16,7 @@
 // Usage:  node fetch-entities.mjs   (from this directory; needs network)
 
 import { readFileSync, writeFileSync } from "node:fs";
+import { applyAliasOverrides, readAliasOverrides } from "./alias-overrides.mjs";
 
 const WDQS = "https://query.wikidata.org/sparql";
 const UA = "geo-quiz-tool/0.1 core-geo publish (colin.hauch@gmail.com)";
@@ -92,6 +93,10 @@ async function main() {
 
   // Emit in curated order (already type-grouped, numeric-sorted) so re-running
   // yields byte-identical output. Aliases sorted + deduped for the same reason.
+  // Curated alias overrides (ticket #183) are unioned in last, so a full
+  // re-publish keeps them exactly as apply-alias-overrides.mjs would (both call
+  // applyAliasOverrides).
+  const overrides = readAliasOverrides();
   const lines = curated.map(({ id, type }) => {
     const byLang = labels.get(id) ?? {};
     const label = LABEL_LANGS.map((lang) => byLang[lang]).find(Boolean);
@@ -101,7 +106,7 @@ async function main() {
     if (alias && alias.size > 0) {
       entity.aliases = { en: [...alias].sort() };
     }
-    return JSON.stringify(entity);
+    return JSON.stringify(applyAliasOverrides(entity, overrides));
   });
 
   writeFileSync(new URL("entities.jsonl", import.meta.url), lines.join("\n") + "\n");
