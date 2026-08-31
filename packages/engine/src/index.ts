@@ -8,15 +8,18 @@
 
 export * from "./types.js";
 export { createGraph } from "./graph.js";
-export { makeCardId, findCard, enumerateCards, supportedSlots, type Card } from "./card.js";
+export { makeCardId, findCard, enumerateCards, supportedSlots, targetEntityId, type Card } from "./card.js";
 export { generateQuestion } from "./question.js";
 export {
-  buildQueue,
+  DEFAULT_TIERS,
+  buildScheduler,
   drawNext,
   applySelection,
-  type Queue,
+  eligibleCards,
+  type Scheduler,
+  type Tier,
   type Rng,
-} from "./queue.js";
+} from "./scheduler.js";
 export {
   normalizeAnswer,
   acceptedAnswers,
@@ -24,3 +27,22 @@ export {
   checkAnswer,
   type AnswerResult,
 } from "./answer.js";
+export {
+  RATING_SCALE,
+  SEED_RATING,
+  PROVISIONAL_K,
+  SETTLED_K,
+  PROVISIONAL_ANSWERS,
+  probabilityOfSuccess,
+  kFactor,
+  abilityKey,
+  emptyRatings,
+  difficultyOf,
+  abilityOf,
+  applyAnswer,
+  replay,
+  ownerPackId,
+  type Ratings,
+  type RatingEvent,
+  type RatingSnapshot,
+} from "./rating.js";

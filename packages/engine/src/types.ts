@@ -13,12 +13,61 @@ export interface LocalizedText {
  * A graph node: a city, a country, etc. `aliases` are display synonyms used
  * for text-input answer matching (see `specs/knowledge-graph/identity.md`);
  * a historical name with dates is a statement, not an alias.
+ *
+ * `autocomplete` is the short form the answer box *shows and fills* when this
+ * entity is a suggestion, for entities whose canonical `labels.en` is too
+ * verbose to type ("Seychellois rupee" → "rupee", "United States dollar" →
+ * "dollar"). The label stays the canonical answer — it is what feedback reveals
+ * and what grading targets — so the `autocomplete` string MUST also be an
+ * accepted name (an alias), or picking it would fill a value the grader rejects.
+ * Absent for entities whose label is already the natural short answer.
  */
 export interface Entity {
   id: string;
   labels: LocalizedText;
   aliases?: Record<string, string[]>;
+  autocomplete?: string;
   types: string[];
+  /**
+   * Where this entity sits on a map. Intrinsic entity identity — a field,
+   * like `labels`, not a statement — used to drive map visual aids at reveal
+   * time. Optional: an entity without one simply gets no map.
+   */
+  coordinate?: { lat: number; lon: number };
+  /**
+   * Regional land geometry for this entity's neighbourhood, in raw lon/lat
+   * (WGS84). Clipped from Natural Earth 50m land once at import (spec #152,
+   * #154) to the `regionExtent` window and stored here beside `coordinate` —
+   * never computed per request. It is the higher-resolution overlay the reveal
+   * map zooms into. Present only when `coordinate` is; paired with
+   * `regionExtent`, the window it was clipped to.
+   */
+  localGeoJSON?: GeoMultiPolygon;
+  /** The lon/lat window `localGeoJSON` was clipped to (spec #152, #154). */
+  regionExtent?: RegionExtent;
+}
+
+/**
+ * An axis-aligned lon/lat rectangle: the target `viewBox` the reveal map zooms
+ * to. Centered on an entity's coordinate, sized by entity type — tight for a
+ * city, roughly-country for a country, wide for a continent (spec #152).
+ */
+export interface RegionExtent {
+  minLon: number;
+  minLat: number;
+  maxLon: number;
+  maxLat: number;
+}
+
+/**
+ * A GeoJSON MultiPolygon geometry in raw lon/lat (WGS84) — nothing is
+ * pre-projected, so the client projects it with the same point math it uses
+ * for the pin. `coordinates` is `[polygon][ring][vertex][lon, lat]`; within a
+ * polygon, ring 0 is the outer boundary and any later rings are holes.
+ */
+export interface GeoMultiPolygon {
+  type: "MultiPolygon";
+  coordinates: number[][][][];
 }
 
 /** Engine-level literal datatypes. Packs may not add to this set. */
@@ -142,4 +191,46 @@ export interface RenderedQuestion {
   packId: string;
   /** That pack's display name, for the client to show. English only for now. */
   packLabel: string;
+  /**
+   * The `types` of the entity the answer names — the kind of thing the learner
+   * must supply (e.g. `["city"]` for "what is the capital of France?"). Read
+   * from the hidden slot's target entity, so a bidirectional card carries the
+   * subject's types when subject-hidden and the object's when object-hidden.
+   * The client scopes answer suggestions to these types. It reveals the answer's
+   * *kind*, never the answer itself. A list because it mirrors `Entity.types`,
+   * though in the current graph every entity has exactly one type.
+   */
+  answerTypes: string[];
 }
+
+/**
+ * The generic visual-aid slot: `{ kind, entityId, ...kindData }`.
+ * Server-computed and fully-hydrated — the client switches on `kind` and
+ * knows nothing about entities or coordinates. v1 has one kind, `map`;
+ * the union exists so a future kind (flag, photo) is an addition, not a
+ * reshape. (`kind`, not `renderer`: CONTEXT.md reserves "renderer" against
+ * for the pack-side Generator.)
+ */
+export interface MapVisualAid {
+  kind: "map";
+  entityId: string;
+  lat: number;
+  lon: number;
+  /** The entity's English canonical label. */
+  label: string;
+  /**
+   * Higher-resolution local land geometry for the pinned region, in raw lon/lat
+   * (spec #152, #155) — the hi-res overlay the reveal map composites over the
+   * baked 110m world base in the same coordinate space. Copied straight from the
+   * entity's stored `localGeoJSON`; present only when the entity carries one.
+   */
+  localGeoJSON?: GeoMultiPolygon;
+  /**
+   * The lon/lat rectangle the reveal map frames the pin at — the regional
+   * `viewBox` target (spec #152, #155). Copied from the entity's stored
+   * `regionExtent`; present only when the entity carries one.
+   */
+  regionExtent?: RegionExtent;
+}
+
+export type VisualAid = MapVisualAid;

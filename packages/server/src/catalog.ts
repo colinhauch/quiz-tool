@@ -64,8 +64,17 @@ function parsePolicy(packId: string, raw: unknown): PackPolicy {
 export function loadCatalog(packsDir: URL = defaultPacksDir()): Catalog {
   const url = new URL(CATALOG, packsDir);
   if (!existsSync(url)) return new Map();
+  return parseCatalog(JSON.parse(readFileSync(url, "utf8")) as unknown);
+}
 
-  const parsed = JSON.parse(readFileSync(url, "utf8")) as unknown;
+/**
+ * Validate a raw catalog object (packId → policy) into a `Catalog`. Shared by
+ * the fs loader and the Worker: the Worker has no filesystem, so its catalog is
+ * bundled into `packs.generated.ts` and passed through here — the same
+ * validation either way, so a policy that is offered locally is offered in
+ * production. An empty/absent object is an empty catalog (everything visible).
+ */
+export function parseCatalog(parsed: unknown): Catalog {
   if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
     throw new Error("catalog: top level must be an object of packId → policy");
   }

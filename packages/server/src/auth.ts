@@ -39,6 +39,13 @@ export interface AuthOptions {
   issuer?: string;
   /** Expected `aud` claim; Supabase access tokens carry `authenticated`. */
   audience?: string;
+  /**
+   * Postgres schema the user client reads/writes (the `DB_SCHEMA` wrangler var).
+   * Isolates data per environment on one project: dev→`dev`, test→`test`, and
+   * prod left unset so it keeps the Supabase default (`public`). RLS still keys
+   * on the shared `auth.uid()`, so this only changes which tables are hit.
+   */
+  schema?: string;
 }
 
 /**
@@ -52,7 +59,7 @@ export interface AuthOptions {
  * per-request round-trip to Supabase Auth. WebCrypto-only, so it bundles for a
  * Cloudflare Worker.
  */
-export function createAuthMiddleware({ jwks, supabaseUrl, supabaseKey, issuer, audience }: AuthOptions) {
+export function createAuthMiddleware({ jwks, supabaseUrl, supabaseKey, issuer, audience, schema }: AuthOptions) {
   return createMiddleware<AuthEnv>(async (c, next) => {
     const header = c.req.header("Authorization");
     const token = header?.startsWith("Bearer ") ? header.slice("Bearer ".length) : undefined;
@@ -74,13 +81,17 @@ export function createAuthMiddleware({ jwks, supabaseUrl, supabaseKey, issuer, a
     c.set("userId", sub);
     // Constructing a client makes no network call; the forwarded JWT is what
     // scopes it, so every query this request makes runs as `sub` under RLS.
-    c.set(
-      "supabase",
-      createClient(supabaseUrl, supabaseKey, {
-        global: { headers: { Authorization: `Bearer ${token}` } },
-        auth: { persistSession: false, autoRefreshToken: false },
-      }),
-    );
+    // A runtime `schema` widens supabase-js's schema generic to `string`; the
+    // stored client is typed at the default (`public`), and the queries in
+    // supabase-storage.ts don't depend on the generic, so narrow it back here.
+    const supabase = createClient(supabaseUrl, supabaseKey, {
+      global: { headers: { Authorization: `Bearer ${token}` } },
+      auth: { persistSession: false, autoRefreshToken: false },
+      // Omit `db` entirely when no schema is set so prod keeps the default
+      // (`public`); only dev/test pass an explicit override.
+      ...(schema ? { db: { schema } } : {}),
+    }) as SupabaseClient;
+    c.set("supabase", supabase);
 
     await next();
   });

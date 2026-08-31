@@ -1,7 +1,6 @@
-import type { PackList, PackSummary } from "@geo/contract";
+import type { PackSummary } from "@geo/contract";
 import { useCallback, useEffect, useState } from "react";
-
-const PACKS_URL = "/api/packs";
+import { getPacks, savePacks } from "./apiClient.js";
 
 /**
  * The pack picker — a shelf of packs you add to your quiz or set aside.
@@ -27,7 +26,7 @@ export function Packs() {
   const load = useCallback(async () => {
     setStatus("loading");
     try {
-      const list = (await (await fetch(PACKS_URL)).json()) as PackList;
+      const list = await getPacks();
       setPacks(list.packs);
       setQueued(list.queued);
       setChecked(new Set(list.packs.filter((p) => p.included).map((p) => p.id)));
@@ -53,12 +52,7 @@ export function Packs() {
   async function save() {
     setStatus("saving");
     try {
-      const res = await fetch(PACKS_URL, {
-        method: "PUT",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ packIds: [...checked] }),
-      });
-      if (!res.ok) throw new Error("save rejected");
+      await savePacks([...checked]);
       await load();
     } catch {
       setStatus("error");

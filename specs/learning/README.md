@@ -20,6 +20,8 @@ This matters for the row shape: the generated-from statement (the scheduler's re
 
 This is the highest-leverage decision in the concept, and the reason is retroactivity: **derived judgments are always recomputed, so a better analysis applies to your entire history the day you write it.** Store a skill score and you have frozen the analysis that produced it; every improvement thereafter only applies to answers given after the improvement, and the old rows are permanently interpreted by a model you have since decided was wrong. Recomputing is cheap and the log is small. Never trade this away for a cache without a specific measured reason.
 
+**One deliberate exception: the scheduler's rating *inputs* at ask time.** The log stores no derived *judgments*, but it does snapshot the scheduler's Elo ratings as they stood the moment it asked — the card's difficulty, the pack ability it was drawn against, the K applied. Those are a record of "what the scheduler believed when it asked," not a verdict about the learner, and like the ratings themselves they remain rebuildable by replaying the log; the snapshot is denormalized telemetry, never the source of truth. See [scheduler.md](scheduler.md).
+
 ## The knowledge coordinate is (statement, what's hidden)
 
 Not the statement. Not the entity. The statement paired with what the question concealed.
@@ -35,6 +37,8 @@ The consequence is that cards key on `(user, statement, hidden-slot)` — which 
 The MVP implementation is deliberately trivial — random over new and least-recently-asked. It exists to prove the seam, not to teach anyone. FSRS goes in later behind the same interface, and cards carry an algorithm tag and an opaque per-algorithm state blob so that algorithms can coexist and cards can migrate individually rather than in a big-bang rewrite.
 
 The reason to build the interface before needing it: a scheduler that reaches into storage or question generation is not swappable, and by the time you want to swap it, the entanglement is everywhere. The interface is cheap now and impossible later.
+
+> **Superseded.** The `RandomLeastRecentScheduler` and the FSRS-behind-an-interface plan above were never built, and the v1 scheduler is neither. The learner is currently served by the provisional **Question Queue** ([../../packages/engine/src/queue.ts](../../packages/engine/src/queue.ts)); its replacement is the **Elo bag-of-bags** scheduler in [scheduler.md](scheduler.md) — Elo ratings for difficulty and ability, a nested shuffle-bag draw that guarantees a difficulty distribution, and no forgetting model. Read that file for the real design; the two paragraphs above are kept only as the record of the abandoned FSRS direction.
 
 ## Insights are aggregations, computed on demand
 
@@ -52,4 +56,5 @@ This is the cheapest hedge in the system: a column now, versus a migration acros
 
 ## Deeper
 
+- [scheduler.md](scheduler.md) — the v1 scheduler: Elo bag-of-bags, why spaced repetition was dropped, and the rating/selection/logging decisions. Supersedes the `Scheduler`-interface sketch in `interfaces.md`.
 - [interfaces.md](interfaces.md) — *reference.* The proposed answer-event and card shapes, the `Scheduler` interface, and the insight queries.

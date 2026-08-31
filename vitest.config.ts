@@ -7,6 +7,7 @@ export default defineConfig({
       "packages/engine",
       "packages/server",
       "packages/web",
+      "packages/admin",
     ],
   },
 });

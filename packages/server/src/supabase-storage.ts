@@ -1,5 +1,13 @@
+import { SEED_RATING } from "@geo/engine";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { AnswerRecord, AnswerStore, SelectionStore } from "./storage.js";
+import type {
+  AnswerRecord,
+  AnswerStore,
+  FeedbackRecord,
+  FeedbackStore,
+  RatingStore,
+  SelectionStore,
+} from "./storage.js";
 
 /**
  * Supabase-backed stores — the production persistence path behind the same
@@ -20,18 +28,28 @@ interface AnswerRow {
   input: string;
   correct: boolean;
   asked_at: string;
+  card_difficulty: number | null;
+  pack_ability: number | null;
+  k_applied: number | null;
+  rating_pack_id: string | null;
 }
 
 export function createSupabaseAnswerStore(client: SupabaseClient): AnswerStore {
   return {
     async record(answer: AnswerRecord) {
       // user_id is omitted on purpose: the column defaults to auth.uid() and the
-      // RLS with-check pins it to the caller, so it cannot be forged here.
+      // RLS with-check pins it to the caller, so it cannot be forged here. The
+      // four snapshot columns are null when the answer carried no rating (an
+      // edge not in the graph).
       const { error } = await client.from("answers").insert({
         card_id: answer.cardId,
         input: answer.input,
         correct: answer.correct,
         asked_at: answer.askedAt,
+        card_difficulty: answer.snapshot?.difficulty ?? null,
+        pack_ability: answer.snapshot?.ability ?? null,
+        k_applied: answer.snapshot?.kApplied ?? null,
+        rating_pack_id: answer.snapshot?.packId ?? null,
       });
       if (error) throw new Error(`answers.insert failed: ${error.message}`);
     },
@@ -41,15 +59,129 @@ export function createSupabaseAnswerStore(client: SupabaseClient): AnswerStore {
       // the sqlite store; RLS already restricts the rows to the caller.
       const { data, error } = await client
         .from("answers")
-        .select("card_id, input, correct, asked_at")
+        .select("card_id, input, correct, asked_at, card_difficulty, pack_ability, k_applied, rating_pack_id")
         .order("id", { ascending: true });
       if (error) throw new Error(`answers.select failed: ${error.message}`);
-      return (data as AnswerRow[] | null ?? []).map((row) => ({
-        cardId: row.card_id,
-        input: row.input,
-        correct: row.correct,
-        askedAt: row.asked_at,
-      }));
+      return (data as AnswerRow[] | null ?? []).map((row) => {
+        const record: AnswerRecord = {
+          cardId: row.card_id,
+          input: row.input,
+          correct: row.correct,
+          askedAt: row.asked_at,
+        };
+        if (
+          row.rating_pack_id !== null &&
+          row.card_difficulty !== null &&
+          row.pack_ability !== null &&
+          row.k_applied !== null
+        ) {
+          record.snapshot = {
+            difficulty: row.card_difficulty,
+            ability: row.pack_ability,
+            kApplied: row.k_applied,
+            packId: row.rating_pack_id,
+          };
+        }
+        return record;
+      });
+    },
+  };
+}
+
+/**
+ * Supabase-backed rating cache. `card_difficulty` is **global** — every learner's
+ * answers move it — so it is written by any authenticated caller (its rows carry
+ * no owner; a user tampering only corrupts a cache the log rebuilds). `pack_ability`
+ * is per-`(learner, pack)`: `user_id` defaults to `auth.uid()` and RLS pins it, so
+ * a store built from one user's client reads and writes only that user's ability.
+ */
+export function createSupabaseRatingStore(client: SupabaseClient): RatingStore {
+  return {
+    async readCard(cardId: string) {
+      const { data, error } = await client
+        .from("card_difficulty")
+        .select("difficulty, answer_count")
+        .eq("card_id", cardId)
+        .maybeSingle();
+      if (error) throw new Error(`card_difficulty.select failed: ${error.message}`);
+      if (!data) return { difficulty: SEED_RATING, answerCount: 0 };
+      return { difficulty: data.difficulty as number, answerCount: data.answer_count as number };
+    },
+
+    async readAllCards() {
+      // Difficulty is global (every learner's answers move it), so no RLS scope
+      // to apply — the scheduler needs the whole cache to bin the pool.
+      //
+      // Paginated with .range() because PostgREST caps a single response at ~1000
+      // rows by default: without this, past 1000 answered cards the tail would be
+      // silently dropped and those cards would mis-bin as medium (P=0.5) forever.
+      // Loop until a short page proves the end is reached.
+      const PAGE = 1000;
+      const out = new Map<string, { difficulty: number; answerCount: number }>();
+      for (let from = 0; ; from += PAGE) {
+        const { data, error } = await client
+          .from("card_difficulty")
+          .select("card_id, difficulty, answer_count")
+          .range(from, from + PAGE - 1);
+        if (error) throw new Error(`card_difficulty.select-all failed: ${error.message}`);
+        const rows = data ?? [];
+        for (const row of rows) {
+          out.set(row.card_id as string, {
+            difficulty: row.difficulty as number,
+            answerCount: row.answer_count as number,
+          });
+        }
+        if (rows.length < PAGE) break;
+      }
+      return out;
+    },
+
+    async readAbility(packId: string) {
+      const { data, error } = await client
+        .from("pack_ability")
+        .select("ability")
+        .eq("pack_id", packId)
+        .maybeSingle();
+      if (error) throw new Error(`pack_ability.select failed: ${error.message}`);
+      return data ? (data.ability as number) : SEED_RATING;
+    },
+
+    async writeCard(cardId: string, difficulty: number, answerCount: number) {
+      const { error } = await client
+        .from("card_difficulty")
+        .upsert({ card_id: cardId, difficulty, answer_count: answerCount }, { onConflict: "card_id" });
+      if (error) throw new Error(`card_difficulty.upsert failed: ${error.message}`);
+    },
+
+    async writeAbility(packId: string, ability: number) {
+      // user_id omitted: defaults to auth.uid(), pinned by RLS. Conflict on the
+      // (user_id, pack_id) primary key updates this learner's ability in place.
+      const { error } = await client
+        .from("pack_ability")
+        .upsert({ pack_id: packId, ability }, { onConflict: "user_id,pack_id" });
+      if (error) throw new Error(`pack_ability.upsert failed: ${error.message}`);
+    },
+  };
+}
+
+/**
+ * Supabase-backed feedback store — insert only. There is no read here on purpose:
+ * the `feedback` table has an insert policy for `authenticated` and no select
+ * policy, so a select would return nothing anyway (only the admin's `service_role`
+ * reads it). `user_id` is omitted for the same reason the answer store omits it —
+ * the column defaults to `auth.uid()` and the RLS with-check pins it to the caller.
+ */
+export function createSupabaseFeedbackStore(client: SupabaseClient): FeedbackStore {
+  return {
+    async record(feedback: FeedbackRecord) {
+      const { error } = await client.from("feedback").insert({
+        kind: feedback.kind,
+        card_id: feedback.cardId,
+        comment: feedback.comment,
+        context: feedback.context,
+        created_at: feedback.createdAt,
+      });
+      if (error) throw new Error(`feedback.insert failed: ${error.message}`);
     },
   };
 }

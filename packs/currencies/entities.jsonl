@@ -1,0 +1,153 @@
+{"id":"Q4406","labels":{"en":"Tuvaluan dollar"},"types":["currency"],"autocomplete":"dollar","aliases":{"en":["$T","TV$","TVD","Tuvalu dollar","dollar","dollars"]}}
+{"id":"Q4584","labels":{"en":"ariary"},"types":["currency"],"aliases":{"en":["MGA","Madagascan ariary","Malagasy ariary"]}}
+{"id":"Q4587","labels":{"en":"leone"},"types":["currency"],"aliases":{"en":["SLE","SLL","Sierra Leonean leone"]}}
+{"id":"Q4588","labels":{"en":"Samoan tālā"},"types":["currency"],"autocomplete":"tālā","aliases":{"en":["Samoan Tala","Tala","Tala (1967-date)","Tālā","WS$","WST","tālā","tālās"]}}
+{"id":"Q4589","labels":{"en":"Tanzanian shilling"},"types":["currency"],"autocomplete":"shilling","aliases":{"en":["Shilingi","TSh","TZS","Tanzanian schilling","Tanzanian shilingi","shilling","shillings"]}}
+{"id":"Q4591","labels":{"en":"Cape Verdean escudo"},"types":["currency"],"autocomplete":"escudo","aliases":{"en":["CVE","Cape Verde escudo","escudo","escudos"]}}
+{"id":"Q4592","labels":{"en":"Fijian dollar"},"types":["currency"],"autocomplete":"dollar","aliases":{"en":["FJD","Fijan dollar","Fiji Dollar","dollar","dollars"]}}
+{"id":"Q4594","labels":{"en":"Djiboutian franc"},"types":["currency"],"autocomplete":"franc","aliases":{"en":["DJF","Djibouti Franc","franc","francs"]}}
+{"id":"Q4595","labels":{"en":"Seychellois rupee"},"types":["currency"],"autocomplete":"rupee","aliases":{"en":["Rupee","SCR","SRe","Seychelles Rupee","rupee","rupees"]}}
+{"id":"Q4596","labels":{"en":"Sri Lankan rupee"},"types":["currency"],"autocomplete":"rupee","aliases":{"en":["LKR","SLRs","Sri Lanka Rupee","Sri Lankan rupees","Tamil rupee","rupee","rupees"]}}
+{"id":"Q4597","labels":{"en":"Solomon Islands dollar"},"types":["currency"],"autocomplete":"dollar","aliases":{"en":["SBD","Solomon Dollar","dollar","dollars"]}}
+{"id":"Q4598","labels":{"en":"Ugandan shilling"},"types":["currency"],"autocomplete":"shilling","aliases":{"en":["UGX","USh","Uganda shilling","shilling","shillings"]}}
+{"id":"Q4602","labels":{"en":"Tunisian dinar"},"types":["currency"],"autocomplete":"dinar","aliases":{"en":["TND","Tunis dinar","dinar","dinars"]}}
+{"id":"Q4603","labels":{"en":"Somali shilling"},"types":["currency"],"autocomplete":"shilling","aliases":{"en":["Currency of somalia","SOS","Sh.So.","shilling","shillings"]}}
+{"id":"Q4608","labels":{"en":"Georgian lari"},"types":["currency"],"autocomplete":"lari","aliases":{"en":["GEL","Lari","lari","laris","₾"]}}
+{"id":"Q4613","labels":{"en":"Tongan paʻanga"},"types":["currency"],"autocomplete":"paʻanga","aliases":{"en":["Pa anga","Pa'anga","TOP","Tonga pa`anga","Tonga paʻanga","Tongan pa`anga","paʻanga","paʻangas"]}}
+{"id":"Q4719","labels":{"en":"Honduran lempira"},"types":["currency"],"autocomplete":"lempira","aliases":{"en":["HNL","lempira","lempiras"]}}
+{"id":"Q4730","labels":{"en":"peso"},"types":["currency"],"aliases":{"en":["MX$","MXN","Mexican centavo","Mexican new peso","Mexican nuevo peso","Mexican peso","currency of Mexico"]}}
+{"id":"Q4734","labels":{"en":"Congolese franc"},"types":["currency"],"autocomplete":"franc","aliases":{"en":["Belgian Congolese franc","CDF","Franc Congolais","franc","francs"]}}
+{"id":"Q4741","labels":{"en":"Rwandan franc"},"types":["currency"],"autocomplete":"franc","aliases":{"en":["FRw","RF","RWF","franc","francs"]}}
+{"id":"Q4823","labels":{"en":"lilangeni"},"types":["currency"],"aliases":{"en":["Eswatini lilangeni","SZL","Swazi lilangeni","Swaziland lilangeni","emalangeni"]}}
+{"id":"Q4916","labels":{"en":"euro"},"types":["currency"],"aliases":{"en":["EUR"]}}
+{"id":"Q4917","labels":{"en":"United States dollar"},"types":["currency"],"autocomplete":"dollar","aliases":{"en":["$","$USD","American dollar","American dollars","American money","U. S. Dollar","U.S. Dollar","US $","US dollar","US dollars","US$","US-$","USA dollar","USA dollars","USD","USD$","United States dollars","buck","dollar","dollars","greenback"]}}
+{"id":"Q8146","labels":{"en":"yen"},"types":["currency"],"aliases":{"en":["JPY","Japanese yen"]}}
+{"id":"Q17193","labels":{"en":"Philippine peso"},"types":["currency"],"autocomplete":"peso","aliases":{"en":["PHP","Philippine piso","peso","pesos","piso","₱"]}}
+{"id":"Q25224","labels":{"en":"pound sterling"},"types":["currency"],"autocomplete":"pound","aliases":{"en":["British pound","GBP","Great British pound","livre sterling","pence","penny","pound","pounds","quid","sterling","£"]}}
+{"id":"Q25344","labels":{"en":"Swiss franc"},"types":["currency"],"autocomplete":"franc","aliases":{"en":["CHF","CHF (Swiss Franc)","Chf","Confœderatio Helvetica Franc","Franc","Franc suisse","Franco svizzero","Schweizer Franken","Swiss Frank","Swiss Franken","Swiss franco","Swiss francs","S₣","franc","francs"]}}
+{"id":"Q25417","labels":{"en":"Danish krone"},"types":["currency"],"autocomplete":"krone","aliases":{"en":["DKK","kr","krone","krones"]}}
+{"id":"Q26365","labels":{"en":"Eastern Caribbean dollar"},"types":["currency"],"autocomplete":"dollar","aliases":{"en":["XCD","dollar","dollars"]}}
+{"id":"Q35881","labels":{"en":"Kyrgyz som"},"types":["currency"],"autocomplete":"som","aliases":{"en":["KGS","som","soms"]}}
+{"id":"Q39099","labels":{"en":"renminbi"},"types":["currency"],"aliases":{"en":["CNY","Chinese Yuan","yuan","yuan RMB","yuan renminbi"]}}
+{"id":"Q41044","labels":{"en":"Russian ruble"},"types":["currency"],"autocomplete":"ruble","aliases":{"en":["RUB","ruble","rubles"]}}
+{"id":"Q41588","labels":{"en":"rupiah"},"types":["currency"],"aliases":{"en":["IDR","Indonesian rupiah","Rupiah (1965-date)"]}}
+{"id":"Q47190","labels":{"en":"forint"},"types":["currency"],"aliases":{"en":["Ft","HUF","Hungarian forint"]}}
+{"id":"Q73408","labels":{"en":"Zambian Kwacha"},"types":["currency"],"autocomplete":"kwacha","aliases":{"en":["ZMW","kwacha","kwachas"]}}
+{"id":"Q80524","labels":{"en":"Indian rupee"},"types":["currency"],"autocomplete":"rupee","aliases":{"en":["INR","Rupaya","Rupee","rupee","rupees","₹"]}}
+{"id":"Q81893","labels":{"en":"hryvnia"},"types":["currency"],"aliases":{"en":["UAH","Ukrainian hryvnia","hryvnya"]}}
+{"id":"Q106720","labels":{"en":"North Korean won"},"types":["currency"],"autocomplete":"won","aliases":{"en":["KPW","won","wons"]}}
+{"id":"Q122922","labels":{"en":"Swedish krona"},"types":["currency"],"autocomplete":"krona","aliases":{"en":["SEK","krona","kronas"]}}
+{"id":"Q123213","labels":{"en":"złoty"},"types":["currency"],"aliases":{"en":["PLN","PLZ","Polish zloty","Polish złoty","zloty","zł"]}}
+{"id":"Q125999","labels":{"en":"Albanian lek"},"types":["currency"],"autocomplete":"lek","aliases":{"en":["ALL","Lek","lek","leks"]}}
+{"id":"Q130498","labels":{"en":"Armenian dram"},"types":["currency"],"autocomplete":"dram","aliases":{"en":["AMD","dram","drams"]}}
+{"id":"Q131016","labels":{"en":"Czech koruna"},"types":["currency"],"autocomplete":"koruna","aliases":{"en":["203","CZK","koruna","korunas"]}}
+{"id":"Q131309","labels":{"en":"new shekel"},"types":["currency"],"autocomplete":"shekel","aliases":{"en":["ILS","Israeli new shekel","Israeli new sheqel","NIS","new Israeli shekel","new Israeli sheqel","new sheqel","shekel","shekels","₪"]}}
+{"id":"Q131473","labels":{"en":"Icelandic króna"},"types":["currency"],"autocomplete":"króna","aliases":{"en":["ISK","Icelandic krona","kr","króna","krónas"]}}
+{"id":"Q131645","labels":{"en":"Romanian Leu"},"types":["currency"],"autocomplete":"leu","aliases":{"en":["L","Leu românesc","RON","leu","leus"]}}
+{"id":"Q131723","labels":{"en":"Bitcoin"},"types":["currency"]}
+{"id":"Q132643","labels":{"en":"Norwegian krone"},"types":["currency"],"autocomplete":"krone","aliases":{"en":["NOK","kr","krone","krones"]}}
+{"id":"Q163712","labels":{"en":"Malaysian ringgit"},"types":["currency"],"autocomplete":"ringgit","aliases":{"en":["MYR","RM","Ringgit Malaysia","ringgit","ringgits"]}}
+{"id":"Q171503","labels":{"en":"nakfa"},"types":["currency"],"aliases":{"en":["ERN","Eritrean nakfa","Nkf"]}}
+{"id":"Q172524","labels":{"en":"Serbian dinar"},"types":["currency"],"autocomplete":"dinar","aliases":{"en":["RSD","Serbia dinar","dinar","dinars"]}}
+{"id":"Q172872","labels":{"en":"Turkish lira"},"types":["currency"],"autocomplete":"lira","aliases":{"en":["TRL","TRY","lira","liras","₺"]}}
+{"id":"Q173117","labels":{"en":"Brazilian real"},"types":["currency"],"autocomplete":"real","aliases":{"en":["BRL","real","reals"]}}
+{"id":"Q173751","labels":{"en":"Kazakhstani tenge"},"types":["currency"],"autocomplete":"tenge","aliases":{"en":["KZT","tenge","tenges"]}}
+{"id":"Q177875","labels":{"en":"Macedonian denar"},"types":["currency"],"autocomplete":"denar","aliases":{"en":["MKD","North Macedonian denar","denar","denars"]}}
+{"id":"Q177882","labels":{"en":"baht"},"types":["currency"],"aliases":{"en":["Siamese tical","THB","Thai baht","tical","฿"]}}
+{"id":"Q179620","labels":{"en":"convertible mark"},"types":["currency"],"autocomplete":"mark","aliases":{"en":["BAM","mark","marks"]}}
+{"id":"Q181129","labels":{"en":"Moldovan leu"},"types":["currency"],"autocomplete":"leu","aliases":{"en":["MDL","leu","leus"]}}
+{"id":"Q181907","labels":{"en":"rand"},"types":["currency"],"aliases":{"en":["Rand","South African rand","ZAR"]}}
+{"id":"Q182803","labels":{"en":"Zimbabwean dollar"},"types":["currency"],"autocomplete":"dollar","aliases":{"en":["$","Z$","ZWD","ZWL","ZWN","ZWR","Zimdollar","dollar","dollars"]}}
+{"id":"Q183435","labels":{"en":"Mongolian tögrög"},"types":["currency"],"autocomplete":"tögrög","aliases":{"en":["MNT","Mongolian tughrik","Mongolian tugrik","tögrög","tögrögs"]}}
+{"id":"Q183530","labels":{"en":"Ghana cedi"},"types":["currency"],"autocomplete":"cedi","aliases":{"en":["GHS","GH₵","cedi","cedis"]}}
+{"id":"Q186794","labels":{"en":"Botswana pula"},"types":["currency"],"autocomplete":"pula","aliases":{"en":["BWP","pula","pulas"]}}
+{"id":"Q188289","labels":{"en":"Pakistani rupee"},"types":["currency"],"autocomplete":"rupee","aliases":{"en":["PKR","rupee","rupees"]}}
+{"id":"Q188608","labels":{"en":"Iranian rial"},"types":["currency"],"autocomplete":"rial","aliases":{"en":["IRR","rial","rials"]}}
+{"id":"Q190699","labels":{"en":"Libyan dinar"},"types":["currency"],"autocomplete":"dinar","aliases":{"en":["LYD","dinar","dinars"]}}
+{"id":"Q190951","labels":{"en":"Singapore dollar"},"types":["currency"],"autocomplete":"dollar","aliases":{"en":["$","Ringgit Singapore","S$","SGD","dollar","dollars"]}}
+{"id":"Q191068","labels":{"en":"Faroese króna"},"types":["currency"],"autocomplete":"króna","aliases":{"en":["Faroese krona","króna","krónas"]}}
+{"id":"Q192090","labels":{"en":"Vietnamese đồng"},"types":["currency"],"autocomplete":"đồng","aliases":{"en":["VND","đồng","đồngs","₫"]}}
+{"id":"Q193094","labels":{"en":"Iraqi dinar"},"types":["currency"],"autocomplete":"dinar","aliases":{"en":["ID","IQD","dinar","dinars"]}}
+{"id":"Q193098","labels":{"en":"Kuwaiti dinar"},"types":["currency"],"autocomplete":"dinar","aliases":{"en":["KWD","dinar","dinars"]}}
+{"id":"Q193712","labels":{"en":"São Tomé and Príncipe dobra"},"types":["currency"],"autocomplete":"dobra","aliases":{"en":["STN","dobra","dobras"]}}
+{"id":"Q194339","labels":{"en":"Bahamian dollar"},"types":["currency"],"autocomplete":"dollar","aliases":{"en":["BSD","dollar","dollars"]}}
+{"id":"Q194351","labels":{"en":"Barbadian dollar"},"types":["currency"],"autocomplete":"dollar","aliases":{"en":["BBD","dollar","dollars"]}}
+{"id":"Q194453","labels":{"en":"Bangladeshi taka"},"types":["currency"],"autocomplete":"taka","aliases":{"en":["BDT","taka","taka 12272","takas"]}}
+{"id":"Q199462","labels":{"en":"Egyptian pound"},"types":["currency"],"autocomplete":"pound","aliases":{"en":["EGP","pound","pounds"]}}
+{"id":"Q199471","labels":{"en":"afghani"},"types":["currency"],"aliases":{"en":["AFN","Afghan afghani","؋"]}}
+{"id":"Q199578","labels":{"en":"Argentine convertible peso"},"types":["currency"],"autocomplete":"peso","aliases":{"en":["ARS","peso","peso convertible Argentina","pesos"]}}
+{"id":"Q199674","labels":{"en":"Algerian dinar"},"types":["currency"],"autocomplete":"dinar","aliases":{"en":["DZD","dinar","dinars"]}}
+{"id":"Q199857","labels":{"en":"Saudi riyal"},"types":["currency"],"autocomplete":"riyal","aliases":{"en":["SAR","riyal","riyals"]}}
+{"id":"Q199886","labels":{"en":"Tajikistani somoni"},"types":["currency"],"autocomplete":"somoni","aliases":{"en":["Somoni","TJS","Tajik Somoni","currency of Tajikistan","somoni","somonis"]}}
+{"id":"Q200050","labels":{"en":"Chilean peso"},"types":["currency"],"autocomplete":"peso","aliases":{"en":["CLP","peso","pesos"]}}
+{"id":"Q200055","labels":{"en":"Lao kip"},"types":["currency"],"autocomplete":"kip","aliases":{"en":["LAK","kip","kips","₭","₭N"]}}
+{"id":"Q200192","labels":{"en":"Moroccan dirham"},"types":["currency"],"autocomplete":"dirham","aliases":{"en":["MAD","Maza","dirham","dirhams"]}}
+{"id":"Q200294","labels":{"en":"United Arab Emirates dirham"},"types":["currency"],"autocomplete":"dirham","aliases":{"en":["AED","Dirham (1973-date)","Emirati dirham","U.A.E. dirham","UAE dirham","dirham","dirhams"]}}
+{"id":"Q200337","labels":{"en":"kwanza"},"types":["currency"],"aliases":{"en":["AOA","Angolan kwanza","Kz"]}}
+{"id":"Q200737","labels":{"en":"boliviano"},"types":["currency"],"aliases":{"en":["BOB","Bolivian boliviano","second boliviano"]}}
+{"id":"Q200753","labels":{"en":"Mozambican metical"},"types":["currency"],"autocomplete":"metical","aliases":{"en":["MZN","Metical","metical","meticals"]}}
+{"id":"Q200759","labels":{"en":"kina"},"types":["currency"],"aliases":{"en":["PGK","Papua New Guinean kina"]}}
+{"id":"Q201505","labels":{"en":"Cuban peso"},"types":["currency"],"autocomplete":"peso","aliases":{"en":["CUP","peso","pesos"]}}
+{"id":"Q201799","labels":{"en":"ngultrum"},"types":["currency"],"aliases":{"en":["BTN","Bhutan currency","Bhutanese ngultrum"]}}
+{"id":"Q201871","labels":{"en":"Bahraini dinar"},"types":["currency"],"autocomplete":"dinar","aliases":{"en":["BHD","dinar","dinars"]}}
+{"id":"Q201875","labels":{"en":"kyat"},"types":["currency"],"aliases":{"en":["Burmese kyat","K","Ks","MMK","Myanmar kyat"]}}
+{"id":"Q201880","labels":{"en":"Lebanese pound"},"types":["currency"],"autocomplete":"pound","aliases":{"en":["1000 lira","LBP","Lebanese pound (1939-date)","pound","pounds"]}}
+{"id":"Q202036","labels":{"en":"Surinamese dollar"},"types":["currency"],"autocomplete":"dollar","aliases":{"en":["$","SRD","dollar","dollars"]}}
+{"id":"Q202040","labels":{"en":"won"},"types":["currency"],"aliases":{"en":["KRW","south korea won","the won","￦"]}}
+{"id":"Q202462","labels":{"en":"Namibian dollar"},"types":["currency"],"autocomplete":"dollar","aliases":{"en":["$","N$","NAD","dollar","dollars"]}}
+{"id":"Q202882","labels":{"en":"Kenyan shilling"},"types":["currency"],"autocomplete":"shilling","aliases":{"en":["KES","Shilling","shilling","shillings"]}}
+{"id":"Q202885","labels":{"en":"dalasi"},"types":["currency"],"aliases":{"en":["GMD","Gambian dalasi"]}}
+{"id":"Q202895","labels":{"en":"Nepalese rupee"},"types":["currency"],"autocomplete":"rupee","aliases":{"en":["NPR","Rupee (1932-date)","rupee","rupees"]}}
+{"id":"Q203567","labels":{"en":"naira"},"types":["currency"],"aliases":{"en":["NGN","Nigerian naira","₦"]}}
+{"id":"Q203722","labels":{"en":"Jordanian dinar"},"types":["currency"],"autocomplete":"dinar","aliases":{"en":["Dinar (1949-date)","JOD","dinar","dinars"]}}
+{"id":"Q203955","labels":{"en":"gourde"},"types":["currency"],"aliases":{"en":["HTG","Haitian Gourde"]}}
+{"id":"Q204656","labels":{"en":"Nuevo sol"},"types":["currency"],"autocomplete":"sol","aliases":{"en":["PEN","sol","sols"]}}
+{"id":"Q204737","labels":{"en":"riel"},"types":["currency"],"aliases":{"en":["Cambodian riel","KHR","៛"]}}
+{"id":"Q206243","labels":{"en":"bir"},"types":["currency"],"aliases":{"en":["ETB","Ethiopian birr","Ethiopian dollar"]}}
+{"id":"Q206319","labels":{"en":"Brunei dollar"},"types":["currency"],"autocomplete":"dollar","aliases":{"en":["$","B$","BND","dollar","dollars"]}}
+{"id":"Q206386","labels":{"en":"Qatari riyal"},"types":["currency"],"autocomplete":"riyal","aliases":{"en":["QAR","Qatar riyal","riyal","riyals"]}}
+{"id":"Q206600","labels":{"en":"Maldivian rufiyaa"},"types":["currency"],"autocomplete":"rufiyaa","aliases":{"en":["MVR","rufiyaa","rufiyaas"]}}
+{"id":"Q207024","labels":{"en":"Mauritanian ouguiya"},"types":["currency"],"autocomplete":"ouguiya","aliases":{"en":["MRU","UM","ouguiya","ouguiyas"]}}
+{"id":"Q207312","labels":{"en":"Nicaraguan córdoba"},"types":["currency"],"autocomplete":"córdoba","aliases":{"en":["Cordoba Oro","Mariana Montserrat","NIC","NIO","Nicaraguan cordoba","córdoba","córdobas"]}}
+{"id":"Q207396","labels":{"en":"quetzal"},"types":["currency"],"aliases":{"en":["GTQ","Guatemala quetzal","Quetzal (1925-date)"]}}
+{"id":"Q207514","labels":{"en":"Paraguayan guaraní"},"types":["currency"],"autocomplete":"guaraní","aliases":{"en":["Guarani (1944-date)","PYG","Paraguayan guarani","guaraní","guaranís"]}}
+{"id":"Q207523","labels":{"en":"Vanuatu vatus"},"types":["currency"],"autocomplete":"vatus","aliases":{"en":["VUV","Vatu","vatus","vatuss"]}}
+{"id":"Q208039","labels":{"en":"loti"},"types":["currency"],"aliases":{"en":["LSL","Lesotho loti"]}}
+{"id":"Q209272","labels":{"en":"Uruguayan peso"},"types":["currency"],"autocomplete":"peso","aliases":{"en":["UYU","peso","pesos"]}}
+{"id":"Q209792","labels":{"en":"Jamaican dollar"},"types":["currency"],"autocomplete":"dollar","aliases":{"en":["$","J$","JMD","Jay","dollar","dollars"]}}
+{"id":"Q210472","labels":{"en":"Panamanian balboa"},"types":["currency"],"autocomplete":"balboa","aliases":{"en":["PAB","balboa","balboas"]}}
+{"id":"Q211694","labels":{"en":"Malawian kwacha"},"types":["currency"],"autocomplete":"kwacha","aliases":{"en":["Kwacha (1971-date)","MWK","Malawi kwacha","kwacha","kwachas"]}}
+{"id":"Q212967","labels":{"en":"Mauritian rupee"},"types":["currency"],"autocomplete":"rupee","aliases":{"en":["MUR","Mauritius rupee","Rupee (1877-date)","rupee","rupees"]}}
+{"id":"Q213005","labels":{"en":"Guyanese dollar"},"types":["currency"],"autocomplete":"dollar","aliases":{"en":["GYD","Money of Guyana","dollar","dollars"]}}
+{"id":"Q213311","labels":{"en":"Guinean franc"},"types":["currency"],"autocomplete":"franc","aliases":{"en":["GNF","franc","francs"]}}
+{"id":"Q214393","labels":{"en":"CFP Franc"},"types":["currency"],"autocomplete":"franc","aliases":{"en":["Franc Pacifique","Pacific Franc","XPF","franc","francs"]}}
+{"id":"Q232270","labels":{"en":"Aruban florin"},"types":["currency"],"autocomplete":"florin","aliases":{"en":["AWG","Afl.","florin","florins"]}}
+{"id":"Q238007","labels":{"en":"Burundian franc"},"types":["currency"],"autocomplete":"franc","aliases":{"en":["BIF","franc","francs"]}}
+{"id":"Q240468","labels":{"en":"Syrian pound"},"types":["currency"],"autocomplete":"pound","aliases":{"en":["LS","SYP","Syrian lira","pound","pounds"]}}
+{"id":"Q240512","labels":{"en":"Yemeni Rial"},"types":["currency"],"autocomplete":"rial","aliases":{"en":["YER","rial","rials","ريال"]}}
+{"id":"Q242890","labels":{"en":"Trinidad and Tobago dollar"},"types":["currency"],"autocomplete":"dollar","aliases":{"en":["TTD","dollar","dollars"]}}
+{"id":"Q242915","labels":{"en":"Costa Rican colón"},"types":["currency"],"autocomplete":"colón","aliases":{"en":["CRC","Costa Rican colon","colón","colóns"]}}
+{"id":"Q242922","labels":{"en":"Dominican peso"},"types":["currency"],"autocomplete":"peso","aliases":{"en":["DOP","Dominican peso oro","peso","peso oro","pesos"]}}
+{"id":"Q242988","labels":{"en":"Liberian dollar"},"types":["currency"],"autocomplete":"dollar","aliases":{"en":["LRD","dollar","dollars"]}}
+{"id":"Q244366","labels":{"en":"South Sudanese pound"},"types":["currency"],"autocomplete":"pound","aliases":{"en":["SSP","pound","pounds"]}}
+{"id":"Q244819","labels":{"en":"Colombian peso"},"types":["currency"],"autocomplete":"peso","aliases":{"en":["$","CO $","CO$","COL$","COP","Colomb peso","peso","pesos"]}}
+{"id":"Q259502","labels":{"en":"Australian dollar"},"types":["currency"],"autocomplete":"dollar","aliases":{"en":["$","A$","AU$","AUD","Aussie dollar","dollar","dollars","the Australian dollar"]}}
+{"id":"Q267264","labels":{"en":"Comorian franc"},"types":["currency"],"autocomplete":"franc","aliases":{"en":["KMF","franc","francs"]}}
+{"id":"Q271206","labels":{"en":"Sudanese pound"},"types":["currency"],"autocomplete":"pound","aliases":{"en":["SDG","Sudanese Pound","pound","pounds"]}}
+{"id":"Q272290","labels":{"en":"Omani rial"},"types":["currency"],"autocomplete":"rial","aliases":{"en":["OMR","rial","rials"]}}
+{"id":"Q275112","labels":{"en":"Belize dollar"},"types":["currency"],"autocomplete":"dollar","aliases":{"en":["$","BZ$","BZD","dollar","dollars"]}}
+{"id":"Q483725","labels":{"en":"Azerbaijani manat"},"types":["currency"],"autocomplete":"manat","aliases":{"en":["AZN","Azerbaijan manat","manat","manats"]}}
+{"id":"Q486637","labels":{"en":"Turkmenistan new manat"},"types":["currency"],"autocomplete":"manat","aliases":{"en":["TMT","Turkmenistani new manat","manat","manats"]}}
+{"id":"Q487888","labels":{"en":"Uzbek som"},"types":["currency"],"autocomplete":"som","aliases":{"en":["UZS","Uzbek sum","som","soms","soʻm"]}}
+{"id":"Q572213","labels":{"en":"East Timor centavo coins"},"types":["currency"],"autocomplete":"coins","aliases":{"en":["coins","coinss"]}}
+{"id":"Q737779","labels":{"en":"Caribbean guilder"},"types":["currency"],"autocomplete":"guilder","aliases":{"en":["XCG","guilder","guilders"]}}
+{"id":"Q847739","labels":{"en":"Central African CFA franc"},"types":["currency"],"autocomplete":"franc","aliases":{"en":["XAF","franc","franc CFA","francs"]}}
+{"id":"Q861690","labels":{"en":"West African CFA franc"},"types":["currency"],"autocomplete":"franc","aliases":{"en":["BCEAO franc","XOF","franc","francs"]}}
+{"id":"Q1049963","labels":{"en":"Kiribati dollar"},"types":["currency"],"autocomplete":"dollar","aliases":{"en":["dollar","dollars"]}}
+{"id":"Q1104069","labels":{"en":"Canadian dollar"},"types":["currency"],"autocomplete":"dollar","aliases":{"en":["$","C$","CA$","CAD","dollar","dollars"]}}
+{"id":"Q1472704","labels":{"en":"New Zealand dollar"},"types":["currency"],"autocomplete":"dollar","aliases":{"en":["NZ$","NZD","dollar","dollars"]}}
+{"id":"Q3867091","labels":{"en":"Korean mun"},"types":["currency"],"autocomplete":"mun","aliases":{"en":["mun","muns"]}}
+{"id":"Q21531507","labels":{"en":"Belarusian ruble"},"types":["currency"],"autocomplete":"ruble","aliases":{"en":["BYN","ruble","rubles","third Belarusian ruble"]}}
+{"id":"Q56349362","labels":{"en":"sovereign bolivar"},"types":["currency"],"autocomplete":"bolivar","aliases":{"en":["Bs.S","VES","bolivar","bolivars"]}}
+{"id":"Q96051466","labels":{"en":"SOV"},"types":["currency"]}
+{"id":"Q125352135","labels":{"en":"Zimbabwe ZiG"},"types":["currency"],"autocomplete":"zig","aliases":{"en":["ZWG","ZiG","Zimbabwean gold","zig","zigs"]}}

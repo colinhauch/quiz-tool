@@ -41,7 +41,14 @@ describe("generateQuestion", () => {
       prompt: "What country is Tokyo in?",
       input: "text",
       ...provenance,
+      answerTypes: ["country"],
     });
+  });
+
+  it("carries the hidden object entity's types as answerTypes", () => {
+    // Object-hidden located_in: the answer is Japan, a country.
+    const q = generateQuestion(makePack(), statements[0]!, "object");
+    expect(q.answerTypes).toEqual(["country"]);
   });
 
   it("never leaks the answer into the rendered question", () => {
@@ -96,9 +103,17 @@ describe("subject-hidden questions", () => {
       prompt: "Bern is the capital of what country?",
       input: "text",
       ...provenance,
+      answerTypes: ["country"],
     });
     // The concealed subject (the answer) never appears in the prompt.
     expect(q.prompt).not.toContain("Switzerland");
   });
 
+  it("scopes answerTypes to the hidden side of a bidirectional card", () => {
+    const objectHidden = generateQuestion(makeBidiPack(), bidiStatement, "object");
+    const subjectHidden = generateQuestion(makeBidiPack(), bidiStatement, "subject");
+    // Object-hidden: answer is Bern, a city. Subject-hidden: answer is a country.
+    expect(objectHidden.answerTypes).toEqual(["city"]);
+    expect(subjectHidden.answerTypes).toEqual(["country"]);
+  });
 });

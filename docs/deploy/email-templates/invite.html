@@ -1,0 +1,68 @@
+<!--
+  Supabase Auth email — Invite user.
+  Paste into Supabase Dashboard → Authentication → Email Templates → "Invite user".
+  Button href MUST stay exactly {{ .ConfirmationURL }}.
+-->
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0;padding:0;background-color:#f1f2f6;">
+  <tr>
+    <td align="center" style="padding:32px 16px;font-family:Helvetica,Arial,sans-serif;">
+
+      <!--[if mso]><table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;background-color:#ffffff;border-radius:8px;overflow:hidden;border-left:4px solid #758bfd;box-shadow:0 2px 8px rgba(39,24,126,0.08);">
+
+        <!-- Header band -->
+        <tr>
+          <td style="background-color:#27187e;padding:28px 40px;">
+            <span style="font-family:Georgia,'Times New Roman',serif;font-size:24px;font-weight:700;letter-spacing:-0.5px;color:#f1f2f6;">Geography Quiz</span>
+          </td>
+        </tr>
+
+        <!-- Body -->
+        <tr>
+          <td style="padding:40px;">
+            <h1 style="margin:0 0 16px;font-family:Georgia,'Times New Roman',serif;font-size:26px;font-weight:700;line-height:1.3;color:#27187e;">You're invited to Geography Quiz</h1>
+            <p style="margin:0 0 28px;font-family:Helvetica,Arial,sans-serif;font-size:16px;line-height:1.6;color:#27187e;">
+              You've been invited to join Geography Quiz — a quick, editorial way to learn the world's map, one question at a time. Accept the invitation to set up your account.
+            </p>
+
+            <!-- Bulletproof CTA button -->
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 28px;">
+              <tr>
+                <td align="center" bgcolor="#ff8600" style="border-radius:6px;">
+                  <!--[if mso]>
+                  <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="{{ .ConfirmationURL }}" style="height:52px;v-text-anchor:middle;width:240px;" arcsize="12%" strokecolor="#ff8600" fillcolor="#ff8600">
+                  <w:anchorlock/>
+                  <center style="color:#ffffff;font-family:Helvetica,Arial,sans-serif;font-size:16px;font-weight:bold;">Accept invitation</center>
+                  </v:roundrect>
+                  <![endif]-->
+                  <!--[if !mso]><!-->
+                  <a href="{{ .ConfirmationURL }}" target="_blank" style="display:inline-block;padding:16px 32px;font-family:Helvetica,Arial,sans-serif;font-size:16px;font-weight:700;color:#ffffff;text-decoration:none;border-radius:6px;background-color:#ff8600;">Accept invitation</a>
+                  <!--<![endif]-->
+                </td>
+              </tr>
+            </table>
+
+            <p style="margin:0 0 8px;font-family:Helvetica,Arial,sans-serif;font-size:13px;line-height:1.6;color:#6a6a80;">
+              Button not working? Copy and paste this link into your browser:
+            </p>
+            <p style="margin:0;font-family:Helvetica,Arial,sans-serif;font-size:13px;line-height:1.5;word-break:break-all;">
+              <a href="{{ .ConfirmationURL }}" target="_blank" style="color:#758bfd;text-decoration:underline;">{{ .ConfirmationURL }}</a>
+            </p>
+          </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+          <td style="padding:24px 40px 32px;border-top:1px solid #f1f2f6;">
+            <p style="margin:0;font-family:Helvetica,Arial,sans-serif;font-size:12px;line-height:1.6;color:#9a9aae;">
+              If you weren't expecting this invitation, you can safely ignore this email.
+            </p>
+          </td>
+        </tr>
+
+      </table>
+      <!--[if mso]></td></tr></table><![endif]-->
+
+    </td>
+  </tr>
+</table>
