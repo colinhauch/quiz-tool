@@ -84,7 +84,22 @@ export const mapVisualAidSchema = z
   })
   .strict();
 
-export const visualAidSchema = z.discriminatedUnion("kind", [mapVisualAidSchema]);
+/**
+ * An image shown beside the prompt — the flag in "This is the flag of what
+ * country?" (spec #180), mirroring `ImageVisualAid` in `@geo/engine`. Generic:
+ * a served asset `src` and a deliberately non-revealing `alt` ("Flag of a
+ * country"), nothing flag-specific, so the next kind of prompt image reuses it.
+ * Names no entity — an image is self-contained.
+ */
+export const imageVisualAidSchema = z
+  .object({
+    kind: z.literal("image"),
+    src: z.string().min(1),
+    alt: z.string().min(1),
+  })
+  .strict();
+
+export const visualAidSchema = z.discriminatedUnion("kind", [mapVisualAidSchema, imageVisualAidSchema]);
 
 export type VisualAid = z.infer<typeof visualAidSchema>;
 

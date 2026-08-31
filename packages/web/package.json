@@ -4,7 +4,10 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "copy-flag-assets": "tsx scripts/copy-flag-assets.ts",
+    "predev": "tsx scripts/copy-flag-assets.ts",
     "dev": "vite",
+    "prebuild": "tsx scripts/copy-flag-assets.ts",
     "build": "vite build",
     "generate-world-map": "tsx scripts/generate-world-map.ts",
     "test": "vitest run"

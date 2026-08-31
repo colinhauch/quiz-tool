@@ -10,6 +10,7 @@ export * from "./types.js";
 export { createGraph } from "./graph.js";
 export { makeCardId, findCard, enumerateCards, supportedSlots, targetEntityId, type Card } from "./card.js";
 export { generateQuestion } from "./question.js";
+export { displayNoun } from "./noun.js";
 export {
   DEFAULT_TIERS,
   buildScheduler,

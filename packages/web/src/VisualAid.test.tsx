@@ -88,4 +88,13 @@ describe("VisualAid", () => {
     const { container } = render(<VisualAid visual={undefined} />);
     expect(container).toBeEmptyDOMElement();
   });
+
+  it("renders an image descriptor as an <img> with its src and generic alt (#180)", () => {
+    const flag: VisualAidData = { kind: "image", src: "/flags/jp.svg", alt: "Flag of a country" };
+    const { getByRole } = render(<VisualAid visual={flag} slot="prompt" />);
+    const img = getByRole("img");
+    expect(img).toHaveAttribute("src", "/flags/jp.svg");
+    // The alt is deliberately non-revealing — the answer must not leak here.
+    expect(img).toHaveAttribute("alt", "Flag of a country");
+  });
 });

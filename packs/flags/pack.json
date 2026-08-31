@@ -1,0 +1,17 @@
+{
+  "id": "flags",
+  "version": "0.0.1",
+  "labels": { "en": "Country Flags" },
+  "descriptions": {
+    "en": "Show a country's flag and name the country: 'This is the flag of what country?'. Statements over country entities owned by core-geo; the flag rides on the prompt as an image visual aid (spec #180)."
+  },
+  "license": "Public Domain / CC (Wikimedia Commons — see per-file provenance)",
+  "credits": [{ "source": "Wikimedia Commons", "retrieved": "2026-08-31" }],
+  "relations": {
+    "flag": {
+      "labels": { "en": "has flag" },
+      "kind": "text",
+      "hiddenSlots": ["subject"]
+    }
+  }
+}

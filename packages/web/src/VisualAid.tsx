@@ -1,4 +1,5 @@
 import type { VisualAid as VisualAidData } from "@geo/contract";
+import { ImageAid } from "./ImageAid.js";
 import { MapAid } from "./MapAid.js";
 
 /**
@@ -39,6 +40,8 @@ export function VisualAid({
             autoZoom={autoZoom}
           />
         );
+      case "image":
+        return <ImageAid src={visual.src} alt={visual.alt} />;
       default:
         return null;
     }
