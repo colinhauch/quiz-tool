@@ -37,9 +37,12 @@ export function EnvironmentSelector({ onReload = defaultReload }: { onReload?: (
 
   // Plain text, not markup: `<option>` is text-only content in HTML, so a
   // nested `<span>` is invalid and every browser flattens it away — there is
-  // no way to dim half an option's label in a native `<select>`. The dimming
-  // spec #171 asks for needs a custom listbox (see #173); until then the
-  // label carries both names, which is the part that actually matters.
+  // no way to dim half an option's label in a native `<select>`. Spec #171
+  // asked for the schema half dimmed; #172 and #173 were both amended to
+  // record that it is not achievable without replacing this control with a
+  // hand-rolled ARIA listbox, which would trade a real accessibility risk and
+  // the OS-native picker for a shade of grey. Both names still show, which is
+  // the part that carries the prod/public divergence.
   return (
     <select className="admin-env-select" aria-label="Environment" value={selected} onChange={handleChange}>
       {ENVIRONMENT_SCHEMAS.map((env) => (
