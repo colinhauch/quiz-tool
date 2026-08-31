@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { AdminPopulation, AdminUserList } from "@geo/contract";
 import { getPopulation, getUsers } from "./apiClient.js";
 import { UserDetail } from "./UserDetail.js";
+import { EnvironmentNote } from "./EnvironmentNote.js";
 
 type View = { kind: "list" } | { kind: "user"; userId: string };
 
@@ -74,17 +75,20 @@ function UserListView({ onSelectUser }: { onSelectUser: (userId: string) => void
     <div>
       {population && <PopulationSummary population={population} />}
       <h3>Every user</h3>
+      <EnvironmentNote kind="shared-roster" />
       <table>
         <thead>
           <tr>
             <th>Email</th>
             <th>Created</th>
             <th>Last sign-in</th>
+            <th>Answers here</th>
+            <th>Last answered here</th>
           </tr>
         </thead>
         <tbody>
           {users.map((user) => (
-            <tr key={user.id}>
+            <tr key={user.id} className={user.answerCount === 0 ? "admin-user-inactive" : undefined}>
               <td>
                 <button type="button" className="admin-link" onClick={() => onSelectUser(user.id)}>
                   {user.email ?? user.id}
@@ -92,6 +96,19 @@ function UserListView({ onSelectUser }: { onSelectUser: (userId: string) => void
               </td>
               <td>{user.createdAt}</td>
               <td>{user.lastSignInAt ?? "never"}</td>
+              {/* A zero here is a finding, not a blank: this person exists in
+                  the shared auth pool but has never played in the selected
+                  environment. Saying so beats a bare "0" the eye slides past. */}
+              {user.answerCount === 0 ? (
+                <td colSpan={2} className="admin-muted">
+                  No activity in this environment
+                </td>
+              ) : (
+                <>
+                  <td>{user.answerCount}</td>
+                  <td>{user.lastAnsweredAt}</td>
+                </>
+              )}
             </tr>
           ))}
         </tbody>

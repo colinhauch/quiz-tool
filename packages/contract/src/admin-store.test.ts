@@ -28,16 +28,40 @@ describe("environmentSchema", () => {
 });
 
 describe("adminUserListSchema", () => {
-  it("accepts a list of users, including a never-signed-in one", () => {
+  it("accepts a list of users, including a never-signed-in one and one with no activity in this environment", () => {
     const payload = [
-      { id: "u1", email: "a@example.com", createdAt: "2026-08-01T00:00:00.000Z", lastSignInAt: "2026-08-20T00:00:00.000Z" },
-      { id: "u2", email: null, createdAt: "2026-08-02T00:00:00.000Z", lastSignInAt: null },
+      {
+        id: "u1",
+        email: "a@example.com",
+        createdAt: "2026-08-01T00:00:00.000Z",
+        lastSignInAt: "2026-08-20T00:00:00.000Z",
+        answerCount: 12,
+        lastAnsweredAt: "2026-08-20T00:00:00.000Z",
+      },
+      {
+        id: "u2",
+        email: null,
+        createdAt: "2026-08-02T00:00:00.000Z",
+        lastSignInAt: null,
+        answerCount: 0,
+        lastAnsweredAt: null,
+      },
     ];
     expect(adminUserListSchema.parse(payload)).toEqual(payload);
   });
 
   it("rejects an entry missing a field", () => {
     expect(() => adminUserListSchema.parse([{ id: "u1", email: null }])).toThrow();
+  });
+
+  // The activity half is per-Environment, so it is not optional: a row without
+  // it would leave the SPA unable to tell "no activity here" from "not asked".
+  it("rejects a user row carrying identity but no activity", () => {
+    expect(() =>
+      adminUserListSchema.parse([
+        { id: "u1", email: null, createdAt: "2026-08-01T00:00:00.000Z", lastSignInAt: null },
+      ]),
+    ).toThrow();
   });
 });
 

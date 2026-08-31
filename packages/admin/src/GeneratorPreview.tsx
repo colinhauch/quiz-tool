@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { AdminGeneratorPreview, AdminPackDetail, AdminPackList } from "@geo/contract";
 import { getGeneratorPreview, getPackDetail, getPacks } from "./apiClient.js";
+import { EnvironmentNote } from "./EnvironmentNote.js";
 
 /** Every statement across a pack's relation groups, flattened for the picker. */
 function statementsOf(detail: AdminPackDetail) {
@@ -43,6 +44,7 @@ export function GeneratorPreview() {
       <h1 id="surface-Generator Preview" className="admin-surface__title">
         Generator Preview
       </h1>
+      <EnvironmentNote kind="pack-graph" />
 
       <label htmlFor="generator-preview-pack">Pack</label>
       <select id="generator-preview-pack" value={packId} onChange={(e) => setPackId(e.target.value)}>

@@ -3,8 +3,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Users } from "./Users.js";
 
 const USERS = [
-  { id: "u1", email: "a@example.com", createdAt: "2026-08-01T00:00:00.000Z", lastSignInAt: "2026-08-20T00:00:00.000Z" },
-  { id: "u2", email: null, createdAt: "2026-08-02T00:00:00.000Z", lastSignInAt: null },
+  {
+    id: "u1",
+    email: "a@example.com",
+    createdAt: "2026-08-01T00:00:00.000Z",
+    lastSignInAt: "2026-08-20T00:00:00.000Z",
+    answerCount: 12,
+    lastAnsweredAt: "2026-08-20T00:00:00.000Z",
+  },
+  // Registered, but never played in the selected environment (#173).
+  { id: "u2", email: null, createdAt: "2026-08-02T00:00:00.000Z", lastSignInAt: null, answerCount: 0, lastAnsweredAt: null },
 ];
 
 const POPULATION = {
@@ -84,5 +92,22 @@ describe("Users surface", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "All users" }));
     expect(await screen.findByText("a@example.com")).toBeInTheDocument();
+  });
+
+  it("shows each user's activity in the selected environment", async () => {
+    render(<Users />);
+    expect(await screen.findByText("12")).toBeInTheDocument();
+  });
+
+  it("marks a user with no activity in this environment, rather than dropping them from the roster", async () => {
+    render(<Users />);
+    // The roster is the shared auth pool, so u2 must still be listed — the
+    // finding is precisely that they registered and never played here.
+    expect(await screen.findByText(/no activity/i)).toBeInTheDocument();
+  });
+
+  it("says the roster is shared while the figures beside it are not", async () => {
+    render(<Users />);
+    expect(await screen.findByText(/shared across every environment/i)).toBeInTheDocument();
   });
 });

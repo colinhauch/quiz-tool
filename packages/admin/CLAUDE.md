@@ -1,7 +1,7 @@
 # @geo/admin — read-only operator visualizer
 
 A localhost tool for looking into the data quiz-tool manages: **Packs**, **Users**,
-**Results**, **Graph Health**, and **Generator Preview**. A Vite + React SPA plus a
+**Results**, **Graph Health**, **Generator Preview**, and **Environments**. A Vite + React SPA plus a
 thin local Hono BFF, mirroring `@geo/web` + `@geo/server`. Deployed separately from
 the player app and kept out of its bundle. **Read-only — no route writes.** See spec
 #133 for the reasoning.
@@ -20,6 +20,11 @@ and ties their lifecycles together — no `concurrently` dependency.
   need **no database** — they work the moment the BFF boots. They are also
   Environment-independent: the local pack graph is the same regardless of
   which Environment is selected.
+- **Environments** (#174) reads *every* Environment at once and takes no
+  `?env=`; an unreachable one is a single "unavailable" column, never a blank
+  page. Every surface that is not scoped to the selected Environment says so
+  on the page itself (`EnvironmentNote.tsx`, #173) — including Users, whose
+  roster is the shared auth pool while the figures beside it are per-Environment.
 - **Users, Results, Population** read across all users, in whichever
   Environment is selected in the SPA's left-nav selector (`prod`/`test`/`dev`
   — CONTEXT.md), and need Supabase credentials (below); without them those

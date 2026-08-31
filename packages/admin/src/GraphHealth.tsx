@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { AdminGraphHealthReport, AdminHealthIssue } from "@geo/contract";
 import { getGraphHealth } from "./apiClient.js";
 import { focusPacksOn } from "./navigation.js";
+import { EnvironmentNote } from "./EnvironmentNote.js";
 
 /** Jumps the shell to the Packs surface, focused on the item's Entity or Statement (#138). */
 function drillDown(item: AdminHealthIssue): void {
@@ -25,6 +26,7 @@ export function GraphHealth() {
       <h1 id="surface-Graph Health" className="admin-surface__title">
         Graph Health
       </h1>
+      <EnvironmentNote kind="pack-graph" />
       {!report && <p className="admin-surface__placeholder">Loading…</p>}
       {report?.checks.map((check) => (
         <div key={check.id} className="admin-health-check">

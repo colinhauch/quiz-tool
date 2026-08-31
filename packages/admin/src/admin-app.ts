@@ -38,6 +38,7 @@ import { buildPopulation } from "./populationProjection.js";
 import type { AdminReadStore } from "./read-store.js";
 import { buildResultRows, buildResultsResponse, filterResultRows } from "./resultsProjection.js";
 import { buildUserDetail } from "./userDetailProjection.js";
+import { projectUserRows } from "./userRowProjection.js";
 
 /** Every `Environment`, in the fixed order the comparison surface fans out to and renders. */
 const ALL_ENVIRONMENTS: readonly Environment[] = ["prod", "test", "dev"];
@@ -213,8 +214,11 @@ export function createAdminApp(options: AdminAppOptions) {
     const env = resolveEnvironment(c);
     if (env instanceof Response) return env;
     const readStore = requireReadStore(env);
-    const users = await readStore.listUsers();
-    return c.json(adminUserListSchema.parse(users));
+    // The roster is shared across Environments while the activity beside it is
+    // not (#173) — both halves are assembled here so the surface never has to
+    // make a second, separately-scoped request to tell them apart.
+    const [users, answers] = await Promise.all([readStore.listUsers(), readStore.listAllAnswers()]);
+    return c.json(adminUserListSchema.parse(projectUserRows(users, answers)));
   });
 
   // Single-user detail (#141): ability per pack, rollups, recent Answer Log

@@ -46,10 +46,15 @@ function buildApp() {
 }
 
 describe("GET /users", () => {
-  it("lists every user through the read store", async () => {
+  it("lists every user through the read store, with their activity in this environment", async () => {
     const res = await buildApp().request("/users");
     expect(res.status).toBe(200);
-    expect(adminUserListSchema.parse(await res.json())).toEqual(USERS);
+    // The roster is the shared auth pool; the two activity fields beside each
+    // user come from the requested Environment's schema alone (#173).
+    expect(adminUserListSchema.parse(await res.json())).toEqual([
+      { ...USERS[0], answerCount: 1, lastAnsweredAt: "2026-08-20T00:00:00.000Z" },
+      { ...USERS[1], answerCount: 1, lastAnsweredAt: "2026-08-21T00:00:00.000Z" },
+    ]);
   });
 
   it("500s when no read store is configured", async () => {
@@ -158,8 +163,12 @@ describe("environment routing", () => {
     const prodRes = await app.request("/users");
     const devRes = await app.request("/users?env=dev");
 
-    expect(adminUserListSchema.parse(await prodRes.json())).toEqual(PROD_USERS);
-    expect(adminUserListSchema.parse(await devRes.json())).toEqual(DEV_USERS);
+    // Neither environment's fake was seeded with answers, so every row is a
+    // real zero — which is itself the #173 behavior: registered, never played
+    // here, still listed.
+    const inactive = { answerCount: 0, lastAnsweredAt: null };
+    expect(adminUserListSchema.parse(await prodRes.json())).toEqual(PROD_USERS.map((u) => ({ ...u, ...inactive })));
+    expect(adminUserListSchema.parse(await devRes.json())).toEqual(DEV_USERS.map((u) => ({ ...u, ...inactive })));
   });
 
   it("treats an absent env exactly as prod, unmodified from today's behavior", async () => {

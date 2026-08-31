@@ -428,3 +428,32 @@ body {
 .admin-env-comparison .admin-env-column-selected {
   background: var(--admin-accent-soft);
 }
+
+/* Per-environment accent (#173). One custom property, keyed off the shell's
+   declared environment, so a screenshot says which environment it came from
+   without a banner taking up space on every page. */
+.admin-shell[data-environment="prod"] {
+  --admin-env-tint: #e0a92e;
+}
+
+.admin-shell[data-environment="test"] {
+  --admin-env-tint: #8b8b96;
+}
+
+.admin-shell[data-environment="dev"] {
+  --admin-env-tint: #3f8fd6;
+}
+
+.admin-shell .admin-brand {
+  border-left: 3px solid var(--admin-env-tint, transparent);
+  padding-left: 9px;
+}
+
+.admin-env-note {
+  margin: 0 0 12px;
+  font-size: 13px;
+}
+
+.admin-user-inactive td {
+  opacity: 0.75;
+}

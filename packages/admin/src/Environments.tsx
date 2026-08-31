@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { AdminEnvironmentComparison, Environment } from "@geo/contract";
 import { getEnvironmentComparison } from "./apiClient.js";
 import { readEnvironmentPref } from "./environmentPref.js";
+import { EnvironmentNote } from "./EnvironmentNote.js";
 
 /** The three Environments in nav order, paired with the schema each binds to — the `prod` → `public` divergence CONTEXT.md records as two terms. */
 const COLUMNS: { readonly id: Environment; readonly schema: string }[] = [
@@ -59,9 +60,7 @@ export function Environments({ selectedEnvironment }: { selectedEnvironment?: En
   return (
     <section className="admin-surface">
       <h2>Environments</h2>
-      <p className="admin-muted">
-        This surface reads all three environments at once, so the environment selector does not apply to it.
-      </p>
+      <EnvironmentNote kind="all-environments" />
 
       {/* The auth pool is shared across all three environments, so this count
           is carried once rather than repeated per column, where it would

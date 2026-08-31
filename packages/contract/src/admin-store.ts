@@ -38,8 +38,31 @@ export const adminUserSchema = z
 
 export type AdminUser = z.infer<typeof adminUserSchema>;
 
-/** `GET /users` — every user (#140). */
-export const adminUserListSchema = z.array(adminUserSchema);
+/**
+ * One row of `GET /users` (#140, widened by #173): a user, plus how active
+ * they have been *in the requested Environment*.
+ *
+ * The two halves have different scopes on purpose. `auth.users` is shared
+ * across every Environment (CONTEXT.md's `Environment`/`schema` entries), so
+ * the identity fields are the same whichever Environment is selected, while
+ * the activity fields come from that Environment's schema alone. The roster is
+ * deliberately not filtered down to active users: "registered here but never
+ * played here" is exactly the signal an operator comes to this surface for,
+ * and filtering would hide it.
+ */
+export const adminUserRowSchema = adminUserSchema
+  .extend({
+    /** Answers this user has recorded in the requested Environment. `0` is a real state — see this schema's doc comment. */
+    answerCount: z.number().int().nonnegative(),
+    /** `askedAt` of their most recent answer in the requested Environment, or `null` if they have none. */
+    lastAnsweredAt: z.string().min(1).nullable(),
+  })
+  .strict();
+
+export type AdminUserRow = z.infer<typeof adminUserRowSchema>;
+
+/** `GET /users` — every user, with per-Environment activity (#140, #173). */
+export const adminUserListSchema = z.array(adminUserRowSchema);
 
 export type AdminUserList = z.infer<typeof adminUserListSchema>;
 

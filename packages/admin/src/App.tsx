@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { SURFACES, type SurfaceId } from "./surfaces.js";
 import { usePacksFocus } from "./navigation.js";
+import { readEnvironmentPref } from "./environmentPref.js";
 import { EnvironmentSelector } from "./EnvironmentSelector.js";
 
 /**
@@ -39,8 +40,16 @@ export function App() {
   const surface = SURFACES.find((s) => s.id === active) ?? SURFACES[0]!;
   const ActiveSurface = surface.component;
 
+  // The shell states which Environment it is showing, and the stylesheet keys
+  // a subtle accent off it (warm prod / neutral test / cool dev) so a
+  // screenshot is self-documenting. A tint, not a banner: the admin is
+  // read-only, so looking at the wrong Environment is a misreading, not a
+  // mistake you cannot undo. Read once, like `apiClient` does — switching
+  // reloads the page (#172), so it cannot go stale under us.
+  const environment = readEnvironmentPref();
+
   return (
-    <div className="admin-shell">
+    <div className="admin-shell" data-environment={environment}>
       <nav className="admin-nav" aria-label="Admin surfaces">
         <div className="admin-brand">Geo Admin</div>
         <EnvironmentSelector />
