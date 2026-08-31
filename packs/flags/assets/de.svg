@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 600" role="img" aria-label="Flag">
+  <rect width="900" height="200" y="0" fill="#000"/>
+  <rect width="900" height="200" y="200" fill="#D00"/>
+  <rect width="900" height="200" y="400" fill="#FFCE00"/>
+</svg>

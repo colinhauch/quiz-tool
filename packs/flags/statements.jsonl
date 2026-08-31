@@ -1,0 +1,5 @@
+{"id":"flag:japan","subject":"Q17","relation":"flag","object":{"kind":"literal","literal":{"datatype":"image","value":{"src":"/flags/jp.svg","alt":"Flag of a country"}}}}
+{"id":"flag:france","subject":"Q142","relation":"flag","object":{"kind":"literal","literal":{"datatype":"image","value":{"src":"/flags/fr.svg","alt":"Flag of a country"}}}}
+{"id":"flag:italy","subject":"Q38","relation":"flag","object":{"kind":"literal","literal":{"datatype":"image","value":{"src":"/flags/it.svg","alt":"Flag of a country"}}}}
+{"id":"flag:nigeria","subject":"Q1033","relation":"flag","object":{"kind":"literal","literal":{"datatype":"image","value":{"src":"/flags/ng.svg","alt":"Flag of a country"}}}}
+{"id":"flag:germany","subject":"Q183","relation":"flag","object":{"kind":"literal","literal":{"datatype":"image","value":{"src":"/flags/de.svg","alt":"Flag of a country"}}}}

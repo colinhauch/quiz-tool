@@ -423,6 +423,7 @@ describe("loadAllPacks over the packs actually shipped", () => {
       "core-cities",
       "core-geo",
       "currencies",
+      "flags",
       "spoken-languages",
     ]);
   });

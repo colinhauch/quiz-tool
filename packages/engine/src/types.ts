@@ -76,7 +76,14 @@ export type Literal =
   | { datatype: "quantity"; value: number }
   | { datatype: "date"; value: string }
   | { datatype: "dateRange"; value: { start: string; end: string } }
-  | { datatype: "boolean"; value: boolean };
+  | { datatype: "boolean"; value: boolean }
+  // An image the card *shows* (a flag, a landmark photo) — never a value a
+  // learner types, so it only ever sits in an object slot the question reveals,
+  // never the hidden one. `src` is the served asset path (`/flags/jp.svg`), `alt`
+  // is deliberately generic and non-revealing ("Flag of a country") so the answer
+  // doesn't leak to assistive tech or view-source. Rendered via an `image`
+  // VisualAid the engine derives from this literal (see `question.ts`).
+  | { datatype: "image"; value: { src: string; alt: string } };
 
 /**
  * The object slot is a closed union — a reference to another entity, or a
@@ -201,6 +208,13 @@ export interface RenderedQuestion {
    * though in the current graph every entity has exactly one type.
    */
   answerTypes: string[];
+  /**
+   * A visual shown *with* the prompt (as opposed to `revealVisual`, shown after
+   * grading) — the flag in a flag card (spec #180). Present only when the
+   * statement's object is an `image` literal and the object slot is visible; the
+   * engine derives it, generators stay text-only. Omitted otherwise.
+   */
+  promptVisual?: VisualAid;
 }
 
 /**
@@ -233,4 +247,18 @@ export interface MapVisualAid {
   regionExtent?: RegionExtent;
 }
 
-export type VisualAid = MapVisualAid;
+/**
+ * An image shown beside the prompt — the flag in "This is the flag of what
+ * country?" (spec #180). Generic on purpose: it carries only a served asset
+ * `src` and a non-revealing `alt`, nothing flag-specific, so the next kind of
+ * prompt image (a landmark, say) reuses it. The engine derives it from an
+ * `image` object literal at question time (see `question.ts`); the client draws
+ * it as an `<img>`. Unlike `map`, it names no entity — an image is self-contained.
+ */
+export interface ImageVisualAid {
+  kind: "image";
+  src: string;
+  alt: string;
+}
+
+export type VisualAid = MapVisualAid | ImageVisualAid;
