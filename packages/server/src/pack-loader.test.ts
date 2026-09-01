@@ -332,6 +332,8 @@ describe("adding a pack touches nothing outside its own directory", () => {
       packId: "newcomer",
       packLabel: "Newcomer",
       answerTypes: ["country"],
+      // No rating store and a never-attempted card: seed stats.
+      stats: { attempts: 0, solvePercent: null, difficulty: 1500, predictedOdds: 0.5 },
     });
   });
 });
@@ -423,6 +425,7 @@ describe("loadAllPacks over the packs actually shipped", () => {
       "core-cities",
       "core-geo",
       "currencies",
+      "flags",
       "spoken-languages",
     ]);
   });
@@ -559,5 +562,61 @@ describe("loadAllPacks over the packs actually shipped", () => {
     expect([...p.entities.values()].some((e) => e.labels.en === "languages of Guinea")).toBe(false);
     expect(p.statements.find((s) => s.id === "lang:north-korea:north-korean-standard-language")).toBeUndefined();
     expect(p.statements.find((s) => s.id === "lang:north-korea:korean")).toBeDefined();
+  });
+
+  // Ticket #183: curated alias overrides (packs/core-geo/alias-overrides.json)
+  // let countries grade regardless of name form — short/common/official variants
+  // Wikidata's altLabels miss, or that the normalizer can't reach (it keeps a
+  // leading "the" and spaces "U. S. A." to "u s a", so bare "USA"/"US"/"UK"
+  // wouldn't match without these). Tested through the flags pack's subject-hidden
+  // cards, whose answer is the country — the direct grading path for these.
+  it("grades country answers regardless of name form (alias overrides, #183)", async () => {
+    const p = await loadAllPacks();
+    const accepts = (flagId: string, variants: string[]) => {
+      const card = makeCardId(flagId, "subject");
+      for (const v of variants) {
+        expect({ variant: v, correct: checkAnswer(p, card, v).correct }).toEqual({ variant: v, correct: true });
+      }
+    };
+    // United States: label, both abbreviations, and the official long form.
+    accepts("flag:us", ["United States", "USA", "US", "United States of America"]);
+    // United Kingdom: abbreviation and common short name.
+    accepts("flag:gb", ["United Kingdom", "UK", "Britain", "Great Britain"]);
+    // Czechia ⇄ Czech Republic (Wikidata already carries the alias; guards it).
+    accepts("flag:cz", ["Czech Republic", "Czechia"]);
+    // Republic of Korea ⇄ South Korea.
+    accepts("flag:kr", ["South Korea", "Republic of Korea", "ROK"]);
+    // Burma ⇄ Myanmar.
+    accepts("flag:mm", ["Myanmar", "Burma"]);
+    // A wrong country is still wrong — the overrides don't over-accept.
+    expect(checkAnswer(p, makeCardId("flag:us", "subject"), "Canada").correct).toBe(false);
+  });
+
+  // Ticket #182: the flags pack ships a flag statement for every core-geo
+  // country, each an image literal over a real country entity, quizzed
+  // subject-hidden ("This is the flag of what country?").
+  it("includes the flags pack, one flag per core-geo country (#182)", async () => {
+    const p = await loadAllPacks();
+
+    const countries = [...p.entities.values()].filter((e) => e.types.includes("country"));
+    const flagStatements = p.statements.filter((s) => s.relation === "flag");
+    // A flag for every country, and every flag over a real country entity.
+    expect(flagStatements.length).toBe(countries.length);
+    for (const s of flagStatements) {
+      expect(p.entities.get(s.subject)?.types).toContain("country");
+      expect(s.object.kind).toBe("literal");
+      if (s.object.kind === "literal") expect(s.object.literal.datatype).toBe("image");
+    }
+
+    // The US flag is quizzable and grades the country name, using the same
+    // alias overrides (#183) — the flag's answer is the country.
+    const us = p.statements.find((s) => s.relation === "flag" && s.subject === "Q30");
+    expect(us).toBeDefined();
+    const q = generateQuestion(p, us!, "subject");
+    expect(q.prompt).toBe("This is the flag of what country?");
+    expect(q.promptVisual?.kind).toBe("image");
+    const usCard = makeCardId(us!.id, "subject");
+    expect(checkAnswer(p, usCard, "United States").correct).toBe(true);
+    expect(checkAnswer(p, usCard, "USA").correct).toBe(true);
   });
 });

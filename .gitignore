@@ -47,6 +47,12 @@ coverage/
 .parcel-cache/
 dist/
 
+# Generated: flag SVGs copied from the flags pack into the web app's served
+# public dir at build time (spec #180). Source of truth is packs/flags/assets/.
+packages/web/public/flags/
+
 # Claude Code local state (worktrees, job scratch)
-.claude/
-.agents/
+.claude/*
+!.claude/skills/
+.agents/*
+!.agents/skills/

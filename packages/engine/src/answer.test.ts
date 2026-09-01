@@ -397,3 +397,40 @@ describe("checkAnswer, subject-hidden", () => {
     });
   });
 });
+
+// A flag card (spec #180): the object is an image literal, the card hides the
+// subject — "This is the flag of what country?" grades against the country.
+describe("checkAnswer, flag cards (image-literal object, subject-hidden)", () => {
+  const japanLocated: Entity = { ...japan, coordinate: { lat: 36, lon: 138 } };
+  const flagStatement: Statement = {
+    id: "flag:japan",
+    subject: "Q17",
+    relation: "flag",
+    object: { kind: "literal", literal: { datatype: "image", value: { src: "/flags/jp.svg", alt: "Flag of a country" } } },
+    pack: "flags",
+  };
+  const flagPack: Pack = {
+    entities: new Map([[japanLocated.id, japanLocated]]),
+    statements: [flagStatement],
+    generators: {},
+    hiddenSlots: { flag: ["subject"] },
+    packs: new Map(),
+  };
+
+  it("grades the typed country name against the hidden subject", () => {
+    const result = checkAnswer(flagPack, "flag:japan:subject", "Japan");
+    expect(result.correct).toBe(true);
+    expect(result.acceptedAnswer).toBe("Japan");
+  });
+
+  it("rejects a wrong country but reveals the accepted one", () => {
+    const result = checkAnswer(flagPack, "flag:japan:subject", "China");
+    expect(result.correct).toBe(false);
+    expect(result.acceptedAnswer).toBe("Japan");
+  });
+
+  it("pins the country on the reveal map (its coordinate), the object being a non-locatable image", () => {
+    const result = checkAnswer(flagPack, "flag:japan:subject", "Japan");
+    expect(result.revealVisual).toEqual({ kind: "map", entityId: "Q17", lat: 36, lon: 138, label: "Japan" });
+  });
+});

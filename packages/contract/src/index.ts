@@ -84,9 +84,44 @@ export const mapVisualAidSchema = z
   })
   .strict();
 
-export const visualAidSchema = z.discriminatedUnion("kind", [mapVisualAidSchema]);
+/**
+ * An image shown beside the prompt — the flag in "This is the flag of what
+ * country?" (spec #180), mirroring `ImageVisualAid` in `@geo/engine`. Generic:
+ * a served asset `src` and a deliberately non-revealing `alt` ("Flag of a
+ * country"), nothing flag-specific, so the next kind of prompt image reuses it.
+ * Names no entity — an image is self-contained.
+ */
+export const imageVisualAidSchema = z
+  .object({
+    kind: z.literal("image"),
+    src: z.string().min(1),
+    alt: z.string().min(1),
+  })
+  .strict();
+
+export const visualAidSchema = z.discriminatedUnion("kind", [mapVisualAidSchema, imageVisualAidSchema]);
 
 export type VisualAid = z.infer<typeof visualAidSchema>;
+
+/**
+ * The scheduling stats a card carries when drawn, all computed server-side and
+ * read under existing RLS. `attempts` and `solvePercent` are strictly *this*
+ * learner's (their RLS-scoped answer log); `difficulty` is the card's **global**
+ * Elo `D`, moved by every learner (permissive read); `predictedOdds` is the
+ * Elo `P(success)` — the learner's per-pack ability against that global
+ * difficulty. Values are as-of-draw (before the current answer). `solvePercent`
+ * is null when the learner has never attempted the card (0/0 is not 0%).
+ */
+export const cardStatsSchema = z
+  .object({
+    attempts: z.number().int().nonnegative(),
+    solvePercent: z.number().min(0).max(100).nullable(),
+    difficulty: z.number(),
+    predictedOdds: z.number().min(0).max(1),
+  })
+  .strict();
+
+export type CardStats = z.infer<typeof cardStatsSchema>;
 
 export const questionResponseSchema = z
   .object({
@@ -98,6 +133,9 @@ export const questionResponseSchema = z
     // The kind(s) of entity the answer names, so the client can scope answer
     // suggestions to the right type. The answer's type, never the answer.
     answerTypes: z.array(z.string().min(1)),
+    // Scheduling stats for the drawn card — attempts/solve% (this learner) and
+    // difficulty/predicted-odds (Elo). See {@link cardStatsSchema}.
+    stats: cardStatsSchema,
     // No v1 card produces one, but the seam supports a visual aid alongside
     // the prompt itself (as opposed to `revealVisual`, shown after grading).
     promptVisual: visualAidSchema.optional(),

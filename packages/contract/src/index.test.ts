@@ -27,6 +27,7 @@ describe("questionResponseSchema", () => {
     packId: "core-cities",
     packLabel: "Cities & Countries",
     answerTypes: ["country"],
+    stats: { attempts: 0, solvePercent: null, difficulty: 1500, predictedOdds: 0.5 },
   };
 
   it("validates a well-formed rendered question", () => {
@@ -168,6 +169,21 @@ describe("visualAidSchema", () => {
     const bad = { ...map, localGeoJSON: { type: "Polygon", coordinates: [] } };
     expect(visualAidSchema.safeParse(bad).success).toBe(false);
   });
+
+  const image = { kind: "image", src: "/flags/jp.svg", alt: "Flag of a country" };
+
+  it("validates a well-formed image descriptor (#180)", () => {
+    expect(visualAidSchema.parse(image)).toEqual(image);
+  });
+
+  it("rejects an image descriptor with an empty src or alt", () => {
+    expect(visualAidSchema.safeParse({ ...image, src: "" }).success).toBe(false);
+    expect(visualAidSchema.safeParse({ ...image, alt: "" }).success).toBe(false);
+  });
+
+  it("rejects an image descriptor with an unknown extra field", () => {
+    expect(visualAidSchema.safeParse({ ...image, entityId: "Q17" }).success).toBe(false);
+  });
 });
 
 describe("questionResponseSchema, promptVisual", () => {
@@ -178,6 +194,7 @@ describe("questionResponseSchema, promptVisual", () => {
     packId: "core-cities",
     packLabel: "Cities & Countries",
     answerTypes: ["country"],
+    stats: { attempts: 0, solvePercent: null, difficulty: 1500, predictedOdds: 0.5 },
   };
 
   it("validates without a promptVisual", () => {

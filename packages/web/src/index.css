@@ -67,7 +67,18 @@ body {
   z-index: 1;
   max-width: 1200px;
   margin: 0 auto;
-  padding: 2rem 1.5rem;
+  padding: 1.25rem 1.5rem;
+}
+
+/* Title and the sign-in/out widget share one row, vertically centred, so the
+   header stays short — the widget no longer sits in its own band above the
+   title. Nav follows on the row below. */
+.app-header__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
 }
 
 .app-title {
@@ -75,13 +86,6 @@ body {
   font-size: 2rem;
   font-weight: 700;
   letter-spacing: -0.5px;
-  margin-bottom: 1.5rem;
-}
-
-.app-header__top {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 1rem;
 }
 
 .app-nav {
@@ -167,10 +171,28 @@ body {
   border-bottom-color: var(--orange);
 }
 
+/* Base (mobile/tablet, single-column everything): a readable measure. The wide
+   two-column quiz card only renders at ≥900px (see useWideLayout), so the
+   widescreen cap is raised at that same breakpoint below — never on the narrow
+   layouts, which must stay this width to read well. */
 .app-main {
   max-width: 680px;
   margin: 2.5rem auto;
   padding: 0 1.5rem;
+}
+
+@media (min-width: 900px) {
+  .app-main {
+    max-width: 1120px;
+  }
+
+  /* Text-only tabs keep a readable measure even though their shared shell is
+     now wide — only the quiz card and the packs/answers grids want the room. */
+  .feedback,
+  .sign-in-gate {
+    max-width: 680px;
+    margin-inline: auto;
+  }
 }
 
 /* ── Sign-in gate ────────────────────────────────────────── */
@@ -292,30 +314,298 @@ body {
   color: var(--indigo);
 }
 
-/* Autocomplete on/off, pushed to the right edge of the header strip. Sits above
-   the topo crop like the eyebrow. */
-.quiz-card__toggle {
+/* The strip stays a compact card identity: pack label plus settings only. */
+.quiz-card__settings-button {
   position: relative;
   z-index: 1;
   margin-left: auto;
+  width: 2rem;
+  height: 2rem;
+  padding: 0.4rem;
+  border: 1px solid rgba(39, 24, 126, 0.28);
+  border-radius: 50%;
+  background: rgba(241, 242, 246, 0.25);
+  color: var(--indigo);
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.quiz-card__settings-button:hover {
+  background: rgba(241, 242, 246, 0.55);
+}
+
+.quiz-card__settings-button:focus-visible,
+.quiz-settings__close:focus-visible {
+  outline: 2px solid var(--indigo);
+  outline-offset: 2px;
+}
+
+.quiz-card__settings-button svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.75;
+  stroke-linejoin: round;
+}
+
+.quiz-settings__backdrop {
+  position: fixed;
+  z-index: 10;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  background: rgba(39, 24, 126, 0.28);
+}
+
+.quiz-settings {
+  width: min(100%, 24rem);
+  padding: 1.25rem;
+  border: 1px solid rgba(39, 24, 126, 0.16);
+  border-radius: 0.5rem;
+  background: #fff;
+  box-shadow: 0 1rem 3rem rgba(39, 24, 126, 0.24);
+}
+
+.quiz-settings__header {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.quiz-settings__header h2 {
+  font-family: var(--serif);
+  font-size: 1.4rem;
+  line-height: 1;
+  color: var(--indigo);
+}
+
+.quiz-settings__close {
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--indigo);
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.quiz-settings__close:hover {
+  background: var(--platinum);
+}
+
+.quiz-settings__toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.75rem 0;
+  border-top: 1px solid rgba(39, 24, 126, 0.1);
   font-family: var(--sans);
-  font-size: 0.72rem;
+  font-size: 0.85rem;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
   color: var(--indigo);
   cursor: pointer;
 }
 
-.quiz-card__toggle input {
+.quiz-settings__toggle input {
   cursor: pointer;
 }
 
 .quiz-card__body {
   padding: 2rem 1.5rem;
+}
+
+/* ── Wide card: question panel + media panel (#187) ──────────
+   Rendered only above the desktop breakpoint (see useWideLayout); narrow
+   screens use the plain `.quiz-card__body` above instead, unchanged. */
+.quiz-card__body--wide {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 34rem;
+  gap: 2.5rem;
+  align-items: stretch;
+}
+
+.qpanel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.qpanel .quiz-prompt {
+  margin-bottom: 0;
+}
+
+/* Grows to fill whatever height the media panel sets, so the answer area
+   stays pinned at the bottom. The no-data tiles use part of that gap without
+   making the panel's height depend on a future stats contract. */
+.qpanel__middle {
+  flex: 1;
+  min-height: 1.5rem;
+  display: flex;
+  align-items: center;
+}
+
+.qpanel__stats {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.625rem;
+}
+
+.qpanel__stat {
+  min-width: 0;
+  padding: 0.75rem;
+  border: 1px solid rgba(39, 24, 126, 0.1);
+  border-radius: 0.375rem;
+  background: rgba(174, 184, 254, 0.12);
+  display: grid;
+  grid-template-columns: 1fr auto;
+  column-gap: 0.5rem;
+  align-items: baseline;
+}
+
+.qpanel__stat-label {
+  min-width: 0;
+  font-family: var(--sans);
+  font-size: 0.65rem;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: rgba(39, 24, 126, 0.72);
+}
+
+.qpanel__stat-value {
+  font-family: var(--serif);
+  font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 1;
+  color: rgba(39, 24, 126, 0.9);
+}
+
+/* A tile with no datum yet (e.g. Solve % before the first attempt) stays dim. */
+.qpanel__stat-value--empty {
+  color: rgba(39, 24, 126, 0.44);
+}
+
+.qpanel__stat-status {
+  grid-column: 1 / -1;
+  margin-top: 0.25rem;
+  font-family: var(--sans);
+  font-size: 0.68rem;
+  line-height: 1.2;
+  color: rgba(39, 24, 126, 0.48);
+}
+
+.qpanel__answer {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+/* Holds the answer input (disabled once answered). The button below never
+   moves between asking and answered. */
+.qpanel__slot {
+  min-height: 3.25rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* The verdict is relocated directly above the answer input. Both layouts keep
+   this slot in the DOM at a fixed min-height whether asking or answered, so the
+   verdict appearing on answer shifts neither the input nor anything below it.
+   Content aligns to the slot's bottom, next to the input. */
+.qpanel__verdict-slot,
+.quiz-verdict-slot {
+  display: flex;
+  align-items: flex-end;
+}
+
+.qpanel__verdict-slot {
+  min-height: 3.75rem;
+}
+
+/* Narrow has no flexible spacer to absorb the verdict's height (unlike the wide
+   panel's `.qpanel__middle`), so this reserve must cover it — sized for the
+   common two-line verdict, keeping the input and everything below it fixed. */
+.quiz-verdict-slot {
+  min-height: 5.25rem;
+}
+
+/* Compact the relocated verdict so the reserved gap stays modest. */
+.qpanel__verdict-slot .quiz-result,
+.quiz-verdict-slot .quiz-result {
+  width: 100%;
+  margin: 0;
+  padding: 0.75rem 1rem;
+}
+
+/* Answered: the submitted answer stays readable but is clearly inert. */
+.quiz-input:disabled {
+  background: var(--platinum);
+  color: var(--indigo);
+  opacity: 0.55;
+  cursor: default;
+}
+
+/* ── Media panel: one frame, two always-reserved slots ───────
+   Constant footprint regardless of content, so switching questions never
+   moves the question panel — the frame makes an empty slot read as
+   intentional panel space rather than a missing element. */
+.mpanel {
+  align-self: stretch;
+  background: #fff;
+  border: 1px solid rgba(39, 24, 126, 0.12);
+  border-radius: 0.5rem;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.mpanel__image {
+  height: 15rem;
+  padding: 1.5rem;
+  border-bottom: 1px solid rgba(39, 24, 126, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mpanel__image .visual-aid {
+  margin: 0;
+}
+
+.mpanel__image .image-aid {
+  max-width: 100%;
+}
+
+.mpanel__image .image-aid__img {
+  height: 12rem;
+}
+
+.mpanel__map {
+  flex: 1;
+  min-height: 20rem;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* Fill the wider media column — the map is the whole point of the widescreen. */
+.mpanel__map .map-aid-viewport {
+  width: 100%;
+  max-width: none;
+  margin: 0 auto;
 }
 
 .quiz-prompt {
@@ -356,13 +646,18 @@ body {
 }
 
 /* ── Answer autocomplete ─────────────────────────────────────
-   The suggestion list sits inline, in normal flow directly under the input, so
-   it pushes the Submit button down instead of floating over content — a floated
-   dropdown gets hidden behind the on-screen keyboard on mobile. */
+   Narrow screens: the suggestion list sits inline, in normal flow directly
+   under the input, so it pushes the Submit button down instead of floating
+   over content — a floated dropdown gets hidden behind the on-screen
+   keyboard on mobile.
+   Desktop (#188, same breakpoint as the wide card in useWideLayout): the
+   list becomes an out-of-flow overlay popover so showing/hiding it never
+   shifts the input, verdict, or Submit button. */
 .answer-combobox {
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
+  position: relative;
 }
 
 .answer-combobox .quiz-input {
@@ -406,6 +701,17 @@ body {
 .answer-suggestion__button:hover,
 .answer-suggestion--active .answer-suggestion__button {
   background: var(--platinum);
+}
+
+@media (min-width: 900px) {
+  .answer-suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    margin-top: 0.4rem;
+    z-index: 10;
+  }
 }
 
 /* ── Primary button (the one orange thing) ───────────────── */
@@ -479,6 +785,29 @@ body {
   margin-top: -0.75rem;
 }
 
+/* The image aid (spec #180): a flag shown with the prompt. Contained (never
+   stretched) in a fixed-height box so wildly different aspect ratios — square,
+   2:1, the odd non-rectangle — all read at a consistent size; a hairline border
+   + soft shadow keeps white-edged flags visible against the light page. */
+.image-aid {
+  width: 100%;
+  max-width: 26rem;
+  margin: 0 auto;
+  display: flex;
+  justify-content: center;
+}
+
+.image-aid__img {
+  max-width: 100%;
+  height: 12rem;
+  width: auto;
+  object-fit: contain;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 0.375rem;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+  background: #fff;
+}
+
 /* The viewport: map + zoom slider as one capped-width composition, centered
    under the verdict text; goes full-width at mobile widths (responsive block
    below). The wrapper owns the width so the slider tracks the map's edges. */
@@ -501,6 +830,15 @@ body {
   height: auto;
   border-radius: 0.375rem;
   background: var(--platinum);
+}
+
+/* Reserved whether or not a slider is shown (#186): the asking (no coords) and
+   answered (coords) states must be the same height, so this row's footprint
+   is fixed and the slider — when present — fills it rather than adding to it. */
+.map-aid__zoom-row {
+  display: flex;
+  align-items: center;
+  height: 1.25rem;
 }
 
 /* 1-D zoom track (spec #156): whole-world at the left, the pinned region at the
@@ -939,9 +1277,6 @@ body {
   }
   .packs__title {
     font-size: 1.6rem;
-  }
-  .app-header__top {
-    justify-content: flex-start;
   }
   .auth-widget {
     flex-wrap: wrap;
