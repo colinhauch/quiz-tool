@@ -73,3 +73,23 @@ _Avoid_: Selected, active, current, highlighted
 **Answer Log**:
 The append-only record of every answer, keyed by card. It records what *was* asked; selection governs what *will be*. Never filtered or rewritten when a pack is deselected.
 _Avoid_: History, results, attempts
+
+### Deployment
+
+**Environment**:
+The operator-facing name for one of the three places the app runs and stores its data: `prod`, `test`, `dev`. Distinct from *schema* — see below — because `prod` is the one Environment whose name doesn't match its schema. The admin visualizer's environment selector (spec #171) is what makes this choosable per request instead of fixed at process boot.
+_Avoid_: Stage, deployment, instance
+
+**Schema**:
+The Postgres schema an Environment's data actually lives in: `public` for `prod`, `test` for `test`, `dev` for `dev`. One Supabase project holds all three schemas side by side. `prod → public` is the sole point where Environment and schema diverge — the reason the two are separate words at all, not synonyms for the same idea.
+_Avoid_: Database, namespace
+
+### Feedback
+
+**Feedback**:
+One report a learner submits to the operator — either *general* (about the app) or *question* (flagging the card on screen, with a snapshot of what the learner saw). Submit-only: learners can never read feedback back, and only the operator does.
+_Avoid_: Report, comment, ticket, bug
+
+**Status**:
+Where a piece of feedback stands with the operator: `unresolved` or `resolved`. New feedback is always unresolved; flipping it is out-of-band SQL in v1, never an app write.
+_Avoid_: State, triage state, done flag

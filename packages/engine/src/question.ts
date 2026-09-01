@@ -1,6 +1,21 @@
-import { makeCardId } from "./card.js";
+import { makeCardId, targetEntityId } from "./card.js";
 import { createGraph } from "./graph.js";
-import type { HiddenSlot, Pack, RenderedQuestion, Statement } from "./types.js";
+import type { HiddenSlot, Pack, RenderedQuestion, Statement, VisualAid } from "./types.js";
+
+/**
+ * The image an `image`-literal object contributes to the prompt, when that
+ * object is on the *visible* side of the card. A flag card hides the subject and
+ * shows the flag object; an object-hidden card would be concealing the image
+ * itself (nothing to show, and unanswerable anyway), so it gets none. Mirrors
+ * `revealVisualFor` in `answer.ts`: the engine derives the visual from stored
+ * data so generators stay text-only.
+ */
+function promptVisualFor(statement: Statement, hiddenSlot: HiddenSlot): VisualAid | undefined {
+  if (hiddenSlot === "object") return undefined;
+  const { object } = statement;
+  if (object.kind !== "literal" || object.literal.datatype !== "image") return undefined;
+  return { kind: "image", src: object.literal.value.src, alt: object.literal.value.alt };
+}
 
 /**
  * Runs the pack's generator for a statement's relation, hiding `hiddenSlot`,
@@ -22,12 +37,18 @@ export function generateQuestion(
   const source = pack.packs.get(statement.pack);
   if (!source) throw new Error(`statement ${statement.id} came from unknown pack: ${statement.pack}`);
 
-  const content = generator({ statement, hiddenSlot, graph: createGraph(pack.entities) });
+  const graph = createGraph(pack.entities);
+  const content = generator({ statement, hiddenSlot, graph });
+  const promptVisual = promptVisualFor(statement, hiddenSlot);
   return {
     cardId: makeCardId(statement.id, hiddenSlot),
     prompt: content.prompt,
     input: content.input,
     packId: source.id,
     packLabel: source.labels.en,
+    answerTypes: graph.getEntity(targetEntityId(statement, hiddenSlot)).types,
+    // Spread only when present, so questions without a prompt visual carry no
+    // key at all (and `.toEqual` fixtures stay exact).
+    ...(promptVisual ? { promptVisual } : {}),
   };
 }

@@ -1,0 +1,457 @@
+:root {
+  --admin-bg: #f7f7f8;
+  --admin-surface-bg: #ffffff;
+  --admin-ink: #1a1a1f;
+  --admin-muted: #63636e;
+  --admin-line: #e2e2e8;
+  --admin-line-strong: #cfcfd8;
+  --admin-nav-bg: #1f2430;
+  --admin-nav-ink: #d7dae2;
+  --admin-nav-ink-active: #ffffff;
+  /* Darkened from #4f6bed so link text and the active-nav background both clear
+     WCAG AA (4.5:1) on their backgrounds — see DESIGN-REVIEW.md finding 6. */
+  --admin-accent: #3f57d6;
+  --admin-accent-soft: #eef1fd;
+  --admin-zebra: #fafafb;
+  --admin-row-hover: #f1f3fd;
+  --admin-highlight: #fff6da;
+  --admin-highlight-bar: #e0a92e;
+  --admin-warn-bg: #fbeecb;
+  --admin-warn-ink: #7a5b12;
+  --admin-radius: 8px;
+  font-family: Inter, system-ui, -apple-system, sans-serif;
+  color: var(--admin-ink);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--admin-bg);
+}
+
+/* ---------------------------------------------------------------- shell */
+
+.admin-shell {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  min-height: 100vh;
+}
+
+.admin-nav {
+  display: flex;
+  flex-direction: column;
+  background: var(--admin-nav-bg);
+  color: var(--admin-nav-ink);
+  padding: 20px 12px;
+  gap: 4px;
+  position: sticky;
+  top: 0;
+  align-self: start;
+  height: 100vh;
+}
+
+.admin-brand {
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.02em;
+  padding: 4px 12px 16px;
+  color: var(--admin-nav-ink-active);
+}
+
+/* Environment selector (#172): sits between the brand and the surface list —
+   see App.tsx. Styled to read as part of the nav chrome, not a stray form
+   control, while still being an obviously interactive `<select>`. */
+.admin-env-select {
+  width: 100%;
+  margin: 0 0 12px;
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--admin-nav-ink-active);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 6px;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.admin-env-select:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.admin-nav ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.admin-nav button {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.admin-nav button:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.admin-nav button[aria-current="page"] {
+  background: var(--admin-accent);
+  color: var(--admin-nav-ink-active);
+  font-weight: 600;
+}
+
+.admin-readonly {
+  margin-top: 12px;
+  align-self: flex-start;
+  background: var(--admin-warn-bg);
+  color: var(--admin-warn-ink);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+/* The surface pane owns horizontal overflow, so a wide table (Results has 8
+   columns) scrolls within the content area instead of pushing the whole app
+   sideways. */
+.admin-main {
+  padding: 32px 40px;
+  overflow: auto;
+  min-width: 0;
+}
+
+/* ------------------------------------------------------------- surfaces */
+
+.admin-surface__title {
+  font-size: 22px;
+  margin: 0 0 16px;
+}
+
+.admin-surface h2 {
+  font-size: 17px;
+  margin: 24px 0 8px;
+}
+
+.admin-surface h3 {
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--admin-muted);
+  margin: 22px 0 8px;
+}
+
+.admin-surface h4 {
+  font-size: 13px;
+  margin: 14px 0 6px;
+}
+
+.admin-surface__placeholder {
+  color: var(--admin-muted);
+}
+
+.admin-muted {
+  color: var(--admin-muted);
+}
+
+/* --------------------------------------------------------------- links */
+
+/* Every clickable is a real <button>; this makes the inline ones read as links
+   while keeping button semantics (tab/enter, disabled). */
+.admin-link {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: var(--admin-accent);
+  cursor: pointer;
+  text-align: left;
+}
+
+.admin-link:hover:not(:disabled) {
+  text-decoration: underline;
+}
+
+.admin-link:disabled {
+  color: var(--admin-ink);
+  cursor: default;
+  opacity: 0.7;
+}
+
+/* A single visible focus ring for everything keyboard-reachable. */
+.admin-link:focus-visible,
+.admin-nav button:focus-visible,
+.admin-env-select:focus-visible,
+.admin-surface input:focus-visible,
+.admin-surface select:focus-visible,
+.admin-surface button:focus-visible {
+  outline: 2px solid var(--admin-accent);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+/* -------------------------------------------------------------- tables */
+
+.admin-surface table {
+  border-collapse: collapse;
+  width: 100%;
+  max-width: 960px;
+  margin: 4px 0 12px;
+  font-size: 13px;
+  background: var(--admin-surface-bg);
+}
+
+.admin-surface thead th {
+  position: sticky;
+  top: 0;
+  background: var(--admin-surface-bg);
+  text-align: left;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--admin-muted);
+  border-bottom: 2px solid var(--admin-line-strong);
+  padding: 6px 12px;
+  white-space: nowrap;
+}
+
+.admin-surface tbody td {
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--admin-line);
+  vertical-align: top;
+}
+
+.admin-surface tbody tr:nth-child(even) {
+  background: var(--admin-zebra);
+}
+
+.admin-surface tbody tr:hover {
+  background: var(--admin-row-hover);
+}
+
+/* The drilled-to statement (Graph Health → Packs, Results → Card): the jump
+   lands here, so it must be unmistakable — finding 2. */
+.admin-highlight,
+.admin-surface tbody tr.admin-highlight {
+  background: var(--admin-highlight);
+  box-shadow: inset 3px 0 0 var(--admin-highlight-bar);
+}
+
+/* --------------------------------------------------- definition lists */
+
+.admin-surface dl {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 4px 16px;
+  margin: 8px 0 12px;
+  max-width: 640px;
+}
+
+.admin-surface dt {
+  font-weight: 600;
+  color: var(--admin-muted);
+}
+
+.admin-surface dd {
+  margin: 0;
+}
+
+/* ------------------------------------------------------- breadcrumb */
+
+.admin-breadcrumb {
+  font-size: 13px;
+  color: var(--admin-muted);
+  margin-bottom: 16px;
+}
+
+/* --------------------------------------------------- graph health */
+
+.admin-health-check {
+  border: 1px solid var(--admin-line);
+  border-radius: var(--admin-radius);
+  padding: 4px 16px 12px;
+  margin-bottom: 12px;
+  background: var(--admin-surface-bg);
+  max-width: 720px;
+}
+
+.admin-health-check h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-transform: none;
+}
+
+.admin-health-count {
+  display: inline-block;
+  min-width: 22px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--admin-accent);
+  background: var(--admin-accent-soft);
+  border-radius: 999px;
+  padding: 1px 8px;
+}
+
+.admin-health-check ul,
+.admin-entity-list,
+.admin-statement-picker {
+  list-style: none;
+  padding: 0;
+  margin: 6px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* --------------------------------------------------- results filters */
+
+.admin-results-filters,
+.admin-feedback-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+  padding: 16px;
+  background: var(--admin-surface-bg);
+  border: 1px solid var(--admin-line);
+  border-radius: var(--admin-radius);
+  margin-bottom: 16px;
+}
+
+.admin-results-filters label,
+.admin-feedback-filters label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--admin-muted);
+}
+
+.admin-surface input,
+.admin-surface select {
+  font: inherit;
+  font-size: 13px;
+  color: var(--admin-ink);
+  padding: 6px 8px;
+  border: 1px solid var(--admin-line-strong);
+  border-radius: 6px;
+  background: var(--admin-surface-bg);
+}
+
+.admin-results-filters button[type="submit"],
+.admin-surface form button[type="submit"] {
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--admin-nav-ink-active);
+  background: var(--admin-accent);
+  border: 0;
+  border-radius: 6px;
+  padding: 8px 16px;
+  cursor: pointer;
+}
+
+/* ------------------------------------------------ charts & leaderboard */
+
+.admin-results-charts {
+  margin-top: 8px;
+}
+
+.admin-leaderboard,
+.admin-card-difficulty {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 20px;
+  max-width: 960px;
+}
+
+.admin-leaderboard ol,
+.admin-card-difficulty ol {
+  margin: 4px 0;
+  padding-left: 20px;
+  font-size: 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+/* The ability-over-time sparkline reads as a chart, not a stray line. */
+.admin-sparkline {
+  color: var(--admin-accent);
+  border: 1px solid var(--admin-line);
+  border-radius: 6px;
+  padding: 6px;
+  background: var(--admin-surface-bg);
+}
+
+/* ---------------------------------------------- generator preview cards */
+
+.admin-generator-card {
+  border: 1px solid var(--admin-line);
+  border-radius: var(--admin-radius);
+  padding: 4px 16px 12px;
+  margin: 8px 0;
+  max-width: 640px;
+  background: var(--admin-surface-bg);
+}
+
+.admin-statement-picker {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+}
+
+/* Environments comparison surface (#174). The selected environment's column is
+   tinted rather than boxed: it is a pointer back to the left-nav selector, not
+   a state the operator has to act on. */
+.admin-env-comparison th[scope="row"] {
+  text-align: left;
+  font-weight: 500;
+}
+
+.admin-env-comparison .admin-env-column-selected {
+  background: var(--admin-accent-soft);
+}
+
+/* Per-environment accent (#173). One custom property, keyed off the shell's
+   declared environment, so a screenshot says which environment it came from
+   without a banner taking up space on every page. */
+.admin-shell[data-environment="prod"] {
+  --admin-env-tint: #e0a92e;
+}
+
+.admin-shell[data-environment="test"] {
+  --admin-env-tint: #8b8b96;
+}
+
+.admin-shell[data-environment="dev"] {
+  --admin-env-tint: #3f8fd6;
+}
+
+.admin-shell .admin-brand {
+  border-left: 3px solid var(--admin-env-tint, transparent);
+  padding-left: 9px;
+}
+
+.admin-env-note {
+  margin: 0 0 12px;
+  font-size: 13px;
+}
+
+.admin-user-inactive td {
+  opacity: 0.75;
+}

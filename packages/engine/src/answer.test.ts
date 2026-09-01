@@ -104,6 +104,7 @@ describe("checkAnswer", () => {
     expect(checkAnswer(makePack(), "cc:tokyo-japan:object", "japan")).toEqual({
       correct: true,
       acceptedAnswer: "Japan",
+      acceptedAnswers: ["Japan"],
     });
   });
 
@@ -111,6 +112,7 @@ describe("checkAnswer", () => {
     expect(checkAnswer(makePack(), "cc:nyc-usa:object", "USA")).toEqual({
       correct: true,
       acceptedAnswer: "United States",
+      acceptedAnswers: ["United States"],
     });
   });
 
@@ -118,11 +120,138 @@ describe("checkAnswer", () => {
     expect(checkAnswer(makePack(), "cc:tokyo-japan:object", "China")).toEqual({
       correct: false,
       acceptedAnswer: "Japan",
+      acceptedAnswers: ["Japan"],
     });
   });
 
   it("throws on an unknown card", () => {
     expect(() => checkAnswer(makePack(), "cc:nope:object", "x")).toThrow(/unknown card/);
+  });
+});
+
+describe("checkAnswer, revealVisual", () => {
+  const tokyo: Entity = {
+    id: "Q1490",
+    labels: { en: "Tokyo" },
+    types: ["city"],
+    coordinate: { lat: 35.6897, lon: 139.6922 },
+  };
+  const japanWithCoordinate: Entity = {
+    ...japan,
+    coordinate: { lat: 36, lon: 138 },
+  };
+  const andorra: Entity = {
+    id: "Q228",
+    labels: { en: "Andorra" },
+    types: ["country"],
+    coordinate: { lat: 42.5, lon: 1.5 },
+  };
+  const europe: Entity = {
+    id: "Q46",
+    labels: { en: "Europe" },
+    types: ["continent"],
+    coordinate: { lat: 48.69, lon: 9.14 },
+  };
+  const tokyoMap = { kind: "map", entityId: "Q1490", lat: 35.6897, lon: 139.6922, label: "Tokyo" };
+
+  // A city→country statement, quizzable both ways.
+  function makeCityCountryPack(subject: Entity, object: Entity): Pack {
+    return {
+      entities: new Map([subject, object].map((e) => [e.id, e])),
+      statements: [
+        { id: "cc:tokyo-japan", subject: subject.id, relation: "located_in", object: { kind: "entity", id: object.id }, pack: "test-pack" },
+      ],
+      generators: {},
+      hiddenSlots: { located_in: ["subject", "object"] },
+      packs,
+    };
+  }
+
+  it("maps the most point-like entity: the city, not the answer country (object-hidden)", () => {
+    // "What country is Tokyo in?" → answer Japan, but the map pins Tokyo.
+    const result = checkAnswer(makeCityCountryPack(tokyo, japanWithCoordinate), "cc:tokyo-japan:object", "Japan");
+    expect(result.acceptedAnswer).toBe("Japan");
+    expect(result.revealVisual).toEqual(tokyoMap);
+  });
+
+  it("maps the city even when the country is the answer (capital, subject-hidden)", () => {
+    // "Moscow is the capital of what country?" → answer Russia, but the map pins
+    // Moscow (city), not Russia's centroid.
+    const russia: Entity = { id: "Q159", labels: { en: "Russia" }, types: ["country"], coordinate: { lat: 60, lon: 100 } };
+    const moscow: Entity = { id: "Q649", labels: { en: "Moscow" }, types: ["city"], coordinate: { lat: 55.75, lon: 37.62 } };
+    const pack: Pack = {
+      entities: new Map([russia, moscow].map((e) => [e.id, e])),
+      statements: [
+        { id: "cap:russia", subject: "Q159", relation: "capital", object: { kind: "entity", id: "Q649" }, pack: "test-pack" },
+      ],
+      generators: {},
+      hiddenSlots: { capital: ["object", "subject"] },
+      packs,
+    };
+    const result = checkAnswer(pack, "cap:russia:subject", "Russia");
+    expect(result.acceptedAnswer).toBe("Russia");
+    expect(result.revealVisual).toEqual({ kind: "map", entityId: "Q649", lat: 55.75, lon: 37.62, label: "Moscow" });
+  });
+
+  it("maps the country, not the continent, for a continent card", () => {
+    // "What continent is Andorra in?" → answer Europe, but the map pins Andorra.
+    const pack: Pack = {
+      entities: new Map([andorra, europe].map((e) => [e.id, e])),
+      statements: [
+        { id: "cont:andorra", subject: "Q228", relation: "located_in_continent", object: { kind: "entity", id: "Q46" }, pack: "test-pack" },
+      ],
+      generators: {},
+      packs,
+    };
+    const result = checkAnswer(pack, "cont:andorra:object", "Asia");
+    expect(result).toMatchObject({ correct: false, acceptedAnswer: "Europe" });
+    expect(result.revealVisual).toEqual({ kind: "map", entityId: "Q228", lat: 42.5, lon: 1.5, label: "Andorra" });
+  });
+
+  it("falls back to the country when the object has no coordinate (e.g. a currency)", () => {
+    const euro: Entity = { id: "Q4916", labels: { en: "Euro" }, types: ["currency"] };
+    const pack: Pack = {
+      entities: new Map([andorra, euro].map((e) => [e.id, e])),
+      statements: [
+        { id: "cur:andorra", subject: "Q228", relation: "uses_currency", object: { kind: "entity", id: "Q4916" }, pack: "test-pack" },
+      ],
+      generators: {},
+      packs,
+    };
+    const result = checkAnswer(pack, "cur:andorra:object", "Euro");
+    expect(result.revealVisual).toEqual({ kind: "map", entityId: "Q228", lat: 42.5, lon: 1.5, label: "Andorra" });
+  });
+
+  it("omits revealVisual when neither end has a coordinate", () => {
+    const tokyoNoCoord: Entity = { id: "Q1490", labels: { en: "Tokyo" }, types: ["city"] };
+    const result = checkAnswer(makeCityCountryPack(tokyoNoCoord, japan), "cc:tokyo-japan:object", "Japan");
+    expect(result).not.toHaveProperty("revealVisual");
+  });
+
+  it("carries the entity's stored regional geometry and extent when present (#155)", () => {
+    // A city with geometry clipped at import (#154): the reveal payload passes
+    // the stored localGeoJSON + regionExtent straight through, fully hydrated,
+    // so the client frames the pin regionally with a crisp overlay.
+    const regionExtent = { minLon: 138.19, minLat: 34.69, maxLon: 141.19, maxLat: 36.69 };
+    const localGeoJSON = {
+      type: "MultiPolygon" as const,
+      coordinates: [[[[139, 35], [140, 35], [140, 36], [139, 36], [139, 35]]]],
+    };
+    const tokyoWithGeometry: Entity = { ...tokyo, localGeoJSON, regionExtent };
+    const result = checkAnswer(
+      makeCityCountryPack(tokyoWithGeometry, japanWithCoordinate),
+      "cc:tokyo-japan:object",
+      "Japan",
+    );
+    expect(result.revealVisual).toEqual({ ...tokyoMap, localGeoJSON, regionExtent });
+  });
+
+  it("maps without regional geometry when the entity has none (#155)", () => {
+    // A coordinate but no stored clip: the map still shows, just at world scale —
+    // no localGeoJSON/regionExtent keys, so the client falls back to full-world.
+    const result = checkAnswer(makeCityCountryPack(tokyo, japanWithCoordinate), "cc:tokyo-japan:object", "Japan");
+    expect(result.revealVisual).not.toHaveProperty("localGeoJSON");
+    expect(result.revealVisual).not.toHaveProperty("regionExtent");
   });
 });
 
@@ -151,11 +280,104 @@ function makeCapitalPack(): Pack {
   };
 }
 
+// A multi-valued object-hidden relation: Switzerland has several official
+// languages, each modeled as its own statement (see spec #97 / ticket #98).
+// Grading a card built from any one of them must accept *any* true language.
+const german: Entity = { id: "Q188", labels: { en: "German" }, types: ["language"] };
+const french: Entity = {
+  id: "Q150",
+  labels: { en: "French" },
+  aliases: { en: ["Français"] },
+  types: ["language"],
+};
+const italian: Entity = { id: "Q652", labels: { en: "Italian" }, types: ["language"] };
+const spanish: Entity = { id: "Q1321", labels: { en: "Spanish" }, types: ["language"] };
+
+const languageStatements: Statement[] = [
+  { id: "lang:switzerland-german", subject: "Q39", relation: "official_language", object: { kind: "entity", id: "Q188" }, pack: "test-pack" },
+  { id: "lang:switzerland-french", subject: "Q39", relation: "official_language", object: { kind: "entity", id: "Q150" }, pack: "test-pack" },
+  { id: "lang:switzerland-italian", subject: "Q39", relation: "official_language", object: { kind: "entity", id: "Q652" }, pack: "test-pack" },
+];
+
+function makeLanguagePack(): Pack {
+  return {
+    entities: new Map([switzerland, german, french, italian, spanish].map((e) => [e.id, e])),
+    statements: languageStatements,
+    generators: {},
+    packs,
+  };
+}
+
+describe("checkAnswer, object-hidden multi-valued (any-of)", () => {
+  // Every true answer for Switzerland's official languages, listed for the reveal.
+  const allLanguages = ["French", "German", "Italian"];
+
+  it("accepts the card's own object", () => {
+    expect(checkAnswer(makeLanguagePack(), "lang:switzerland-german:object", "German")).toEqual({
+      correct: true,
+      acceptedAnswer: "German",
+      acceptedAnswers: allLanguages,
+    });
+  });
+
+  it("accepts a sibling object — a different true answer for the same (subject, relation)", () => {
+    // Card was built from the German statement; the learner answers French.
+    expect(checkAnswer(makeLanguagePack(), "lang:switzerland-german:object", "French")).toEqual({
+      correct: true,
+      acceptedAnswer: "French",
+      acceptedAnswers: allLanguages,
+    });
+  });
+
+  it("accepts a sibling object given by alias", () => {
+    expect(checkAnswer(makeLanguagePack(), "lang:switzerland-italian:object", "Français")).toEqual({
+      correct: true,
+      acceptedAnswer: "French",
+      acceptedAnswers: allLanguages,
+    });
+  });
+
+  it("rejects a language that is not official, revealing every accepted answer", () => {
+    expect(checkAnswer(makeLanguagePack(), "lang:switzerland-french:object", "Spanish")).toEqual({
+      correct: false,
+      acceptedAnswer: "French",
+      acceptedAnswers: allLanguages,
+    });
+  });
+});
+
+describe("checkAnswer, transcontinental (accepts and lists every continent)", () => {
+  const kazakhstan: Entity = { id: "Q232", labels: { en: "Kazakhstan" }, types: ["country"], coordinate: { lat: 48, lon: 68 } };
+  const asia: Entity = { id: "Q48", labels: { en: "Asia" }, types: ["continent"] };
+  const europe: Entity = { id: "Q46", labels: { en: "Europe" }, types: ["continent"] };
+
+  function makeTranscontinentalPack(): Pack {
+    return {
+      entities: new Map([kazakhstan, asia, europe].map((e) => [e.id, e])),
+      statements: [
+        { id: "cc:kazakhstan-asia", subject: "Q232", relation: "located_in_continent", object: { kind: "entity", id: "Q48" }, pack: "test-pack" },
+        { id: "cc:kazakhstan-europe", subject: "Q232", relation: "located_in_continent", object: { kind: "entity", id: "Q46" }, pack: "test-pack" },
+      ],
+      generators: {},
+      packs,
+    };
+  }
+
+  it("accepts either continent and lists both, mapping the country", () => {
+    const result = checkAnswer(makeTranscontinentalPack(), "cc:kazakhstan-europe:object", "Asia");
+    expect(result.correct).toBe(true);
+    expect(result.acceptedAnswers).toEqual(["Asia", "Europe"]);
+    // The map pins Kazakhstan (the country), not either continent.
+    expect(result.revealVisual).toEqual({ kind: "map", entityId: "Q232", lat: 48, lon: 68, label: "Kazakhstan" });
+  });
+});
+
 describe("checkAnswer, subject-hidden", () => {
   it("grades against the statement's subject entity", () => {
     expect(checkAnswer(makeCapitalPack(), "cap:switzerland-bern:subject", "Switzerland")).toEqual({
       correct: true,
       acceptedAnswer: "Switzerland",
+      acceptedAnswers: ["Switzerland"],
     });
   });
 
@@ -163,6 +385,7 @@ describe("checkAnswer, subject-hidden", () => {
     expect(checkAnswer(makeCapitalPack(), "cap:switzerland-bern:subject", "France")).toEqual({
       correct: false,
       acceptedAnswer: "Switzerland",
+      acceptedAnswers: ["Switzerland"],
     });
   });
 
@@ -170,6 +393,44 @@ describe("checkAnswer, subject-hidden", () => {
     expect(checkAnswer(makeCapitalPack(), "cap:switzerland-bern:object", "Bern")).toEqual({
       correct: true,
       acceptedAnswer: "Bern",
+      acceptedAnswers: ["Bern"],
     });
+  });
+});
+
+// A flag card (spec #180): the object is an image literal, the card hides the
+// subject — "This is the flag of what country?" grades against the country.
+describe("checkAnswer, flag cards (image-literal object, subject-hidden)", () => {
+  const japanLocated: Entity = { ...japan, coordinate: { lat: 36, lon: 138 } };
+  const flagStatement: Statement = {
+    id: "flag:japan",
+    subject: "Q17",
+    relation: "flag",
+    object: { kind: "literal", literal: { datatype: "image", value: { src: "/flags/jp.svg", alt: "Flag of a country" } } },
+    pack: "flags",
+  };
+  const flagPack: Pack = {
+    entities: new Map([[japanLocated.id, japanLocated]]),
+    statements: [flagStatement],
+    generators: {},
+    hiddenSlots: { flag: ["subject"] },
+    packs: new Map(),
+  };
+
+  it("grades the typed country name against the hidden subject", () => {
+    const result = checkAnswer(flagPack, "flag:japan:subject", "Japan");
+    expect(result.correct).toBe(true);
+    expect(result.acceptedAnswer).toBe("Japan");
+  });
+
+  it("rejects a wrong country but reveals the accepted one", () => {
+    const result = checkAnswer(flagPack, "flag:japan:subject", "China");
+    expect(result.correct).toBe(false);
+    expect(result.acceptedAnswer).toBe("Japan");
+  });
+
+  it("pins the country on the reveal map (its coordinate), the object being a non-locatable image", () => {
+    const result = checkAnswer(flagPack, "flag:japan:subject", "Japan");
+    expect(result.revealVisual).toEqual({ kind: "map", entityId: "Q17", lat: 36, lon: 138, label: "Japan" });
   });
 });

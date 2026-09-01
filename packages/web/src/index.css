@@ -67,7 +67,18 @@ body {
   z-index: 1;
   max-width: 1200px;
   margin: 0 auto;
-  padding: 2rem 1.5rem;
+  padding: 1.25rem 1.5rem;
+}
+
+/* Title and the sign-in/out widget share one row, vertically centred, so the
+   header stays short — the widget no longer sits in its own band above the
+   title. Nav follows on the row below. */
+.app-header__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
 }
 
 .app-title {
@@ -75,12 +86,68 @@ body {
   font-size: 2rem;
   font-weight: 700;
   letter-spacing: -0.5px;
-  margin-bottom: 1.5rem;
 }
 
 .app-nav {
   display: flex;
   gap: 2rem;
+}
+
+/* ── Auth widget (sign in / sign out) ────────────────────── */
+.auth-widget {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.85rem;
+}
+
+.auth-widget__google,
+.auth-widget__signout {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(241, 242, 246, 0.4);
+  color: var(--platinum);
+  padding: 0.4rem 0.8rem;
+  border-radius: 0.3rem;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.auth-widget__google:hover,
+.auth-widget__signout:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.auth-widget__magic {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.auth-widget__magic input {
+  padding: 0.4rem 0.6rem;
+  border-radius: 0.3rem;
+  border: 1px solid rgba(241, 242, 246, 0.4);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--platinum);
+  font-size: 0.85rem;
+  width: 11rem;
+}
+
+.auth-widget__magic input::placeholder {
+  color: rgba(241, 242, 246, 0.6);
+}
+
+.auth-widget__magic button {
+  background: none;
+  border: none;
+  color: var(--periwinkle);
+  font-weight: 600;
+  font-size: 0.8rem;
+  cursor: pointer;
+  text-decoration: underline;
+  white-space: nowrap;
 }
 
 .app-nav button {
@@ -104,10 +171,102 @@ body {
   border-bottom-color: var(--orange);
 }
 
+/* Base (mobile/tablet, single-column everything): a readable measure. The wide
+   two-column quiz card only renders at ≥900px (see useWideLayout), so the
+   widescreen cap is raised at that same breakpoint below — never on the narrow
+   layouts, which must stay this width to read well. */
 .app-main {
   max-width: 680px;
   margin: 2.5rem auto;
   padding: 0 1.5rem;
+}
+
+@media (min-width: 900px) {
+  .app-main {
+    max-width: 1120px;
+  }
+
+  /* Text-only tabs keep a readable measure even though their shared shell is
+     now wide — only the quiz card and the packs/answers grids want the room. */
+  .feedback,
+  .sign-in-gate {
+    max-width: 680px;
+    margin-inline: auto;
+  }
+}
+
+/* ── Sign-in gate ────────────────────────────────────────── */
+.sign-in-gate {
+  background: #fff;
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 8px rgba(39, 24, 126, 0.08);
+  padding: 2.5rem 2rem;
+  max-width: 380px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.sign-in-gate__message {
+  margin: 0 0 1.75rem;
+  font-family: var(--serif);
+  font-size: 1.35rem;
+  color: var(--indigo);
+}
+
+/* The auth widget lives on the header's dark band by default (light text on
+   indigo); inside the white gate card it needs the inverse treatment, so these
+   scoped overrides restyle it as a readable stack with a clear primary action. */
+.sign-in-gate .auth-widget {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.85rem;
+}
+
+.sign-in-gate .auth-widget__google {
+  background: var(--indigo);
+  border: none;
+  color: #fff;
+  padding: 0.7rem 1rem;
+  font-size: 0.95rem;
+  border-radius: 0.375rem;
+}
+
+.sign-in-gate .auth-widget__google:hover {
+  background: #1d1260;
+}
+
+.sign-in-gate .auth-widget__magic {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.6rem;
+}
+
+.sign-in-gate .auth-widget__magic input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.7rem 0.8rem;
+  font-size: 0.95rem;
+  background: #fff;
+  border: 1px solid var(--periwinkle);
+  color: var(--indigo);
+}
+
+.sign-in-gate .auth-widget__magic input::placeholder {
+  color: #9aa0b3;
+}
+
+.sign-in-gate .auth-widget__magic button {
+  padding: 0.7rem 1rem;
+  border: 1px solid var(--indigo);
+  border-radius: 0.375rem;
+  background: #fff;
+  color: var(--indigo);
+  font-size: 0.9rem;
+  text-decoration: none;
+}
+
+.sign-in-gate .auth-widget__magic button:hover {
+  background: var(--platinum);
 }
 
 /* ── Quiz card ───────────────────────────────────────────── */
@@ -155,8 +314,298 @@ body {
   color: var(--indigo);
 }
 
+/* The strip stays a compact card identity: pack label plus settings only. */
+.quiz-card__settings-button {
+  position: relative;
+  z-index: 1;
+  margin-left: auto;
+  width: 2rem;
+  height: 2rem;
+  padding: 0.4rem;
+  border: 1px solid rgba(39, 24, 126, 0.28);
+  border-radius: 50%;
+  background: rgba(241, 242, 246, 0.25);
+  color: var(--indigo);
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.quiz-card__settings-button:hover {
+  background: rgba(241, 242, 246, 0.55);
+}
+
+.quiz-card__settings-button:focus-visible,
+.quiz-settings__close:focus-visible {
+  outline: 2px solid var(--indigo);
+  outline-offset: 2px;
+}
+
+.quiz-card__settings-button svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.75;
+  stroke-linejoin: round;
+}
+
+.quiz-settings__backdrop {
+  position: fixed;
+  z-index: 10;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  background: rgba(39, 24, 126, 0.28);
+}
+
+.quiz-settings {
+  width: min(100%, 24rem);
+  padding: 1.25rem;
+  border: 1px solid rgba(39, 24, 126, 0.16);
+  border-radius: 0.5rem;
+  background: #fff;
+  box-shadow: 0 1rem 3rem rgba(39, 24, 126, 0.24);
+}
+
+.quiz-settings__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.quiz-settings__header h2 {
+  font-family: var(--serif);
+  font-size: 1.4rem;
+  line-height: 1;
+  color: var(--indigo);
+}
+
+.quiz-settings__close {
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--indigo);
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.quiz-settings__close:hover {
+  background: var(--platinum);
+}
+
+.quiz-settings__toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.75rem 0;
+  border-top: 1px solid rgba(39, 24, 126, 0.1);
+  font-family: var(--sans);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--indigo);
+  cursor: pointer;
+}
+
+.quiz-settings__toggle input {
+  cursor: pointer;
+}
+
 .quiz-card__body {
   padding: 2rem 1.5rem;
+}
+
+/* ── Wide card: question panel + media panel (#187) ──────────
+   Rendered only above the desktop breakpoint (see useWideLayout); narrow
+   screens use the plain `.quiz-card__body` above instead, unchanged. */
+.quiz-card__body--wide {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 34rem;
+  gap: 2.5rem;
+  align-items: stretch;
+}
+
+.qpanel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.qpanel .quiz-prompt {
+  margin-bottom: 0;
+}
+
+/* Grows to fill whatever height the media panel sets, so the answer area
+   stays pinned at the bottom. The no-data tiles use part of that gap without
+   making the panel's height depend on a future stats contract. */
+.qpanel__middle {
+  flex: 1;
+  min-height: 1.5rem;
+  display: flex;
+  align-items: center;
+}
+
+.qpanel__stats {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.625rem;
+}
+
+.qpanel__stat {
+  min-width: 0;
+  padding: 0.75rem;
+  border: 1px solid rgba(39, 24, 126, 0.1);
+  border-radius: 0.375rem;
+  background: rgba(174, 184, 254, 0.12);
+  display: grid;
+  grid-template-columns: 1fr auto;
+  column-gap: 0.5rem;
+  align-items: baseline;
+}
+
+.qpanel__stat-label {
+  min-width: 0;
+  font-family: var(--sans);
+  font-size: 0.65rem;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: rgba(39, 24, 126, 0.72);
+}
+
+.qpanel__stat-value {
+  font-family: var(--serif);
+  font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 1;
+  color: rgba(39, 24, 126, 0.9);
+}
+
+/* A tile with no datum yet (e.g. Solve % before the first attempt) stays dim. */
+.qpanel__stat-value--empty {
+  color: rgba(39, 24, 126, 0.44);
+}
+
+.qpanel__stat-status {
+  grid-column: 1 / -1;
+  margin-top: 0.25rem;
+  font-family: var(--sans);
+  font-size: 0.68rem;
+  line-height: 1.2;
+  color: rgba(39, 24, 126, 0.48);
+}
+
+.qpanel__answer {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+/* Holds the answer input (disabled once answered). The button below never
+   moves between asking and answered. */
+.qpanel__slot {
+  min-height: 3.25rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* The verdict is relocated directly above the answer input. Both layouts keep
+   this slot in the DOM at a fixed min-height whether asking or answered, so the
+   verdict appearing on answer shifts neither the input nor anything below it.
+   Content aligns to the slot's bottom, next to the input. */
+.qpanel__verdict-slot,
+.quiz-verdict-slot {
+  display: flex;
+  align-items: flex-end;
+}
+
+.qpanel__verdict-slot {
+  min-height: 3.75rem;
+}
+
+/* Narrow has no flexible spacer to absorb the verdict's height (unlike the wide
+   panel's `.qpanel__middle`), so this reserve must cover it — sized for the
+   common two-line verdict, keeping the input and everything below it fixed. */
+.quiz-verdict-slot {
+  min-height: 5.25rem;
+}
+
+/* Compact the relocated verdict so the reserved gap stays modest. */
+.qpanel__verdict-slot .quiz-result,
+.quiz-verdict-slot .quiz-result {
+  width: 100%;
+  margin: 0;
+  padding: 0.75rem 1rem;
+}
+
+/* Answered: the submitted answer stays readable but is clearly inert. */
+.quiz-input:disabled {
+  background: var(--platinum);
+  color: var(--indigo);
+  opacity: 0.55;
+  cursor: default;
+}
+
+/* ── Media panel: one frame, two always-reserved slots ───────
+   Constant footprint regardless of content, so switching questions never
+   moves the question panel — the frame makes an empty slot read as
+   intentional panel space rather than a missing element. */
+.mpanel {
+  align-self: stretch;
+  background: #fff;
+  border: 1px solid rgba(39, 24, 126, 0.12);
+  border-radius: 0.5rem;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.mpanel__image {
+  height: 15rem;
+  padding: 1.5rem;
+  border-bottom: 1px solid rgba(39, 24, 126, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mpanel__image .visual-aid {
+  margin: 0;
+}
+
+.mpanel__image .image-aid {
+  max-width: 100%;
+}
+
+.mpanel__image .image-aid__img {
+  height: 12rem;
+}
+
+.mpanel__map {
+  flex: 1;
+  min-height: 20rem;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* Fill the wider media column — the map is the whole point of the widescreen. */
+.mpanel__map .map-aid-viewport {
+  width: 100%;
+  max-width: none;
+  margin: 0 auto;
 }
 
 .quiz-prompt {
@@ -194,6 +643,75 @@ body {
 .quiz-input::placeholder {
   color: var(--indigo);
   opacity: 0.4;
+}
+
+/* ── Answer autocomplete ─────────────────────────────────────
+   Narrow screens: the suggestion list sits inline, in normal flow directly
+   under the input, so it pushes the Submit button down instead of floating
+   over content — a floated dropdown gets hidden behind the on-screen
+   keyboard on mobile.
+   Desktop (#188, same breakpoint as the wide card in useWideLayout): the
+   list becomes an out-of-flow overlay popover so showing/hiding it never
+   shifts the input, verdict, or Submit button. */
+.answer-combobox {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  position: relative;
+}
+
+.answer-combobox .quiz-input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.answer-suggestions {
+  list-style: none;
+  margin: 0;
+  padding: 0.25rem;
+  border: 1px solid var(--periwinkle);
+  border-radius: 0.375rem;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(39, 24, 126, 0.08);
+  /* A long list scrolls within itself rather than pushing the button off-screen. */
+  max-height: 15rem;
+  overflow-y: auto;
+}
+
+.answer-suggestion {
+  margin: 0;
+}
+
+.answer-suggestion__button {
+  display: block;
+  width: 100%;
+  /* Comfortable touch target on mobile. */
+  min-height: 44px;
+  padding: 0.55rem 0.75rem;
+  border: none;
+  border-radius: 0.25rem;
+  background: transparent;
+  color: var(--indigo);
+  font-family: var(--sans);
+  font-size: 1rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.answer-suggestion__button:hover,
+.answer-suggestion--active .answer-suggestion__button {
+  background: var(--platinum);
+}
+
+@media (min-width: 900px) {
+  .answer-suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    margin-top: 0.4rem;
+    z-index: 10;
+  }
 }
 
 /* ── Primary button (the one orange thing) ───────────────── */
@@ -251,6 +769,140 @@ body {
 
 .quiz-result--incorrect .quiz-result__verdict {
   color: var(--red);
+}
+
+/* ── Visual aid slot (prompt- and reveal-time) ──────────────
+   `.visual-aid` only exists in the DOM when there's a descriptor to draw —
+   VisualAid renders null otherwise — so an empty slot adds zero margin and
+   zero height instead of reserving space. The modifiers only tweak which
+   side carries the gap, since the prompt slot sits above content and the
+   reveal slot sits below it. */
+.visual-aid {
+  margin-bottom: 2rem;
+}
+
+.visual-aid--prompt {
+  margin-top: -0.75rem;
+}
+
+/* The image aid (spec #180): a flag shown with the prompt. Contained (never
+   stretched) in a fixed-height box so wildly different aspect ratios — square,
+   2:1, the odd non-rectangle — all read at a consistent size; a hairline border
+   + soft shadow keeps white-edged flags visible against the light page. */
+.image-aid {
+  width: 100%;
+  max-width: 26rem;
+  margin: 0 auto;
+  display: flex;
+  justify-content: center;
+}
+
+.image-aid__img {
+  max-width: 100%;
+  height: 12rem;
+  width: auto;
+  object-fit: contain;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 0.375rem;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+  background: #fff;
+}
+
+/* The viewport: map + zoom slider as one capped-width composition, centered
+   under the verdict text; goes full-width at mobile widths (responsive block
+   below). The wrapper owns the width so the slider tracks the map's edges. */
+.map-aid-viewport {
+  width: 100%;
+  max-width: 26rem;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.map-aid {
+  display: block;
+  width: 100%;
+  /* The viewBox holds a constant 2:1 aspect through the whole zoom (the regional
+     target is aspect-fitted), so the box keeps a fixed height and never reflows
+     the Next button below it. Pinned explicitly as a guard. */
+  aspect-ratio: 2 / 1;
+  height: auto;
+  border-radius: 0.375rem;
+  background: var(--platinum);
+}
+
+/* Reserved whether or not a slider is shown (#186): the asking (no coords) and
+   answered (coords) states must be the same height, so this row's footprint
+   is fixed and the slider — when present — fills it rather than adding to it. */
+.map-aid__zoom-row {
+  display: flex;
+  align-items: center;
+  height: 1.25rem;
+}
+
+/* 1-D zoom track (spec #156): whole-world at the left, the pinned region at the
+   right. Aimed at the one server-fixed target — this is zoom, not panning. */
+.map-aid__zoom {
+  width: 100%;
+  accent-color: var(--orange);
+  cursor: pointer;
+}
+
+.map-aid__ocean {
+  fill: var(--cornflower);
+  opacity: 0.35;
+}
+
+.map-aid__land {
+  fill: var(--green);
+  fill-opacity: 0.9;
+  stroke: var(--green-text);
+  stroke-width: 0.3;
+  stroke-linejoin: round;
+}
+
+/* The hi-res regional overlay (spec #152, #155): the server-clipped local land,
+   composited over the coarse 110m base in the same lon/lat space. Fill only, no
+   stroke — the ring includes straight segments along the clip-window box, and
+   stroking them draws dark border lines around the region. The crisp coastline
+   is the fill boundary itself, so it stays sharp without an outline. Matches the
+   base land's fill-opacity so the detail is the same green, not a deeper patch. */
+.map-aid__local {
+  fill: var(--green);
+  fill-opacity: 0.9;
+}
+
+.map-aid__frame {
+  fill: none;
+  stroke: var(--indigo);
+  stroke-width: 0.6;
+  opacity: 0.4;
+}
+
+.map-aid__point {
+  fill: var(--orange);
+  stroke: var(--platinum);
+  stroke-width: 1;
+}
+
+.map-aid__label {
+  fill: var(--orange);
+  /* Halo so the label stays legible over land or water. */
+  stroke: var(--platinum);
+  stroke-width: 2;
+  paint-order: stroke;
+  stroke-linejoin: round;
+  font-family: var(--sans);
+  font-size: 8px;
+  font-weight: 700;
+}
+
+.map-aid__coords {
+  fill: var(--indigo);
+  opacity: 0.5;
+  font-family: var(--sans);
+  font-size: 6px;
 }
 
 /* ── Status / transient messages ─────────────────────────── */
@@ -525,6 +1177,84 @@ body {
   cursor: not-allowed;
 }
 
+/* ── Feedback: a single freeform note ────────────────────── */
+/* Deliberately spare — one box, one button. The learner can never read feedback
+   back, so the sent confirmation beside the button is the only signal it landed. */
+.feedback__head {
+  margin-bottom: 1.5rem;
+}
+
+.feedback__title {
+  font-family: var(--serif);
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  color: var(--indigo);
+  line-height: 1.1;
+}
+
+.feedback__sub {
+  margin-top: 0.35rem;
+  color: rgba(39, 24, 126, 0.7);
+  font-size: 1rem;
+}
+
+.feedback__box,
+.question-feedback__box {
+  width: 100%;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--cornflower);
+  border-radius: 0.375rem;
+  font-size: 1rem;
+  font-family: var(--sans);
+  color: var(--indigo);
+  background: var(--platinum);
+  resize: vertical;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.feedback__box:focus,
+.question-feedback__box:focus {
+  outline: none;
+  border-color: var(--cornflower);
+  box-shadow: 0 0 0 3px rgba(117, 139, 253, 0.15);
+}
+
+.feedback__bar {
+  margin-top: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.feedback__bar-spacer {
+  flex: 1;
+}
+
+.feedback__note {
+  font-size: 0.9rem;
+}
+
+.feedback__note--sent {
+  color: var(--green);
+}
+
+.feedback__note--error {
+  color: var(--red);
+}
+
+.feedback__bar .btn-primary {
+  width: auto;
+  padding: 0.7rem 1.4rem;
+  white-space: nowrap;
+}
+
+.feedback__bar .btn-primary:disabled {
+  background: rgba(174, 184, 254, 0.4);
+  color: rgba(241, 242, 246, 0.7);
+  cursor: not-allowed;
+}
+
 /* ── Responsive ──────────────────────────────────────────── */
 @media (max-width: 480px) {
   .app-title {
@@ -539,7 +1269,80 @@ body {
   .quiz-prompt {
     font-size: 1.25rem;
   }
+  .map-aid-viewport {
+    max-width: 100%;
+  }
+  .visual-aid {
+    margin-bottom: 1.5rem;
+  }
   .packs__title {
     font-size: 1.6rem;
   }
+  .auth-widget {
+    flex-wrap: wrap;
+  }
+  .auth-widget__magic input {
+    width: 8.5rem;
+  }
+}
+
+/* ── Per-question feedback: a quiet control on the quiz card ─ */
+/* Small and low-contrast on purpose: flagging a bad question must be available
+   in both card states without competing with Submit or Next question. */
+.question-feedback {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(174, 184, 254, 0.35);
+}
+
+.question-feedback__open {
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: var(--sans);
+  font-size: 0.85rem;
+  color: rgba(39, 24, 126, 0.6);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.question-feedback__open:hover {
+  color: var(--indigo);
+}
+
+/* Same box as the general one, a size down — it sits inside a card. */
+.question-feedback__box {
+  padding: 0.65rem 0.8rem;
+  font-size: 0.95rem;
+}
+
+.question-feedback__bar {
+  margin-top: 0.65rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* Shared by both feedback surfaces: quiet beside the primary send button. */
+.feedback__cancel {
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: var(--sans);
+  font-size: 0.85rem;
+  color: rgba(39, 24, 126, 0.6);
+  cursor: pointer;
+}
+
+.feedback__cancel:disabled {
+  color: rgba(39, 24, 126, 0.25);
+  cursor: not-allowed;
+}
+
+.question-feedback__bar .btn-primary {
+  width: auto;
+  padding: 0.5rem 1.1rem;
+  font-size: 0.9rem;
+  white-space: nowrap;
 }

@@ -1,0 +1,14 @@
+# Cache headers for the Cloudflare Workers Static Assets serving the SPA.
+# Vite copies this file (and everything else in public/) to the dist root at
+# build time; the platform reads it to override its default of
+# `public, max-age=0, must-revalidate` on the matched paths.
+#
+# Vite emits everything under /assets/ with a content hash in the filename
+# (index-BnIvQsXM.js), so a given URL's bytes never change — a new build makes a
+# new filename and index.html points at it. That makes these safe to cache
+# hard: returning visitors load them from disk with no revalidation round-trip.
+# Everything else — index.html (must always be fresh, or users get a stale app),
+# the non-hashed contour SVGs, and flags/ — keeps the platform default and
+# revalidates, so updates to them still show up.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable

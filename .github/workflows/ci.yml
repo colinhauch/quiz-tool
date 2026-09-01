@@ -1,0 +1,75 @@
+name: CI
+
+# Merge gate for the promotion pipeline (spec #71). Runs the fast suite on every
+# PR into a long-lived branch. No secrets: the Supabase service key is not added
+# here, so the supabase-js store integration tests stay local-only for now.
+# The dev->test gate is where slower journey/integration tests will be added
+# later; today every target runs the same fast suite.
+
+on:
+  pull_request:
+    branches: [dev, test, prod]
+
+# The job/check name below ("checks") is required by branch protection by name.
+# Keep it stable.
+jobs:
+  checks:
+    name: checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm run typecheck
+
+      - name: Unit tests
+        run: pnpm test
+
+      - name: Validate packs
+        run: pnpm run packs:validate
+
+  # Enforces the promotion source: a PR into prod must come from test, and a PR
+  # into test must come from dev. PRs into dev have no restriction. Rulesets gate
+  # only the base branch, so this required check is how the head branch is
+  # constrained. It always runs and always reports, so it never leaves a required
+  # check pending. Like "checks", this job name is referenced by the rulesets by
+  # name — keep it stable.
+  promotion-source:
+    name: promotion-source
+    runs-on: ubuntu-latest
+    steps:
+      - name: Enforce promotion source branch
+        env:
+          BASE: ${{ github.base_ref }}
+          HEAD: ${{ github.head_ref }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          THIS_REPO: ${{ github.repository }}
+        run: |
+          # Same-repo guard: a fork can open a PR whose head branch is *named*
+          # dev/test, so promotions must originate from this repo, not a fork.
+          # This closes the "branch name, not history" hole once the repo is public.
+          if [ "$HEAD_REPO" != "$THIS_REPO" ]; then
+            echo "::error::Promotion PRs must originate from this repository, not a fork ('$HEAD_REPO')"; exit 1
+          fi
+          case "$BASE" in
+            prod)
+              [ "$HEAD" = "test" ] || { echo "::error::PRs into prod must come from test (got '$HEAD')"; exit 1; } ;;
+            test)
+              [ "$HEAD" = "dev" ]  || { echo "::error::PRs into test must come from dev (got '$HEAD')"; exit 1; } ;;
+            *)
+              echo "No source restriction for base '$BASE'." ;;
+          esac

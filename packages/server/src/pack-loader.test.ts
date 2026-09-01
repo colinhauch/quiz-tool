@@ -2,7 +2,15 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { questionResponseSchema } from "@geo/contract";
-import { type Entity, type Generator, generateQuestion, type HiddenSlot, type Statement } from "@geo/engine";
+import {
+  checkAnswer,
+  type Entity,
+  type Generator,
+  generateQuestion,
+  type HiddenSlot,
+  makeCardId,
+  type Statement,
+} from "@geo/engine";
 import { afterEach, describe, expect, it } from "vitest";
 import { createApp } from "./app.js";
 import { assembleGraph, assembleLoaded, discoverPacks, type LoadedPack, loadAllPacks, loadPack } from "./pack-loader.js";
@@ -323,6 +331,9 @@ describe("adding a pack touches nothing outside its own directory", () => {
       input: "text",
       packId: "newcomer",
       packLabel: "Newcomer",
+      answerTypes: ["country"],
+      // No rating store and a never-attempted card: seed stats.
+      stats: { attempts: 0, solvePercent: null, difficulty: 1500, predictedOdds: 0.5 },
     });
   });
 });
@@ -413,6 +424,9 @@ describe("loadAllPacks over the packs actually shipped", () => {
       "continental-countries",
       "core-cities",
       "core-geo",
+      "currencies",
+      "flags",
+      "spoken-languages",
     ]);
   });
 
@@ -439,12 +453,21 @@ describe("loadAllPacks over the packs actually shipped", () => {
     // continental-countries ships statements for every country in core-geo.
     // France is Q142 — this assertion said Q42 (Douglas Adams), a Q-ID core-geo
     // does not contain at all, so it had been failing since it was written.
-    const franceStatement = p.statements.find((s) => s.id === "cc:france");
+    // Statement ids carry the continent slug so a transcontinental country's
+    // several statements stay unique (e.g. cc:kazakhstan-asia, cc:kazakhstan-europe).
+    const franceStatement = p.statements.find((s) => s.id === "cc:france-europe");
     expect(franceStatement).toBeDefined();
     expect(franceStatement?.subject).toBe("Q142");
     // Its own relation id, not core-cities' city→country `located_in` (#38).
     expect(franceStatement?.relation).toBe("located_in_continent");
     expect(franceStatement?.object).toEqual({ kind: "entity", id: "Q46" });
+
+    // Kazakhstan is transcontinental: both Asia and Europe, each its own statement.
+    const kazakhstan = p.statements.filter((s) => s.subject === "Q232" && s.relation === "located_in_continent");
+    expect(kazakhstan.map((s) => s.object).sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)))).toEqual([
+      { kind: "entity", id: "Q48" }, // Asia
+      { kind: "entity", id: "Q46" }, // Europe
+    ].sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b))));
 
     // Verify France (Q142) and Europe (Q46) are both in core-geo
     expect(p.entities.get("Q142")?.labels.en).toBe("France");
@@ -453,5 +476,147 @@ describe("loadAllPacks over the packs actually shipped", () => {
     // continental-countries interweaves with other packs: 150+ continent questions
     const continentQuestions = p.statements.filter((s) => s.relation === "located_in_continent");
     expect(continentQuestions.length).toBeGreaterThanOrEqual(150);
+  });
+
+  it("includes the currencies pack, quizzed object-hidden with any-of grading", async () => {
+    const p = await loadAllPacks();
+
+    // The currencies pack owns its currency entities (core-geo owns none).
+    expect(p.entities.get("Q4916")?.labels.en).toBe("euro");
+    expect(p.entities.get("Q4916")?.types).toContain("currency");
+
+    // France → euro. Object-hidden render must not leak the answer.
+    const france = p.statements.find((s) => s.id === "cur:france:euro");
+    expect(france).toBeDefined();
+    expect(france?.relation).toBe("official_currency");
+    expect(france?.object).toEqual({ kind: "entity", id: "Q4916" });
+    const q = generateQuestion(p, france!, "object");
+    expect(q.prompt).toBe("What currency does France use?");
+    expect(q.prompt.toLowerCase()).not.toContain("euro");
+
+    // Grades the currency name correct (case/alias-insensitive).
+    const franceCard = makeCardId(france!.id, "object");
+    expect(checkAnswer(p, franceCard, "Euro").correct).toBe(true);
+    expect(checkAnswer(p, franceCard, "EUR").correct).toBe(true);
+
+    // A country with two legal tenders accepts either — any-of over the pair.
+    // France also has the CFP franc (Q214393) via its overseas territories.
+    expect(p.statements.find((s) => s.id === "cur:france:cfp-franc")).toBeDefined();
+    expect(checkAnswer(p, franceCard, "CFP franc").correct).toBe(true);
+
+    // Verbose currency names carry a short `autocomplete` form the answer box
+    // shows/fills; the short form and its plural are accepted answers, and the
+    // full name stays the canonical label revealed in feedback.
+    const usd = p.entities.get("Q4917");
+    expect(usd?.labels.en).toBe("United States dollar");
+    expect(usd?.autocomplete).toBe("dollar");
+    const usStatement = p.statements.find((s) => s.subject === "Q30" && s.object.kind === "entity" && s.object.id === "Q4917");
+    expect(usStatement).toBeDefined();
+    const usCard = makeCardId(usStatement!.id, "object");
+    expect(checkAnswer(p, usCard, "dollar").correct).toBe(true);
+    expect(checkAnswer(p, usCard, "dollars").correct).toBe(true);
+    expect(checkAnswer(p, usCard, "dollar").acceptedAnswer).toBe("United States dollar");
+  });
+
+  it("includes the spoken-languages pack, object-hidden, editorially curated", async () => {
+    const p = await loadAllPacks();
+
+    // The pack owns its language entities (core-geo owns none).
+    expect(p.entities.get("Q150")?.labels.en).toBe("French");
+    expect(p.entities.get("Q150")?.types).toContain("language");
+
+    // France → French. Object-hidden render must not leak the answer.
+    const france = p.statements.find((s) => s.id === "lang:france:french");
+    expect(france).toBeDefined();
+    expect(france?.relation).toBe("spoken_language");
+    const q = generateQuestion(p, france!, "object");
+    expect(q.prompt).toBe("What is a language spoken in France?");
+    expect(q.prompt.toLowerCase()).not.toContain("french");
+    expect(checkAnswer(p, makeCardId(france!.id, "object"), "French").correct).toBe(true);
+
+    // Editorial override: the US teaches English (P37 omits it federally) and
+    // no longer surfaces the territorial-only languages that made "a language
+    // spoken in the US" grade as Carolinian.
+    const usEnglish = p.statements.find((s) => s.id === "lang:united-states:english");
+    expect(usEnglish).toBeDefined();
+    const usCard = makeCardId(usEnglish!.id, "object");
+    expect(checkAnswer(p, usCard, "English").correct).toBe(true); // added
+    expect(checkAnswer(p, usCard, "Spanish").correct).toBe(true); // kept (any-of)
+    expect(checkAnswer(p, usCard, "Carolinian").correct).toBe(false); // removed
+    expect(p.statements.find((s) => s.subject === "Q30" && s.id.includes("carolinian"))).toBeUndefined();
+
+    // Uruguay had no P37 value at all; the override adds Spanish.
+    expect(p.statements.find((s) => s.id === "lang:uruguay:spanish")).toBeDefined();
+
+    // A label carrying the country ("Jamaican Patois") gets a short autocomplete
+    // form ("Patois") the box shows/fills, while the full label stays canonical;
+    // the short form grades correct.
+    const patois = p.entities.get("Q35939");
+    expect(patois?.labels.en).toBe("Jamaican Patois");
+    expect(patois?.autocomplete).toBe("Patois"); // proper-noun case preserved
+    const jamaica = makeCardId("lang:jamaica:jamaican-patois", "object");
+    expect(checkAnswer(p, jamaica, "Patois").correct).toBe(true);
+    expect(checkAnswer(p, jamaica, "Jamaican Patois").correct).toBe(true); // full name still accepted
+
+    // Junk Wikidata entities are curated out via overrides.json.
+    expect([...p.entities.values()].some((e) => e.labels.en === "languages of Guinea")).toBe(false);
+    expect(p.statements.find((s) => s.id === "lang:north-korea:north-korean-standard-language")).toBeUndefined();
+    expect(p.statements.find((s) => s.id === "lang:north-korea:korean")).toBeDefined();
+  });
+
+  // Ticket #183: curated alias overrides (packs/core-geo/alias-overrides.json)
+  // let countries grade regardless of name form — short/common/official variants
+  // Wikidata's altLabels miss, or that the normalizer can't reach (it keeps a
+  // leading "the" and spaces "U. S. A." to "u s a", so bare "USA"/"US"/"UK"
+  // wouldn't match without these). Tested through the flags pack's subject-hidden
+  // cards, whose answer is the country — the direct grading path for these.
+  it("grades country answers regardless of name form (alias overrides, #183)", async () => {
+    const p = await loadAllPacks();
+    const accepts = (flagId: string, variants: string[]) => {
+      const card = makeCardId(flagId, "subject");
+      for (const v of variants) {
+        expect({ variant: v, correct: checkAnswer(p, card, v).correct }).toEqual({ variant: v, correct: true });
+      }
+    };
+    // United States: label, both abbreviations, and the official long form.
+    accepts("flag:us", ["United States", "USA", "US", "United States of America"]);
+    // United Kingdom: abbreviation and common short name.
+    accepts("flag:gb", ["United Kingdom", "UK", "Britain", "Great Britain"]);
+    // Czechia ⇄ Czech Republic (Wikidata already carries the alias; guards it).
+    accepts("flag:cz", ["Czech Republic", "Czechia"]);
+    // Republic of Korea ⇄ South Korea.
+    accepts("flag:kr", ["South Korea", "Republic of Korea", "ROK"]);
+    // Burma ⇄ Myanmar.
+    accepts("flag:mm", ["Myanmar", "Burma"]);
+    // A wrong country is still wrong — the overrides don't over-accept.
+    expect(checkAnswer(p, makeCardId("flag:us", "subject"), "Canada").correct).toBe(false);
+  });
+
+  // Ticket #182: the flags pack ships a flag statement for every core-geo
+  // country, each an image literal over a real country entity, quizzed
+  // subject-hidden ("This is the flag of what country?").
+  it("includes the flags pack, one flag per core-geo country (#182)", async () => {
+    const p = await loadAllPacks();
+
+    const countries = [...p.entities.values()].filter((e) => e.types.includes("country"));
+    const flagStatements = p.statements.filter((s) => s.relation === "flag");
+    // A flag for every country, and every flag over a real country entity.
+    expect(flagStatements.length).toBe(countries.length);
+    for (const s of flagStatements) {
+      expect(p.entities.get(s.subject)?.types).toContain("country");
+      expect(s.object.kind).toBe("literal");
+      if (s.object.kind === "literal") expect(s.object.literal.datatype).toBe("image");
+    }
+
+    // The US flag is quizzable and grades the country name, using the same
+    // alias overrides (#183) — the flag's answer is the country.
+    const us = p.statements.find((s) => s.relation === "flag" && s.subject === "Q30");
+    expect(us).toBeDefined();
+    const q = generateQuestion(p, us!, "subject");
+    expect(q.prompt).toBe("This is the flag of what country?");
+    expect(q.promptVisual?.kind).toBe("image");
+    const usCard = makeCardId(us!.id, "subject");
+    expect(checkAnswer(p, usCard, "United States").correct).toBe(true);
+    expect(checkAnswer(p, usCard, "USA").correct).toBe(true);
   });
 });

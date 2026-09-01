@@ -41,7 +41,14 @@ describe("generateQuestion", () => {
       prompt: "What country is Tokyo in?",
       input: "text",
       ...provenance,
+      answerTypes: ["country"],
     });
+  });
+
+  it("carries the hidden object entity's types as answerTypes", () => {
+    // Object-hidden located_in: the answer is Japan, a country.
+    const q = generateQuestion(makePack(), statements[0]!, "object");
+    expect(q.answerTypes).toEqual(["country"]);
   });
 
   it("never leaks the answer into the rendered question", () => {
@@ -88,6 +95,48 @@ function makeBidiPack(): Pack {
   };
 }
 
+// A `flag` relation: the object is an image literal (the flag), quizzed
+// subject-hidden only — "This is the flag of what country?" (spec #180). The
+// prompt noun comes from the hidden subject's type via the display-noun registry.
+const flag: Generator = ({ statement, graph }) => {
+  const subject = graph.getEntity(statement.subject);
+  // displayNoun is exercised through the pack generator in the real system; here
+  // the fixture inlines the "country" noun to keep the generator self-contained.
+  return { prompt: `This is the flag of what ${subject.types[0]}?`, input: "text" };
+};
+
+const flagStatement: Statement = {
+  id: "flag:japan",
+  subject: "Q17",
+  relation: "flag",
+  object: { kind: "literal", literal: { datatype: "image", value: { src: "/flags/jp.svg", alt: "Flag of a country" } } },
+  pack: TEST_PACK.id,
+};
+
+function makeFlagPack(): Pack {
+  return {
+    entities: new Map([[japan.id, japan]]),
+    statements: [flagStatement],
+    generators: { flag },
+    hiddenSlots: { flag: ["subject"] },
+    packs,
+  };
+}
+
+describe("image prompt visuals", () => {
+  it("attaches the object image literal as a prompt visual on a subject-hidden card", () => {
+    const q = generateQuestion(makeFlagPack(), flagStatement, "subject");
+    expect(q.promptVisual).toEqual({ kind: "image", src: "/flags/jp.svg", alt: "Flag of a country" });
+    expect(q.prompt).toBe("This is the flag of what country?");
+    expect(q.answerTypes).toEqual(["country"]);
+  });
+
+  it("does not leak the answer country through the prompt or the visual's alt", () => {
+    const q = generateQuestion(makeFlagPack(), flagStatement, "subject");
+    expect(JSON.stringify(q)).not.toContain("Japan");
+  });
+});
+
 describe("subject-hidden questions", () => {
   it("renders a subject-hidden statement, concealing the subject", () => {
     const q = generateQuestion(makeBidiPack(), bidiStatement, "subject");
@@ -96,9 +145,17 @@ describe("subject-hidden questions", () => {
       prompt: "Bern is the capital of what country?",
       input: "text",
       ...provenance,
+      answerTypes: ["country"],
     });
     // The concealed subject (the answer) never appears in the prompt.
     expect(q.prompt).not.toContain("Switzerland");
   });
 
+  it("scopes answerTypes to the hidden side of a bidirectional card", () => {
+    const objectHidden = generateQuestion(makeBidiPack(), bidiStatement, "object");
+    const subjectHidden = generateQuestion(makeBidiPack(), bidiStatement, "subject");
+    // Object-hidden: answer is Bern, a city. Subject-hidden: answer is a country.
+    expect(objectHidden.answerTypes).toEqual(["city"]);
+    expect(subjectHidden.answerTypes).toEqual(["country"]);
+  });
 });

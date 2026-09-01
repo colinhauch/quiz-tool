@@ -12,11 +12,17 @@
  * The output is committed and MUST be regenerated when packs change; the
  * equivalence test (`packs-bundle.test.ts`) fails if it drifts.
  */
-import { existsSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { discoverPacks, loadPack } from "../src/pack-loader.js";
+import { defaultPacksDir, discoverPacks, loadPack } from "../src/pack-loader.js";
 
 const OUT = new URL("../src/packs.generated.ts", import.meta.url);
+
+/** The raw catalog object (packId → policy), or `{}` when there is no file. */
+function readCatalog(): unknown {
+  const url = new URL("catalog.json", defaultPacksDir());
+  return existsSync(url) ? JSON.parse(readFileSync(url, "utf8")) : {};
+}
 
 /** A pack dir name to a valid JS identifier for its generator import. */
 function ident(dirName: string): string {
@@ -63,9 +69,22 @@ async function renderBundle(): Promise<string> {
     rows.join(",\n"),
     "] as LoadedPack[];",
     "",
+    "// The pack visibility/tier catalog (packs/catalog.json), bundled so the",
+    "// Worker applies the same product policy the fs server does — without it a",
+    "// hidden pack (e.g. core-cities) would show in every deployed environment.",
+    `export const loadedCatalog: unknown = ${JSON.stringify(readCatalog())};`,
+    "",
   ].join("\n")}`;
 }
 
 const source = await renderBundle();
-writeFileSync(OUT, source);
-console.log(`wrote ${fileURLToPath(OUT)} (${source.length} bytes)`);
+// Skip the write when nothing changed: this file lives under src/, which the
+// `wrangler dev` watcher observes, so rewriting it byte-identical on every build
+// would trigger an endless rebuild loop (the deploy [build] step reruns us).
+const unchanged = existsSync(OUT) && readFileSync(OUT, "utf8") === source;
+if (unchanged) {
+  console.log(`unchanged ${fileURLToPath(OUT)} (${source.length} bytes)`);
+} else {
+  writeFileSync(OUT, source);
+  console.log(`wrote ${fileURLToPath(OUT)} (${source.length} bytes)`);
+}

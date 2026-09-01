@@ -8,7 +8,13 @@ import { z } from "zod";
  * truth. Nothing Node-native may ever land here, or `web` would pull it in.
  *
  * Route schemas arrive with the slices that add the routes (see #12–#14).
+ *
+ * The admin visualizer's own seam lives in `./admin.ts`, re-exported below so
+ * both surfaces import from `@geo/contract` alone.
  */
+
+export * from "./admin.js";
+export * from "./admin-store.js";
 
 export const healthSchema = z.object({
   status: z.literal("ok"),
@@ -27,6 +33,96 @@ export type Health = z.infer<typeof healthSchema>;
  * the `cardId` prefix, which coupled it to the id format and got the answer
  * wrong once two packs shared a prefix (#40).
  */
+/**
+ * The generic visual-aid slot: `{ kind, entityId, ...kindData }`, mirroring
+ * `VisualAid` in `@geo/engine`. Generic by design — a discriminated union on
+ * `kind` — so a future kind (flag, photo) is a new member of the union, not a
+ * reshape of the seam. v1 has one member, `map`. (`kind`, not `renderer`:
+ * CONTEXT.md reserves "renderer" against for the pack-side Generator.)
+ */
+/**
+ * A GeoJSON MultiPolygon in raw lon/lat (WGS84), mirroring `GeoMultiPolygon` in
+ * `@geo/engine`. Nothing is pre-projected — the client projects it with the
+ * same point math it uses for the pin. `coordinates` is
+ * `[polygon][ring][vertex][lon, lat]`; ring 0 is the outer boundary, later
+ * rings are holes. Not deeply validated (four levels of arrays of number pairs);
+ * the shape is server-produced from stored data, so we assert the tag and let
+ * the nested numbers through as-is.
+ */
+export const geoMultiPolygonSchema = z
+  .object({
+    type: z.literal("MultiPolygon"),
+    coordinates: z.array(z.array(z.array(z.array(z.number())))),
+  })
+  .strict();
+
+/**
+ * The lon/lat rectangle the reveal map frames the pin at, mirroring
+ * `RegionExtent` in `@geo/engine` (spec #152, #155).
+ */
+export const regionExtentSchema = z
+  .object({
+    minLon: z.number(),
+    minLat: z.number(),
+    maxLon: z.number(),
+    maxLat: z.number(),
+  })
+  .strict();
+
+export const mapVisualAidSchema = z
+  .object({
+    kind: z.literal("map"),
+    entityId: z.string().min(1),
+    lat: z.number(),
+    lon: z.number(),
+    label: z.string().min(1),
+    // Regional overlay + framing, computed at import (#154) and carried here
+    // fully hydrated (#155). Optional: an entity with a coordinate but no stored
+    // clip still maps, at world scale.
+    localGeoJSON: geoMultiPolygonSchema.optional(),
+    regionExtent: regionExtentSchema.optional(),
+  })
+  .strict();
+
+/**
+ * An image shown beside the prompt — the flag in "This is the flag of what
+ * country?" (spec #180), mirroring `ImageVisualAid` in `@geo/engine`. Generic:
+ * a served asset `src` and a deliberately non-revealing `alt` ("Flag of a
+ * country"), nothing flag-specific, so the next kind of prompt image reuses it.
+ * Names no entity — an image is self-contained.
+ */
+export const imageVisualAidSchema = z
+  .object({
+    kind: z.literal("image"),
+    src: z.string().min(1),
+    alt: z.string().min(1),
+  })
+  .strict();
+
+export const visualAidSchema = z.discriminatedUnion("kind", [mapVisualAidSchema, imageVisualAidSchema]);
+
+export type VisualAid = z.infer<typeof visualAidSchema>;
+
+/**
+ * The scheduling stats a card carries when drawn, all computed server-side and
+ * read under existing RLS. `attempts` and `solvePercent` are strictly *this*
+ * learner's (their RLS-scoped answer log); `difficulty` is the card's **global**
+ * Elo `D`, moved by every learner (permissive read); `predictedOdds` is the
+ * Elo `P(success)` — the learner's per-pack ability against that global
+ * difficulty. Values are as-of-draw (before the current answer). `solvePercent`
+ * is null when the learner has never attempted the card (0/0 is not 0%).
+ */
+export const cardStatsSchema = z
+  .object({
+    attempts: z.number().int().nonnegative(),
+    solvePercent: z.number().min(0).max(100).nullable(),
+    difficulty: z.number(),
+    predictedOdds: z.number().min(0).max(1),
+  })
+  .strict();
+
+export type CardStats = z.infer<typeof cardStatsSchema>;
+
 export const questionResponseSchema = z
   .object({
     cardId: z.string().min(1),
@@ -34,10 +130,51 @@ export const questionResponseSchema = z
     input: z.literal("text"),
     packId: z.string().min(1),
     packLabel: z.string().min(1),
+    // The kind(s) of entity the answer names, so the client can scope answer
+    // suggestions to the right type. The answer's type, never the answer.
+    answerTypes: z.array(z.string().min(1)),
+    // Scheduling stats for the drawn card — attempts/solve% (this learner) and
+    // difficulty/predicted-odds (Elo). See {@link cardStatsSchema}.
+    stats: cardStatsSchema,
+    // No v1 card produces one, but the seam supports a visual aid alongside
+    // the prompt itself (as opposed to `revealVisual`, shown after grading).
+    promptVisual: visualAidSchema.optional(),
   })
   .strict();
 
 export type QuestionResponse = z.infer<typeof questionResponseSchema>;
+
+/**
+ * One entity as the answer-suggestion source sees it: its id, its canonical
+ * English label, every display alias flattened into one list, and an optional
+ * short `autocomplete` form. `aliases` broadens what the client can match a
+ * keystroke against, mirroring the names the grader accepts. `autocomplete`,
+ * when present, is what a suggestion row shows and fills instead of `label` —
+ * the short form for a verbose label ("United States dollar" → "dollar"); it is
+ * always also one of `aliases`, so filling it still grades correct.
+ */
+export const entitySummarySchema = z
+  .object({
+    id: z.string().min(1),
+    label: z.string().min(1),
+    // Non-empty: an empty alias would normalize to "" and match every keystroke
+    // as a universal substring.
+    aliases: z.array(z.string().min(1)),
+    autocomplete: z.string().min(1).optional(),
+  })
+  .strict();
+
+export type EntitySummary = z.infer<typeof entitySummarySchema>;
+
+/**
+ * `GET /entities?type=` — every entity in the graph of the requested type, for
+ * the client to cache and offer as answer suggestions. Global, not per-pack: a
+ * city is a city regardless of which pack quizzed it. An unknown type yields an
+ * empty list.
+ */
+export const entityListSchema = z.array(entitySummarySchema);
+
+export type EntityList = z.infer<typeof entityListSchema>;
 
 /**
  * `POST /answer` request — the card being answered and the learner's raw typed
@@ -60,6 +197,12 @@ export const answerResponseSchema = z
   .object({
     correct: z.boolean(),
     acceptedAnswer: z.string().min(1),
+    // Every canonical label the card accepts, for the reveal to list them all —
+    // a transcontinental country returns both its continents. Single-valued
+    // cards carry a one-element list; `acceptedAnswer` is always one of these.
+    acceptedAnswers: z.array(z.string().min(1)).min(1),
+    // A map of the target entity, when it carries a coordinate. Omitted otherwise.
+    revealVisual: visualAidSchema.optional(),
   })
   .strict();
 
@@ -154,3 +297,46 @@ export type PackSelectionRequest = z.infer<typeof packSelectionRequestSchema>;
 export const answerLogSchema = z.array(answerLogEntrySchema);
 
 export type AnswerLog = z.infer<typeof answerLogSchema>;
+
+/**
+ * The snapshot a question-feedback report carries: what the learner actually saw
+ * on the card, captured at submission time so the operator can investigate even
+ * after the underlying pack data changes. Every field is optional because a flag
+ * raised before answering has no `input` or `acceptedAnswers` yet, and general
+ * feedback carries no context at all (see spec #160).
+ */
+export const feedbackContextSchema = z
+  .object({
+    prompt: z.string().optional(),
+    packLabel: z.string().optional(),
+    packId: z.string().optional(),
+    acceptedAnswers: z.array(z.string()).optional(),
+    input: z.string().optional(),
+    // Which card state the flag was raised from. Without it, a missing `input`
+    // is ambiguous — flagged before answering, or captured and lost? Optional
+    // because the first feedback rows predate this field.
+    answered: z.boolean().optional(),
+  })
+  .strict();
+
+export type FeedbackContext = z.infer<typeof feedbackContextSchema>;
+
+/**
+ * `POST /feedback` request — one learner-submitted report. `kind` splits general
+ * app feedback from a flag against a specific question; `card_id` and `context`
+ * are populated only for the `question` kind (the card the report is about, and
+ * the snapshot of what was on screen). `comment` is always non-empty: general
+ * feedback requires the learner's text, and a question flag with an empty box
+ * carries a default sentinel sentence the client supplies. There is deliberately
+ * no read side to this contract — clients submit but never read feedback back.
+ */
+export const feedbackRequestSchema = z
+  .object({
+    kind: z.enum(["general", "question"]),
+    card_id: z.string().min(1).optional(),
+    comment: z.string().min(1),
+    context: feedbackContextSchema.optional(),
+  })
+  .strict();
+
+export type FeedbackRequest = z.infer<typeof feedbackRequestSchema>;

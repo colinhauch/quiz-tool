@@ -1,7 +1,12 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { AnswerRecord } from "./storage.js";
-import { createSupabaseAnswerStore, createSupabaseSelectionStore } from "./supabase-storage.js";
+import {
+  createSupabaseAnswerStore,
+  createSupabaseFeedbackStore,
+  createSupabaseRatingStore,
+  createSupabaseSelectionStore,
+} from "./supabase-storage.js";
 
 /**
  * Integration tests for the production stores, driven through supabase-js
@@ -78,6 +83,30 @@ describe.skipIf(!ready)("Supabase stores (integration, RLS)", () => {
     expect(await storeB.all()).toEqual([{ ...answer, input: "Berlin", correct: false }]);
   });
 
+  it("lets a client insert feedback but never read it back (insert-only RLS)", async () => {
+    const a = await signedInUser(admin);
+    createdUserIds.push(a.id);
+
+    const store = createSupabaseFeedbackStore(a.client);
+    await store.record({
+      kind: "general",
+      cardId: null,
+      comment: "The map is gorgeous.",
+      context: null,
+      createdAt: "2026-08-29T12:00:00.000Z",
+    });
+
+    // No select policy: a client select succeeds but returns zero rows, even the
+    // caller's own. Only the admin's service_role can read the table.
+    const { data: asClient, error: clientErr } = await a.client.from("feedback").select("*");
+    expect(clientErr).toBeNull();
+    expect(asClient).toEqual([]);
+
+    // The row is really there — the service_role sees it.
+    const { data: asAdmin } = await admin.from("feedback").select("comment").eq("user_id", a.id);
+    expect(asAdmin).toEqual([{ comment: "The map is gorgeous." }]);
+  });
+
   it("reads null on first run, then round-trips a selection, isolated per user", async () => {
     const a = await signedInUser(admin);
     const b = await signedInUser(admin);
@@ -98,5 +127,36 @@ describe.skipIf(!ready)("Supabase stores (integration, RLS)", () => {
 
     // B's selection is untouched by A's writes.
     expect(await selB.read()).toBeNull();
+  });
+
+  it("round-trips a snapshot on the answer row", async () => {
+    const a = await signedInUser(admin);
+    createdUserIds.push(a.id);
+    const store = createSupabaseAnswerStore(a.client);
+
+    const withSnapshot = {
+      ...answer,
+      snapshot: { difficulty: 1500, ability: 1520, kApplied: 40, packId: "capital-cities" },
+    };
+    await store.record(withSnapshot);
+    expect(await store.all()).toEqual([withSnapshot]);
+  });
+
+  it("keeps ability per-user but difficulty global (shared across users)", async () => {
+    const a = await signedInUser(admin);
+    const b = await signedInUser(admin);
+    createdUserIds.push(a.id, b.id);
+    const ratingA = createSupabaseRatingStore(a.client);
+    const ratingB = createSupabaseRatingStore(b.client);
+    const card = `cc:tokyo-japan:object-${crypto.randomUUID()}`;
+
+    // Ability is isolated: A's write is invisible to B.
+    await ratingA.writeAbility("capital-cities", 1600);
+    expect(await ratingA.readAbility("capital-cities")).toBeCloseTo(1600, 6);
+    expect(await ratingB.readAbility("capital-cities")).toBe(1500); // seed — B has none
+
+    // Difficulty is global: A writes it, B reads the same value.
+    await ratingA.writeCard(card, 1480, 3);
+    expect(await ratingB.readCard(card)).toEqual({ difficulty: 1480, answerCount: 3 });
   });
 });
