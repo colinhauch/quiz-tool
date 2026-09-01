@@ -119,7 +119,34 @@ describe("server app", () => {
       packId: TEST_PACK.id,
       packLabel: TEST_PACK.labels.en,
       answerTypes: ["country"],
+      // No rating store and no prior answers: seed difficulty/ability give
+      // P = 0.5, and the learner has never attempted the card.
+      stats: { attempts: 0, solvePercent: null, difficulty: 1500, predictedOdds: 0.5 },
     });
+  });
+
+  it("GET /question carries this learner's attempts/solve% and the card's Elo stats", async () => {
+    const db = openDatabase(":memory:");
+    const store = createAnswerStore(db);
+    const rating = createRatingStore(db);
+    const app = createApp({ pack: fixturePack(), store, rating, rng: () => 0 });
+
+    // One correct answer on the fresh card: provisional K=40, P=0.5, so
+    // difficulty drops 20 (1480) and ability rises 20 (1520).
+    const answered = await app.request("/answer", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ cardId: "S1:object", input: "Japan" }),
+    });
+    expect(answered.status).toBe(200);
+
+    const res = await app.request("/question");
+    const { stats } = questionResponseSchema.parse(await res.json());
+    expect(stats.attempts).toBe(1);
+    expect(stats.solvePercent).toBe(100);
+    expect(stats.difficulty).toBeCloseTo(1480);
+    // P(success) with D=1480 vs θ=1520.
+    expect(stats.predictedOdds).toBeCloseTo(0.5573, 3);
   });
 
   it("GET /question never leaks the answer over the seam", async () => {

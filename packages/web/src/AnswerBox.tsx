@@ -9,6 +9,9 @@ interface AnswerBoxProps {
   answerTypes: string[];
   /** When false, the plain input with no suggestions (the pre-autocomplete box). */
   suggestEnabled?: boolean;
+  /** Once answered, the box shows the submitted answer greyed out and non-editable — no
+   *  suggestions, no focus stealing. The typed answer stays visible beside the verdict. */
+  disabled?: boolean;
   /** Focused after picking a suggestion, so a keyboard learner's next Enter
    *  submits rather than re-opening suggestions in the input. Owned by the
    *  caller: the submit control lives outside this component (#187). */
@@ -38,6 +41,7 @@ export function AnswerBox({
   onChange,
   answerTypes,
   suggestEnabled = true,
+  disabled = false,
   submitButtonRef,
 }: AnswerBoxProps) {
   const [entities, setEntities] = useState<EntitySummary[]>([]);
@@ -101,7 +105,22 @@ export function AnswerBox({
     }
   }
 
-  const showList = suggestions.length > 0;
+  const showList = !disabled && suggestions.length > 0;
+
+  // Answered: the submitted answer, shown greyed and non-editable so the learner
+  // can still read what they typed. No combobox semantics, no suggestions, and
+  // no autofocus — focus goes to the Next button (the caller manages that).
+  if (disabled) {
+    return (
+      <input
+        className="quiz-input"
+        aria-label="Your answer"
+        value={value}
+        disabled
+        readOnly
+      />
+    );
+  }
 
   // With suggestions off, the box is the plain pre-autocomplete input: no
   // combobox semantics, so a screen reader announces exactly today's field.

@@ -332,6 +332,8 @@ describe("adding a pack touches nothing outside its own directory", () => {
       packId: "newcomer",
       packLabel: "Newcomer",
       answerTypes: ["country"],
+      // No rating store and a never-attempted card: seed stats.
+      stats: { attempts: 0, solvePercent: null, difficulty: 1500, predictedOdds: 0.5 },
     });
   });
 });

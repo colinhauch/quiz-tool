@@ -487,6 +487,11 @@ body {
   font-size: 1.35rem;
   font-weight: 700;
   line-height: 1;
+  color: rgba(39, 24, 126, 0.9);
+}
+
+/* A tile with no datum yet (e.g. Solve % before the first attempt) stays dim. */
+.qpanel__stat-value--empty {
   color: rgba(39, 24, 126, 0.44);
 }
 
@@ -506,17 +511,50 @@ body {
   margin-top: 1.5rem;
 }
 
-/* The input and the verdict share this one fixed-height slot; the button
-   below it never moves between asking and answered. */
+/* Holds the answer input (disabled once answered). The button below never
+   moves between asking and answered. */
 .qpanel__slot {
-  min-height: 4.75rem;
+  min-height: 3.25rem;
   display: flex;
   flex-direction: column;
   justify-content: center;
 }
 
-.qpanel__slot .quiz-result {
-  margin-bottom: 0;
+/* The verdict is relocated directly above the answer input. Both layouts keep
+   this slot in the DOM at a fixed min-height whether asking or answered, so the
+   verdict appearing on answer shifts neither the input nor anything below it.
+   Content aligns to the slot's bottom, next to the input. */
+.qpanel__verdict-slot,
+.quiz-verdict-slot {
+  display: flex;
+  align-items: flex-end;
+}
+
+.qpanel__verdict-slot {
+  min-height: 3.75rem;
+}
+
+/* Narrow has no flexible spacer to absorb the verdict's height (unlike the wide
+   panel's `.qpanel__middle`), so this reserve must cover it — sized for the
+   common two-line verdict, keeping the input and everything below it fixed. */
+.quiz-verdict-slot {
+  min-height: 5.25rem;
+}
+
+/* Compact the relocated verdict so the reserved gap stays modest. */
+.qpanel__verdict-slot .quiz-result,
+.quiz-verdict-slot .quiz-result {
+  width: 100%;
+  margin: 0;
+  padding: 0.75rem 1rem;
+}
+
+/* Answered: the submitted answer stays readable but is clearly inert. */
+.quiz-input:disabled {
+  background: var(--platinum);
+  color: var(--indigo);
+  opacity: 0.55;
+  cursor: default;
 }
 
 /* ── Media panel: one frame, two always-reserved slots ───────

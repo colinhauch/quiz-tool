@@ -1,10 +1,13 @@
-import type { AnswerResponse, EntitySummary, QuestionResponse, VisualAid } from "@geo/contract";
+import type { AnswerResponse, CardStats, EntitySummary, QuestionResponse, VisualAid } from "@geo/contract";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { setSignedInSource } from "./auth.js";
 import { DEFAULT_QUESTION_COMMENT } from "./QuestionFeedback.js";
 import { Quiz } from "./Quiz.js";
 import { clearSuggestionCache } from "./suggestions.js";
+
+// A fresh, never-attempted card: seed difficulty, P = 0.5, no solve history.
+const seedStats: CardStats = { attempts: 0, solvePercent: null, difficulty: 1500, predictedOdds: 0.5 };
 
 const tokyo: QuestionResponse = {
   cardId: "cc:tokyo-japan:object",
@@ -13,6 +16,7 @@ const tokyo: QuestionResponse = {
   packId: "core-cities",
   packLabel: "Cities & Countries",
   answerTypes: ["country"],
+  stats: seedStats,
 };
 const paris: QuestionResponse = {
   cardId: "cc:paris-france:object",
@@ -21,6 +25,7 @@ const paris: QuestionResponse = {
   packId: "continental-countries",
   packLabel: "Continents & Countries",
   answerTypes: ["country"],
+  stats: seedStats,
 };
 
 const countries: EntitySummary[] = [
@@ -143,6 +148,25 @@ describe("Quiz", () => {
     );
   });
 
+  it("keeps the typed answer visible but disabled, with the verdict above it, after answering", async () => {
+    stubFetch([tokyo], { correct: false, acceptedAnswer: "Japan" });
+    render(<Quiz />);
+
+    fireEvent.change(await screen.findByLabelText(/your answer/i), { target: { value: "China" } });
+    fireEvent.click(screen.getByRole("button", { name: /^submit$/i }));
+
+    const verdict = await screen.findByRole("status");
+    expect(verdict).toHaveTextContent("Incorrect. The answer is Japan.");
+
+    // The input stays, showing what was typed, but is now non-interactable.
+    const box = screen.getByLabelText(/your answer/i);
+    expect(box).toBeDisabled();
+    expect(box).toHaveValue("China");
+
+    // The verdict sits above (before) the input in document order.
+    expect(verdict.compareDocumentPosition(box) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it("shows incorrect feedback with the accepted answer", async () => {
     stubFetch([tokyo], { correct: false, acceptedAnswer: "Japan" });
     render(<Quiz />);
@@ -236,6 +260,7 @@ describe("Quiz", () => {
       packId: "currencies",
       packLabel: "Currencies",
       answerTypes: ["currency"],
+      stats: seedStats,
     };
     const usd: EntitySummary = {
       id: "Q4917",
@@ -524,8 +549,28 @@ describe("Quiz", () => {
       expect(map).toHaveAttribute("aria-label", "World map");
     });
 
-    it("fills the question-panel gap with four safe, no-data statistic tiles", async () => {
+    it("keeps the disabled answer and shows the verdict above it after answering", async () => {
       stubFetch([tokyo], { correct: true, acceptedAnswer: "Japan" });
+      render(<Quiz />);
+
+      fireEvent.change(await screen.findByLabelText(/your answer/i), { target: { value: "Japan" } });
+      fireEvent.click(screen.getByRole("button", { name: /^submit$/i }));
+
+      const verdict = await screen.findByRole("status");
+      expect(verdict).toHaveTextContent("Correct! The answer is Japan.");
+
+      const box = screen.getByLabelText(/your answer/i);
+      expect(box).toBeDisabled();
+      expect(box).toHaveValue("Japan");
+      expect(verdict.compareDocumentPosition(box) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    });
+
+    it("renders the four statistic tiles from the card's stats", async () => {
+      const answered: QuestionResponse = {
+        ...tokyo,
+        stats: { attempts: 4, solvePercent: 75, difficulty: 1480, predictedOdds: 0.62 },
+      };
+      stubFetch([answered], { correct: true, acceptedAnswer: "Japan" });
       render(<Quiz />);
 
       await screen.findByText("What country is Tokyo in?");
@@ -533,10 +578,24 @@ describe("Quiz", () => {
       const stats = screen.getByRole("region", { name: "Question statistics" });
       expect(stats.querySelectorAll(".qpanel__stat")).toHaveLength(4);
       expect(stats).toHaveTextContent("Attempts");
+      expect(stats).toHaveTextContent("4");
       expect(stats).toHaveTextContent("Solve %");
+      expect(stats).toHaveTextContent("75%");
       expect(stats).toHaveTextContent("ELO/Difficulty");
+      expect(stats).toHaveTextContent("1480");
       expect(stats).toHaveTextContent("Your predicted odds");
-      expect(screen.getAllByLabelText("Not available yet")).toHaveLength(4);
+      expect(stats).toHaveTextContent("62%");
+    });
+
+    it("shows an em dash for Solve % before the first attempt", async () => {
+      stubFetch([tokyo], { correct: true, acceptedAnswer: "Japan" });
+      render(<Quiz />);
+
+      await screen.findByText("What country is Tokyo in?");
+
+      const stats = screen.getByRole("region", { name: "Question statistics" });
+      const empty = stats.querySelector(".qpanel__stat-value--empty");
+      expect(empty).toHaveTextContent("—");
     });
 
     it("shows the question image big in the image slot when the question carries one", async () => {

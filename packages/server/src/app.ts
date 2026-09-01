@@ -2,6 +2,7 @@ import {
   answerLogSchema,
   answerRequestSchema,
   answerResponseSchema,
+  type CardStats,
   entityListSchema,
   feedbackRequestSchema,
   healthSchema,
@@ -24,6 +25,7 @@ import {
   findCard,
   generateQuestion,
   ownerPackId,
+  probabilityOfSuccess,
   type Pack,
   type Ratings,
   type Scheduler,
@@ -225,17 +227,15 @@ export function createApp({
   // the contract the browser trusts — and so an accidental answer leak fails
   // here, at the seam.
   app.get("/question", async (c) => {
-    const { scheduler, key, rating, freshRatings } = await ensureScheduler(c);
+    const { scheduler, key, store: s, rating, freshRatings } = await ensureScheduler(c);
     // Reuse the ratings ensureScheduler just loaded on a learner's first draw;
     // otherwise re-read, since they drift as answers arrive between draws.
     const ratings = freshRatings ?? (await loadRatings(rating, key, scheduler.included));
     const drawn = drawNext(pack, ratings, key, scheduler, rng);
     schedulers.set(key, drawn.scheduler);
-    return c.json(
-      questionResponseSchema.parse(
-        generateQuestion(pack, drawn.card.statement, drawn.card.hiddenSlot),
-      ),
-    );
+    const question = generateQuestion(pack, drawn.card.statement, drawn.card.hiddenSlot);
+    const stats = await cardStats(s, ratings, key, question.cardId, drawn.card.statement.pack);
+    return c.json(questionResponseSchema.parse({ ...question, stats }));
   });
 
   // Every entity of a given type in the graph, for the client to cache and
@@ -410,6 +410,35 @@ export function createApp({
   });
 
   return app;
+}
+
+/**
+ * The scheduling stats a drawn card carries. `attempts`/`solvePercent` come from
+ * *this* learner's answer log (RLS-scoped), filtered to this card; `difficulty`
+ * is the card's global Elo `D` and `predictedOdds` the Elo `P(success)` of the
+ * learner's per-pack ability against it — both read from the `ratings` already
+ * loaded for the draw, so no extra rating round-trip. Stats are as-of-draw:
+ * `store.all()` reflects the log before the current answer. `solvePercent` is
+ * null when the learner has never attempted the card (0/0 is not 0%).
+ */
+async function cardStats(
+  store: AnswerStore,
+  ratings: Ratings,
+  learnerId: string,
+  cardId: string,
+  packId: string,
+): Promise<CardStats> {
+  const mine = (await store.all()).filter((a) => a.cardId === cardId);
+  const attempts = mine.length;
+  const correct = mine.filter((a) => a.correct).length;
+  const difficulty = difficultyOf(ratings, cardId);
+  const ability = abilityOf(ratings, learnerId, packId);
+  return {
+    attempts,
+    solvePercent: attempts === 0 ? null : (correct / attempts) * 100,
+    difficulty,
+    predictedOdds: probabilityOfSuccess(difficulty, ability),
+  };
 }
 
 /**
