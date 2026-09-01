@@ -72,6 +72,19 @@ function feedbackPosts(fetchMock: ReturnType<typeof stubFetch>): unknown[] {
     .map(([, init]) => JSON.parse((init as { body: string }).body));
 }
 
+/** Forces `useWideLayout`'s breakpoint query on/off (jsdom has no matchMedia
+ *  by default, so the hook falls back to narrow when unstubbed). */
+function stubWideLayout(wide: boolean) {
+  vi.stubGlobal(
+    "matchMedia",
+    vi.fn().mockReturnValue({
+      matches: wide,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    }),
+  );
+}
+
 beforeEach(() => {
   // The quiz card's feedback control checks for itself that someone is signed in.
   setSignedInSource(() => true);
@@ -82,6 +95,7 @@ afterEach(() => {
   clearSuggestionCache();
   localStorage.clear();
   vi.restoreAllMocks();
+  vi.unstubAllGlobals();
 });
 
 describe("Quiz", () => {
@@ -438,6 +452,129 @@ describe("Quiz", () => {
         input: "Chian",
         acceptedAnswers: ["Japan"],
       },
+    });
+  });
+
+  // #187: above the desktop breakpoint the card becomes question panel +
+  // media panel, with a permanent map slot. Below it — the default in these
+  // tests, per stubWideLayout's absence — nothing here changes; that's the
+  // suite above.
+  describe("wide layout (#187)", () => {
+    beforeEach(() => stubWideLayout(true));
+
+    it("reserves the image slot empty and the map slot as a world view while asking, when the question carries neither", async () => {
+      stubFetch([tokyo], { correct: true, acceptedAnswer: "Japan" });
+      const { container } = render(<Quiz />);
+
+      await screen.findByText("What country is Tokyo in?");
+
+      expect(container.querySelector(".mpanel__image")).toBeInTheDocument();
+      expect(container.querySelector(".mpanel__image .visual-aid")).not.toBeInTheDocument();
+      // The map is permanent: it renders even though this question has none.
+      const map = container.querySelector(".mpanel__map svg");
+      expect(map).toBeInTheDocument();
+      expect(map).toHaveAttribute("aria-label", "World map");
+    });
+
+    it("shows the question image big in the image slot when the question carries one", async () => {
+      const flagQuestion: QuestionResponse = {
+        ...tokyo,
+        promptVisual: { kind: "image", src: "/flags/jp.svg", alt: "Flag of a country" },
+      };
+      stubFetch([flagQuestion], { correct: true, acceptedAnswer: "Japan" });
+      const { container } = render(<Quiz />);
+
+      await screen.findByText("What country is Tokyo in?");
+
+      const img = container.querySelector(".mpanel__image img");
+      expect(img).toHaveAttribute("src", "/flags/jp.svg");
+    });
+
+    it("keeps the map at world scale (no pin) while asking, then pins and zooms once answered", async () => {
+      stubFetch([tokyo], {
+        correct: true,
+        acceptedAnswer: "Japan",
+        revealVisual: {
+          kind: "map",
+          entityId: "Q1490",
+          lat: 35.6895,
+          lon: 139.6917,
+          label: "Tokyo",
+        },
+      });
+      const { container } = render(<Quiz />);
+
+      await screen.findByText("What country is Tokyo in?");
+      expect(container.querySelector(".mpanel__map circle")).not.toBeInTheDocument();
+
+      fireEvent.change(await screen.findByLabelText(/your answer/i), { target: { value: "Japan" } });
+      fireEvent.click(screen.getByRole("button", { name: /^submit$/i }));
+      await screen.findByRole("status");
+
+      expect(container.querySelector(".mpanel__map circle")).toBeInTheDocument();
+      expect(container.querySelector(".mpanel__map svg")).toHaveAttribute(
+        "aria-label",
+        "Map showing the location of Tokyo",
+      );
+    });
+
+    it("anchors the same button below the fixed slot across asking and answered, relabelled but not moved", async () => {
+      stubFetch([tokyo], { correct: true, acceptedAnswer: "Japan" });
+      render(<Quiz />);
+
+      const submitButton = await screen.findByRole("button", { name: /^submit$/i });
+      fireEvent.change(screen.getByLabelText(/your answer/i), { target: { value: "Japan" } });
+      fireEvent.click(submitButton);
+
+      const nextButton = await screen.findByRole("button", { name: /next question/i });
+      // Same DOM node relabelled, not a different button appended elsewhere.
+      expect(nextButton).toBe(submitButton);
+    });
+
+    it("focuses the anchored button after picking a suggestion", async () => {
+      stubFetch([tokyo], { correct: true, acceptedAnswer: "Japan" });
+      render(<Quiz />);
+
+      const box = (await screen.findByLabelText(/your answer/i)) as HTMLInputElement;
+      fireEvent.change(box, { target: { value: "jap" } });
+      await screen.findByRole("option", { name: "Japan" });
+      fireEvent.click(screen.getByRole("button", { name: "Japan" }));
+
+      expect(box.value).toBe("Japan");
+      expect(screen.getByRole("button", { name: /^submit$/i })).toHaveFocus();
+    });
+
+    it("does not move the question panel when switching between flag, map, and neither", async () => {
+      const flagQuestion: QuestionResponse = {
+        ...tokyo,
+        promptVisual: { kind: "image", src: "/flags/jp.svg", alt: "Flag of a country" },
+      };
+      const mapAnswer = {
+        correct: true,
+        acceptedAnswer: "Japan",
+        revealVisual: { kind: "map" as const, entityId: "Q1490", lat: 1, lon: 2, label: "Tokyo" },
+      };
+      stubFetch([flagQuestion, paris, tokyo], mapAnswer);
+      const { container } = render(<Quiz />);
+
+      for (const expectedPrompt of [
+        "What country is Tokyo in?", // flagQuestion
+        "What country is Paris in?", // no visuals
+        "What country is Tokyo in?", // tokyo again
+      ]) {
+        await screen.findByText(expectedPrompt);
+        // The two reserved slots are always present, whatever this question has.
+        expect(container.querySelector(".mpanel__image")).toBeInTheDocument();
+        expect(container.querySelector(".mpanel__map svg")).toBeInTheDocument();
+        expect(container.querySelector(".qpanel")).toBeInTheDocument();
+
+        const submitBtn = screen.getByRole("button", { name: /^submit$/i });
+        fireEvent.click(submitBtn);
+        await screen.findByRole("button", { name: /next question/i });
+        fireEvent.click(screen.getByRole("button", { name: /next question/i }));
+      }
+      // Let the last "Next" click's question load settle before the test ends.
+      await screen.findByRole("button", { name: /^submit$/i });
     });
   });
 });
