@@ -44,11 +44,24 @@ import {
  * `VisualAid`, the slot that owns the `kind` dispatch. Timing/easing are tuned
  * by feel, so they are adjustable (module defaults, overridable per instance)
  * rather than hard-coded to one behavior.
+ *
+ * Permanent mode (#186): `lat`/`lon` are optional. With no coordinates —
+ * the media panel's map slot before the answer is known — this renders the
+ * bare zoomed-out world (no pin/label/coords/slider). The zoom-slider row is
+ * always present in the layout (empty when there's nothing to zoom toward)
+ * so that state and the answered state are the same height; no reflow when
+ * the slider appears.
  */
-type MapProps = Pick<
-  Extract<VisualAidData, { kind: "map" }>,
-  "lat" | "lon" | "label" | "localGeoJSON" | "regionExtent"
+type MapProps = Omit<
+  Pick<
+    Extract<VisualAidData, { kind: "map" }>,
+    "lat" | "lon" | "label" | "localGeoJSON" | "regionExtent"
+  >,
+  "lat" | "lon" | "label"
 > & {
+  lat?: number;
+  lon?: number;
+  label?: string;
   /** Whether the map auto-zooms (oscillates global⟷regional). Default off. */
   autoZoom?: boolean;
   /** Pause at global scale before easing in. Tunable. */
@@ -103,9 +116,12 @@ export function MapAid({
   flyMs = FLY_MS,
   holdMs = HOLD_MS,
 }: MapProps) {
+  const hasCoords = lat !== undefined && lon !== undefined;
+
   // The zoom target: the regional extent grown to the world's aspect ratio, so
-  // the frame's shape (and on-screen height) never changes as it zooms.
-  const regionView = regionExtent
+  // the frame's shape (and on-screen height) never changes as it zooms. There
+  // is nothing to zoom toward without a pinned coordinate.
+  const regionView = hasCoords && regionExtent
     ? fitAspect(extentToView(regionExtent), WORLD_ASPECT)
     : null;
   const canZoom = regionView !== null;
@@ -154,17 +170,6 @@ export function MapAid({
   // frame is so pin/label/coords stay roughly the same on-screen size at any
   // extent. Strokes use non-scaling-stroke instead (constant pixel width).
   const s = view.w / WIDTH;
-  const { x, y } = project(lat, lon);
-  const pad = 4 * s;
-  // Keep the label on-canvas: flip its anchor near the frame's right/bottom.
-  // Margins mirror the original full-world thresholds (60 / 15 units), scaled by
-  // `s` so they stay a constant on-screen size — leaving room for the label's
-  // pixel width — at any extent.
-  const nearRight = x > view.x + view.w - 60 * s;
-  const nearBottom = y > view.y + view.h - 15 * s;
-  const labelX = nearRight ? x - 8 * s : x + 8 * s;
-  const labelAnchor = nearRight ? "end" : "start";
-  const labelY = nearBottom ? y - 8 * s : y + 14 * s;
 
   return (
     <div className="map-aid-viewport">
@@ -173,11 +178,11 @@ export function MapAid({
         viewBox={`${view.x} ${view.y} ${view.w} ${view.h}`}
         preserveAspectRatio="xMidYMid meet"
         role="img"
-        aria-label={`Map showing the location of ${label}`}
+        aria-label={hasCoords ? `Map showing the location of ${label}` : "World map"}
       >
         <rect className="map-aid__ocean" x={view.x} y={view.y} width={view.w} height={view.h} />
         <path className="map-aid__land" d={WORLD_LAND_PATH} vectorEffect="non-scaling-stroke" />
-        {localGeoJSON && (
+        {hasCoords && localGeoJSON && (
           <path
             className="map-aid__local"
             d={geoToPath(localGeoJSON)}
@@ -193,39 +198,81 @@ export function MapAid({
           vectorEffect="non-scaling-stroke"
         />
 
-        <circle className="map-aid__point" cx={x} cy={y} r={3.5 * s} vectorEffect="non-scaling-stroke" />
-        <text
-          className="map-aid__label"
-          x={labelX}
-          y={labelY}
-          textAnchor={labelAnchor}
-          vectorEffect="non-scaling-stroke"
-          style={{ fontSize: `${8 * s}px` }}
-        >
-          {label}
-        </text>
-        <text
-          className="map-aid__coords"
-          x={view.x + pad}
-          y={view.y + view.h - pad}
-          style={{ fontSize: `${6 * s}px` }}
-        >
-          {lat.toFixed(2)}, {lon.toFixed(2)}
-        </text>
+        {hasCoords && (
+          <MapMarks lat={lat} lon={lon} label={label} view={view} scale={s} />
+        )}
       </svg>
 
-      {canZoom && (
-        <input
-          className="map-aid__zoom"
-          type="range"
-          min={0}
-          max={1}
-          step={0.001}
-          value={t}
-          onChange={(e) => onScrub(Number(e.target.value))}
-          aria-label={`Zoom the map from the whole world in to ${label}`}
-        />
-      )}
+      {/* Reserved regardless of whether a slider is shown, so the asking
+          (no coords) and answered (coords) states are the same height —
+          see the module doc (#186). */}
+      <div className="map-aid__zoom-row">
+        {canZoom && (
+          <input
+            className="map-aid__zoom"
+            type="range"
+            min={0}
+            max={1}
+            step={0.001}
+            value={t}
+            onChange={(e) => onScrub(Number(e.target.value))}
+            aria-label={`Zoom the map from the whole world in to ${label}`}
+          />
+        )}
+      </div>
     </div>
+  );
+}
+
+/** The pin, its label, and the coordinate readout — only meaningful once a
+ * coordinate exists. Split out so `MapAid` doesn't compute label placement
+ * for the no-coords world view. */
+function MapMarks({
+  lat,
+  lon,
+  label,
+  view,
+  scale: s,
+}: {
+  lat: number;
+  lon: number;
+  label: string | undefined;
+  view: { x: number; y: number; w: number; h: number };
+  scale: number;
+}) {
+  const { x, y } = project(lat, lon);
+  const pad = 4 * s;
+  // Keep the label on-canvas: flip its anchor near the frame's right/bottom.
+  // Margins mirror the original full-world thresholds (60 / 15 units), scaled by
+  // `s` so they stay a constant on-screen size — leaving room for the label's
+  // pixel width — at any extent.
+  const nearRight = x > view.x + view.w - 60 * s;
+  const nearBottom = y > view.y + view.h - 15 * s;
+  const labelX = nearRight ? x - 8 * s : x + 8 * s;
+  const labelAnchor = nearRight ? "end" : "start";
+  const labelY = nearBottom ? y - 8 * s : y + 14 * s;
+
+  return (
+    <>
+      <circle className="map-aid__point" cx={x} cy={y} r={3.5 * s} vectorEffect="non-scaling-stroke" />
+      <text
+        className="map-aid__label"
+        x={labelX}
+        y={labelY}
+        textAnchor={labelAnchor}
+        vectorEffect="non-scaling-stroke"
+        style={{ fontSize: `${8 * s}px` }}
+      >
+        {label}
+      </text>
+      <text
+        className="map-aid__coords"
+        x={view.x + pad}
+        y={view.y + view.h - pad}
+        style={{ fontSize: `${6 * s}px` }}
+      >
+        {lat.toFixed(2)}, {lon.toFixed(2)}
+      </text>
+    </>
   );
 }
