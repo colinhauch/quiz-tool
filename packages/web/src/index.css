@@ -67,7 +67,18 @@ body {
   z-index: 1;
   max-width: 1200px;
   margin: 0 auto;
-  padding: 2rem 1.5rem;
+  padding: 1.25rem 1.5rem;
+}
+
+/* Title and the sign-in/out widget share one row, vertically centred, so the
+   header stays short — the widget no longer sits in its own band above the
+   title. Nav follows on the row below. */
+.app-header__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
 }
 
 .app-title {
@@ -75,13 +86,6 @@ body {
   font-size: 2rem;
   font-weight: 700;
   letter-spacing: -0.5px;
-  margin-bottom: 1.5rem;
-}
-
-.app-header__top {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 1rem;
 }
 
 .app-nav {
@@ -167,10 +171,28 @@ body {
   border-bottom-color: var(--orange);
 }
 
+/* Base (mobile/tablet, single-column everything): a readable measure. The wide
+   two-column quiz card only renders at ≥900px (see useWideLayout), so the
+   widescreen cap is raised at that same breakpoint below — never on the narrow
+   layouts, which must stay this width to read well. */
 .app-main {
   max-width: 680px;
   margin: 2.5rem auto;
   padding: 0 1.5rem;
+}
+
+@media (min-width: 900px) {
+  .app-main {
+    max-width: 1120px;
+  }
+
+  /* Text-only tabs keep a readable measure even though their shared shell is
+     now wide — only the quiz card and the packs/answers grids want the room. */
+  .feedback,
+  .sign-in-gate {
+    max-width: 680px;
+    margin-inline: auto;
+  }
 }
 
 /* ── Sign-in gate ────────────────────────────────────────── */
@@ -405,8 +427,8 @@ body {
    screens use the plain `.quiz-card__body` above instead, unchanged. */
 .quiz-card__body--wide {
   display: grid;
-  grid-template-columns: 1fr 26rem;
-  gap: 2rem;
+  grid-template-columns: minmax(0, 1fr) 34rem;
+  gap: 2.5rem;
   align-items: stretch;
 }
 
@@ -512,8 +534,8 @@ body {
 }
 
 .mpanel__image {
-  height: 13rem;
-  padding: 1.25rem;
+  height: 15rem;
+  padding: 1.5rem;
   border-bottom: 1px solid rgba(39, 24, 126, 0.1);
   display: flex;
   align-items: center;
@@ -529,21 +551,22 @@ body {
 }
 
 .mpanel__image .image-aid__img {
-  height: 10.5rem;
+  height: 12rem;
 }
 
 .mpanel__map {
   flex: 1;
-  min-height: 17.75rem;
-  padding: 1.25rem;
+  min-height: 20rem;
+  padding: 1.5rem;
   display: flex;
   flex-direction: column;
   justify-content: center;
 }
 
+/* Fill the wider media column — the map is the whole point of the widescreen. */
 .mpanel__map .map-aid-viewport {
   width: 100%;
-  max-width: 26rem;
+  max-width: none;
   margin: 0 auto;
 }
 
@@ -1216,9 +1239,6 @@ body {
   }
   .packs__title {
     font-size: 1.6rem;
-  }
-  .app-header__top {
-    justify-content: flex-start;
   }
   .auth-widget {
     flex-wrap: wrap;

@@ -52,10 +52,10 @@ export function App({ boundary = getAuthBoundary() }: { boundary?: AuthBoundary 
       <header className="app-header">
         <div className="app-header__topo" aria-hidden="true" />
         <div className="app-header__inner">
-          <div className="app-header__top">
+          <div className="app-header__bar">
+            <h1 className="app-title">Geography Quiz</h1>
             <AuthWidget boundary={boundary} />
           </div>
-          <h1 className="app-title">Geography Quiz</h1>
           <nav className="app-nav" aria-label="Views">
             <button type="button" aria-current={tab === "quiz"} onClick={() => setTab("quiz")}>
               Quiz
