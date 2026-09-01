@@ -41,3 +41,27 @@ jobs:
 
       - name: Validate packs
         run: pnpm run packs:validate
+
+  # Enforces the promotion source: a PR into prod must come from test, and a PR
+  # into test must come from dev. PRs into dev have no restriction. Rulesets gate
+  # only the base branch, so this required check is how the head branch is
+  # constrained. It always runs and always reports, so it never leaves a required
+  # check pending. Like "checks", this job name is referenced by the rulesets by
+  # name — keep it stable.
+  promotion-source:
+    name: promotion-source
+    runs-on: ubuntu-latest
+    steps:
+      - name: Enforce promotion source branch
+        env:
+          BASE: ${{ github.base_ref }}
+          HEAD: ${{ github.head_ref }}
+        run: |
+          case "$BASE" in
+            prod)
+              [ "$HEAD" = "test" ] || { echo "::error::PRs into prod must come from test (got '$HEAD')"; exit 1; } ;;
+            test)
+              [ "$HEAD" = "dev" ]  || { echo "::error::PRs into test must come from dev (got '$HEAD')"; exit 1; } ;;
+            *)
+              echo "No source restriction for base '$BASE'." ;;
+          esac
