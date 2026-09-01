@@ -48,5 +48,7 @@ coverage/
 dist/
 
 # Claude Code local state (worktrees, job scratch)
-.claude/
-.agents/
+.claude/*
+!.claude/skills/
+.agents/*
+!.agents/skills/
