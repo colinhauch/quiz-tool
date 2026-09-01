@@ -476,6 +476,21 @@ describe("Quiz", () => {
       expect(map).toHaveAttribute("aria-label", "World map");
     });
 
+    it("fills the question-panel gap with four safe, no-data statistic tiles", async () => {
+      stubFetch([tokyo], { correct: true, acceptedAnswer: "Japan" });
+      render(<Quiz />);
+
+      await screen.findByText("What country is Tokyo in?");
+
+      const stats = screen.getByRole("region", { name: "Question statistics" });
+      expect(stats.querySelectorAll(".qpanel__stat")).toHaveLength(4);
+      expect(stats).toHaveTextContent("Attempts");
+      expect(stats).toHaveTextContent("Solve %");
+      expect(stats).toHaveTextContent("ELO/Difficulty");
+      expect(stats).toHaveTextContent("Your predicted odds");
+      expect(screen.getAllByLabelText("Not available yet")).toHaveLength(4);
+    });
+
     it("shows the question image big in the image slot when the question carries one", async () => {
       const flagQuestion: QuestionResponse = {
         ...tokyo,

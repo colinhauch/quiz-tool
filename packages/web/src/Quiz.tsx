@@ -31,6 +31,27 @@ function Verdict({ result }: { result: AnswerResponse }) {
   );
 }
 
+// Scheduling data is deliberately absent from QuestionResponse for now. Keep
+// these tiles present and self-contained so adding that data later cannot
+// change the question panel's geometry.
+function QuestionStats() {
+  const stats = ["Attempts", "Solve %", "ELO/Difficulty", "Your predicted odds"];
+
+  return (
+    <section className="qpanel__stats" aria-label="Question statistics">
+      {stats.map((label) => (
+        <div className="qpanel__stat" key={label}>
+          <span className="qpanel__stat-label">{label}</span>
+          <span className="qpanel__stat-value" aria-label="Not available yet">
+            —
+          </span>
+          <span className="qpanel__stat-status">Awaiting data</span>
+        </div>
+      ))}
+    </section>
+  );
+}
+
 export function Quiz() {
   const [view, setView] = useState<View>({ state: "loading" });
   const [input, setInput] = useState("");
@@ -126,7 +147,9 @@ export function Quiz() {
         <div className="quiz-card__body quiz-card__body--wide">
           <div className="qpanel">
             <p className="quiz-prompt">{view.question.prompt}</p>
-            <div className="qpanel__middle" />
+            <div className="qpanel__middle">
+              <QuestionStats />
+            </div>
             <form
               className="qpanel__answer"
               onSubmit={(e: FormEvent) => {

@@ -339,11 +339,60 @@ body {
 }
 
 /* Grows to fill whatever height the media panel sets, so the answer area
-   stays pinned at the bottom instead of leaving a dead gap under a short
-   prompt. Empty for now — filling it with question stats is #189. */
+   stays pinned at the bottom. The no-data tiles use part of that gap without
+   making the panel's height depend on a future stats contract. */
 .qpanel__middle {
   flex: 1;
   min-height: 1.5rem;
+  display: flex;
+  align-items: center;
+}
+
+.qpanel__stats {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.625rem;
+}
+
+.qpanel__stat {
+  min-width: 0;
+  padding: 0.75rem;
+  border: 1px solid rgba(39, 24, 126, 0.1);
+  border-radius: 0.375rem;
+  background: rgba(174, 184, 254, 0.12);
+  display: grid;
+  grid-template-columns: 1fr auto;
+  column-gap: 0.5rem;
+  align-items: baseline;
+}
+
+.qpanel__stat-label {
+  min-width: 0;
+  font-family: var(--sans);
+  font-size: 0.65rem;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: rgba(39, 24, 126, 0.72);
+}
+
+.qpanel__stat-value {
+  font-family: var(--serif);
+  font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 1;
+  color: rgba(39, 24, 126, 0.44);
+}
+
+.qpanel__stat-status {
+  grid-column: 1 / -1;
+  margin-top: 0.25rem;
+  font-family: var(--sans);
+  font-size: 0.68rem;
+  line-height: 1.2;
+  color: rgba(39, 24, 126, 0.48);
 }
 
 .qpanel__answer {
