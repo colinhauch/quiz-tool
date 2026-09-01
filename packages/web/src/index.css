@@ -454,13 +454,18 @@ body {
 }
 
 /* ── Answer autocomplete ─────────────────────────────────────
-   The suggestion list sits inline, in normal flow directly under the input, so
-   it pushes the Submit button down instead of floating over content — a floated
-   dropdown gets hidden behind the on-screen keyboard on mobile. */
+   Narrow screens: the suggestion list sits inline, in normal flow directly
+   under the input, so it pushes the Submit button down instead of floating
+   over content — a floated dropdown gets hidden behind the on-screen
+   keyboard on mobile.
+   Desktop (#188, same breakpoint as the wide card in useWideLayout): the
+   list becomes an out-of-flow overlay popover so showing/hiding it never
+   shifts the input, verdict, or Submit button. */
 .answer-combobox {
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
+  position: relative;
 }
 
 .answer-combobox .quiz-input {
@@ -504,6 +509,17 @@ body {
 .answer-suggestion__button:hover,
 .answer-suggestion--active .answer-suggestion__button {
   background: var(--platinum);
+}
+
+@media (min-width: 900px) {
+  .answer-suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    margin-top: 0.4rem;
+    z-index: 10;
+  }
 }
 
 /* ── Primary button (the one orange thing) ───────────────── */
