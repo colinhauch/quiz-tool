@@ -27,6 +27,7 @@ describe("questionResponseSchema", () => {
     packId: "core-cities",
     packLabel: "Cities & Countries",
     answerTypes: ["country"],
+    stats: { attempts: 0, solvePercent: null, difficulty: 1500, predictedOdds: 0.5 },
   };
 
   it("validates a well-formed rendered question", () => {
@@ -193,6 +194,7 @@ describe("questionResponseSchema, promptVisual", () => {
     packId: "core-cities",
     packLabel: "Cities & Countries",
     answerTypes: ["country"],
+    stats: { attempts: 0, solvePercent: null, difficulty: 1500, predictedOdds: 0.5 },
   };
 
   it("validates without a promptVisual", () => {

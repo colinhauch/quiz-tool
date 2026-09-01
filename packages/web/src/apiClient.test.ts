@@ -28,6 +28,7 @@ describe("apiClient", () => {
       packId: "core-cities",
       packLabel: "Cities & Countries",
       answerTypes: ["country"],
+      stats: { attempts: 0, solvePercent: null, difficulty: 1500, predictedOdds: 0.5 },
     };
     const fetchMock = vi.fn(() => Promise.resolve({ json: async () => question }));
     vi.stubGlobal("fetch", fetchMock);

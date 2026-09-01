@@ -1,4 +1,4 @@
-import type { AnswerResponse, QuestionResponse } from "@geo/contract";
+import type { AnswerResponse, CardStats, QuestionResponse } from "@geo/contract";
 import { type FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { AnswerBox } from "./AnswerBox.js";
 import { getQuestion, submitAnswer as submitAnswerRequest } from "./apiClient.js";
@@ -31,21 +31,29 @@ function Verdict({ result }: { result: AnswerResponse }) {
   );
 }
 
-// Scheduling data is deliberately absent from QuestionResponse for now. Keep
-// these tiles present and self-contained so adding that data later cannot
-// change the question panel's geometry.
-function QuestionStats() {
-  const stats = ["Attempts", "Solve %", "ELO/Difficulty", "Your predicted odds"];
+// The card's scheduling stats, computed server-side and carried on the question
+// (see `cardStatsSchema`). Attempts/Solve % are this learner's own history;
+// difficulty and predicted odds are the Elo numbers. A percentage with no datum
+// yet (Solve % before the first attempt) shows an em dash and stays dim.
+function QuestionStats({ stats }: { stats: CardStats }) {
+  const pct = (v: number) => `${Math.round(v)}%`;
+  const tiles: { label: string; value: string; empty?: boolean }[] = [
+    { label: "Attempts", value: String(stats.attempts) },
+    stats.solvePercent === null
+      ? { label: "Solve %", value: "—", empty: true }
+      : { label: "Solve %", value: pct(stats.solvePercent) },
+    { label: "ELO/Difficulty", value: String(Math.round(stats.difficulty)) },
+    { label: "Your predicted odds", value: pct(stats.predictedOdds * 100) },
+  ];
 
   return (
     <section className="qpanel__stats" aria-label="Question statistics">
-      {stats.map((label) => (
+      {tiles.map(({ label, value, empty }) => (
         <div className="qpanel__stat" key={label}>
           <span className="qpanel__stat-label">{label}</span>
-          <span className="qpanel__stat-value" aria-label="Not available yet">
-            —
+          <span className={`qpanel__stat-value${empty ? " qpanel__stat-value--empty" : ""}`}>
+            {value}
           </span>
-          <span className="qpanel__stat-status">Awaiting data</span>
         </div>
       ))}
     </section>
@@ -105,7 +113,6 @@ export function Quiz() {
   const [autoZoomEnabled, setAutoZoomEnabled] = useState(readAutoZoomPref);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const nextButtonRef = useRef<HTMLButtonElement>(null);
-  const submitButtonRef = useRef<HTMLButtonElement>(null);
   const settingsButtonRef = useRef<HTMLButtonElement>(null);
   const wide = useWideLayout();
 
@@ -218,7 +225,7 @@ export function Quiz() {
           <div className="qpanel">
             <p className="quiz-prompt">{view.question.prompt}</p>
             <div className="qpanel__middle">
-              <QuestionStats />
+              <QuestionStats stats={view.question.stats} />
             </div>
             <form
               className="qpanel__answer"
@@ -228,18 +235,20 @@ export function Quiz() {
                 else void loadQuestion();
               }}
             >
+              {/* Reserved whether asking or answered, so the verdict appearing
+                  above the input shifts nothing below it. */}
+              <div className="qpanel__verdict-slot">
+                {view.state === "answered" && <Verdict result={view.result} />}
+              </div>
               <div className="qpanel__slot">
-                {asking ? (
-                  <AnswerBox
-                    value={input}
-                    onChange={setInput}
-                    answerTypes={view.question.answerTypes}
-                    suggestEnabled={suggestEnabled}
-                    submitButtonRef={nextButtonRef}
-                  />
-                ) : (
-                  <Verdict result={view.result} />
-                )}
+                <AnswerBox
+                  value={input}
+                  onChange={setInput}
+                  answerTypes={view.question.answerTypes}
+                  suggestEnabled={suggestEnabled}
+                  disabled={!asking}
+                  submitButtonRef={nextButtonRef}
+                />
               </div>
               <button ref={nextButtonRef} className="btn-primary" type="submit">
                 {asking ? "Submit" : "Next question"}
@@ -276,39 +285,34 @@ export function Quiz() {
           <p className="quiz-prompt">{view.question.prompt}</p>
           <VisualAid visual={view.question.promptVisual} slot="prompt" />
 
-          {asking ? (
-            <form
-              className="quiz-form"
-              onSubmit={(e: FormEvent) => {
-                e.preventDefault();
-                void submitAnswer(view.question);
-              }}
-            >
-              <AnswerBox
-                value={input}
-                onChange={setInput}
-                answerTypes={view.question.answerTypes}
-                suggestEnabled={suggestEnabled}
-                submitButtonRef={submitButtonRef}
-              />
-              <button ref={submitButtonRef} className="btn-primary" type="submit">
-                Submit
-              </button>
-            </form>
-          ) : (
-            <>
-              <Verdict result={view.result} />
+          <form
+            className="quiz-form"
+            onSubmit={(e: FormEvent) => {
+              e.preventDefault();
+              if (view.state === "asking") void submitAnswer(view.question);
+              else void loadQuestion();
+            }}
+          >
+            {/* Reserved whether asking or answered, so the verdict appearing
+                above the input shifts nothing below it. */}
+            <div className="quiz-verdict-slot">
+              {view.state === "answered" && <Verdict result={view.result} />}
+            </div>
+            <AnswerBox
+              value={input}
+              onChange={setInput}
+              answerTypes={view.question.answerTypes}
+              suggestEnabled={suggestEnabled}
+              disabled={!asking}
+              submitButtonRef={nextButtonRef}
+            />
+            {view.state === "answered" && (
               <VisualAid visual={view.result.revealVisual} slot="reveal" autoZoom={autoZoomEnabled} />
-              <button
-                ref={nextButtonRef}
-                className="btn-primary"
-                type="button"
-                onClick={() => void loadQuestion()}
-              >
-                Next question
-              </button>
-            </>
-          )}
+            )}
+            <button ref={nextButtonRef} className="btn-primary" type="submit">
+              {asking ? "Submit" : "Next question"}
+            </button>
+          </form>
 
           <QuestionFeedback key={view.question.cardId} cardId={view.question.cardId} context={feedbackContext} />
         </div>
