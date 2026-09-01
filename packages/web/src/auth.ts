@@ -174,11 +174,41 @@ export function readSignedIn(): boolean {
   return signedInSource();
 }
 
+/**
+ * A dev-only boundary that reports a permanently signed-in learner with a
+ * placeholder token, so `pnpm dev` runs the whole app with no real sign-in. It
+ * pairs with the server's single-user, no-auth mode (packages/server/src/index.ts),
+ * which ignores the token entirely. Guarded by `import.meta.env.DEV` in
+ * {@link getAuthBoundary} so it can never activate in a production build; the
+ * `VITE_DEV_NO_AUTH` flag turns it on within dev. Sign-out is a no-op — there is
+ * nothing to sign back in with, so it just stays signed in.
+ */
+function createDevNoAuthBoundary(): AuthBoundary {
+  const state: AuthState = { status: "signed-in", accessToken: "dev-no-auth", reason: null };
+  return {
+    getState: () => state,
+    subscribe(listener) {
+      listener(state);
+      return () => {};
+    },
+    async signInWithGoogle() {},
+    async signInWithMagicLink() {},
+    async signOut() {},
+    handleExpiry() {},
+  };
+}
+
 let singleton: AuthBoundary | undefined;
 
 /** The app-wide boundary, built once around the real `supabase-js` client. */
 export function getAuthBoundary(): AuthBoundary {
   if (!singleton) {
+    // Dev escape hatch: skip Supabase auth entirely for local runs. Never in a
+    // production build — `import.meta.env.DEV` is false there.
+    if (import.meta.env.DEV && import.meta.env.VITE_DEV_NO_AUTH === "true") {
+      singleton = createDevNoAuthBoundary();
+      return singleton;
+    }
     const { url, key } = resolveSupabaseConfig();
     const client = createClient(url, key, {
       auth: {
