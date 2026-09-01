@@ -1,0 +1,480 @@
+/* THROWAWAY prototype styles. Desktop-first on purpose — narrow screens are out
+   of scope. Prefixed `pt-`/`card`/`qpanel`/`mpanel` etc.; reuses index.css chrome
+   (.quiz-card, .quiz-card__strip, .quiz-input, .answer-suggestions, .btn-primary,
+   .quiz-result, .question-feedback) so density and styling match production. */
+
+.pt-stage-main {
+  max-width: 1160px;
+  margin: 2.5rem auto;
+  padding: 0 1.5rem;
+}
+
+/* ── Card: strip + two panels ───────────────────────────────── */
+/* `.quiz-card` (from index.css) already gives the white surface, radius, shadow,
+   and the cornflower left spine. `.quiz-card__strip` gives the topo header bar. */
+.card__gear {
+  position: relative;
+  z-index: 1;
+  margin-left: auto;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  border: none;
+  background: rgba(255, 255, 255, 0.45);
+  color: var(--indigo);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.card__gear:hover {
+  background: rgba(255, 255, 255, 0.75);
+}
+
+.card__body {
+  display: grid;
+  grid-template-columns: 1fr 34rem;
+  gap: 2.5rem;
+  padding: 2rem;
+  align-items: stretch;
+}
+
+/* ── Question panel ─────────────────────────────────────────── */
+.qpanel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.qpanel .quiz-prompt {
+  margin-bottom: 1.5rem;
+}
+
+/* The former "gap": now a flexible region that carries stats and grows to fill
+   whatever height the media panel sets, so the answer stays pinned at the bottom
+   without a dead void. */
+.qpanel__middle {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.qpanel__answer {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+/* Input-or-verdict share one fixed-height slot; the button sits below it and
+   never moves between asking and answered. */
+.qpanel__slot {
+  min-height: 4.75rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.qpanel__slot .quiz-result {
+  margin-bottom: 0;
+}
+
+/* Overlay autocomplete: a popover under the input, out of flow — shifts nothing. */
+.qpanel__combo {
+  position: relative;
+}
+
+.qpanel__pop {
+  position: absolute;
+  top: calc(100% + 0.35rem);
+  left: 0;
+  right: 0;
+  z-index: 5;
+}
+
+/* Reserved autocomplete: a permanent block (present in both states) that holds
+   the suggestion list's space up front, so the button holds still. Its cost is
+   this always-there strip; the overlay above has no such cost. */
+.qpanel__reserved {
+  min-height: 8.5rem;
+}
+
+/* ── Stat treatments (gap fillers) ──────────────────────────── */
+/* J — tiles */
+.stat-tiles {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.stat-tile {
+  background: var(--platinum);
+  border-radius: 0.5rem;
+  padding: 0.85rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.stat-tile--accent {
+  background: rgba(117, 139, 253, 0.16);
+}
+
+.stat-tile__num {
+  font-family: var(--serif);
+  font-size: 1.55rem;
+  font-weight: 700;
+  color: var(--indigo);
+  line-height: 1.05;
+}
+
+.stat-tile__label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(39, 24, 126, 0.6);
+}
+
+/* K — difficulty gauge */
+.gauge {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.gauge__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.gauge__label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(39, 24, 126, 0.6);
+}
+
+.gauge__value {
+  font-weight: 700;
+  color: var(--indigo);
+}
+
+.gauge__track {
+  position: relative;
+  height: 0.6rem;
+  border-radius: 999px;
+  background: linear-gradient(to right, var(--green) 0%, #d9b44a 55%, var(--red) 100%);
+  opacity: 0.85;
+}
+
+.gauge__marker {
+  position: absolute;
+  top: 50%;
+  width: 1rem;
+  height: 1rem;
+  transform: translate(-50%, -50%);
+  border-radius: 999px;
+  background: #fff;
+  border: 3px solid var(--indigo);
+}
+
+.gauge__scale {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  color: rgba(39, 24, 126, 0.55);
+}
+
+.gauge__odds {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(39, 24, 126, 0.1);
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+}
+
+.gauge__odds-num {
+  font-family: var(--serif);
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--cornflower);
+}
+
+.gauge__odds-label {
+  font-size: 0.85rem;
+  color: rgba(39, 24, 126, 0.65);
+  line-height: 1.3;
+}
+
+/* L — stat bar + distribution */
+.statbar {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.statbar__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.chip {
+  background: var(--platinum);
+  border-radius: 999px;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--indigo);
+}
+
+.statbar__dist-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(39, 24, 126, 0.6);
+  margin-bottom: 0.35rem;
+}
+
+.statbar__meter {
+  height: 0.7rem;
+  border-radius: 999px;
+  background: var(--red-bg);
+  overflow: hidden;
+}
+
+.statbar__meter-correct {
+  height: 100%;
+  background: var(--green);
+  border-radius: 999px;
+}
+
+/* ── Media panel — the framed component (from H) ─────────────── */
+/* One card, two always-reserved slots split by a hairline. The frame makes an
+   empty slot read as intentional panel space rather than a missing element. */
+.mpanel {
+  align-self: stretch;
+  background: #fff;
+  border: 1px solid rgba(39, 24, 126, 0.12);
+  border-radius: 0.6rem;
+  overflow: hidden;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.6);
+  display: flex;
+  flex-direction: column;
+}
+
+.mpanel__q {
+  height: 13rem;
+  padding: 1.25rem;
+  border-bottom: 1px solid rgba(39, 24, 126, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mpanel__q .image-aid,
+.mpanel__q .visual-aid {
+  max-width: none;
+  margin: 0;
+}
+
+.mpanel__q .image-aid__img {
+  height: 10.5rem;
+  border: none;
+  box-shadow: none;
+}
+
+.mpanel__map {
+  flex: 1;
+  min-height: 17.75rem;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.mpanel__map .map-aid-viewport {
+  width: 100%;
+  max-width: 30rem;
+  margin: 0 auto;
+}
+
+.mpanel__map .visual-aid {
+  margin: 0;
+}
+
+/* ── Settings modal (behind the gear) ───────────────────────── */
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(39, 24, 126, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+.modal__card {
+  background: #fff;
+  border-radius: 0.6rem;
+  box-shadow: 0 20px 50px rgba(39, 24, 126, 0.3);
+  padding: 1.5rem 1.75rem;
+  width: 22rem;
+  max-width: 100%;
+}
+
+.modal__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.modal__title {
+  font-family: var(--serif);
+  font-size: 1.4rem;
+  color: var(--indigo);
+}
+
+.modal__close {
+  background: none;
+  border: none;
+  font-size: 1.1rem;
+  color: rgba(39, 24, 126, 0.6);
+  cursor: pointer;
+}
+
+.modal__row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 0;
+  color: var(--indigo);
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.modal__note {
+  margin-top: 0.75rem;
+  font-size: 0.8rem;
+  color: rgba(39, 24, 126, 0.55);
+  line-height: 1.4;
+}
+
+/* ── Floating variant switcher ──────────────────────────────── */
+.pt-switcher {
+  position: fixed;
+  bottom: 1.25rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--indigo);
+  color: #fff;
+  padding: 0.4rem 0.5rem;
+  border-radius: 999px;
+  box-shadow: 0 8px 24px rgba(39, 24, 126, 0.35);
+  z-index: 50;
+}
+
+.pt-switcher button {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  border: none;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.pt-switcher button:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.pt-switcher__label {
+  min-width: 18rem;
+  text-align: center;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+/* ── Scenario panel ─────────────────────────────────────────── */
+.pt-scenario {
+  position: fixed;
+  bottom: 5.5rem;
+  left: 1.25rem;
+  background: #fff;
+  border: 1px solid rgba(39, 24, 126, 0.15);
+  border-radius: 0.6rem;
+  box-shadow: 0 8px 24px rgba(39, 24, 126, 0.15);
+  padding: 1rem 1.1rem;
+  z-index: 50;
+  width: 16.5rem;
+}
+
+.pt-scenario__title {
+  font-family: var(--serif);
+  font-weight: 700;
+  font-size: 1.05rem;
+  margin-bottom: 0.75rem;
+}
+
+.pt-scenario__row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(39, 24, 126, 0.6);
+}
+
+.pt-seg {
+  display: flex;
+  border: 1px solid var(--periwinkle);
+  border-radius: 0.4rem;
+  overflow: hidden;
+}
+
+.pt-seg button {
+  flex: 1;
+  border: none;
+  background: #fff;
+  color: var(--indigo);
+  font: inherit;
+  font-size: 0.8rem;
+  text-transform: none;
+  letter-spacing: 0;
+  padding: 0.45rem 0.4rem;
+  cursor: pointer;
+}
+
+.pt-seg button[aria-pressed="true"] {
+  background: var(--cornflower);
+  color: #fff;
+}
+
+.pt-scenario__hint {
+  font-size: 0.72rem;
+  color: rgba(39, 24, 126, 0.55);
+  line-height: 1.4;
+  margin-top: 0.25rem;
+}
