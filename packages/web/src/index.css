@@ -292,25 +292,107 @@ body {
   color: var(--indigo);
 }
 
-/* Autocomplete on/off, pushed to the right edge of the header strip. Sits above
-   the topo crop like the eyebrow. */
-.quiz-card__toggle {
+/* The strip stays a compact card identity: pack label plus settings only. */
+.quiz-card__settings-button {
   position: relative;
   z-index: 1;
   margin-left: auto;
+  width: 2rem;
+  height: 2rem;
+  padding: 0.4rem;
+  border: 1px solid rgba(39, 24, 126, 0.28);
+  border-radius: 50%;
+  background: rgba(241, 242, 246, 0.25);
+  color: var(--indigo);
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.quiz-card__settings-button:hover {
+  background: rgba(241, 242, 246, 0.55);
+}
+
+.quiz-card__settings-button:focus-visible,
+.quiz-settings__close:focus-visible {
+  outline: 2px solid var(--indigo);
+  outline-offset: 2px;
+}
+
+.quiz-card__settings-button svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.75;
+  stroke-linejoin: round;
+}
+
+.quiz-settings__backdrop {
+  position: fixed;
+  z-index: 10;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  background: rgba(39, 24, 126, 0.28);
+}
+
+.quiz-settings {
+  width: min(100%, 24rem);
+  padding: 1.25rem;
+  border: 1px solid rgba(39, 24, 126, 0.16);
+  border-radius: 0.5rem;
+  background: #fff;
+  box-shadow: 0 1rem 3rem rgba(39, 24, 126, 0.24);
+}
+
+.quiz-settings__header {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.quiz-settings__header h2 {
+  font-family: var(--serif);
+  font-size: 1.4rem;
+  line-height: 1;
+  color: var(--indigo);
+}
+
+.quiz-settings__close {
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--indigo);
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.quiz-settings__close:hover {
+  background: var(--platinum);
+}
+
+.quiz-settings__toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.75rem 0;
+  border-top: 1px solid rgba(39, 24, 126, 0.1);
   font-family: var(--sans);
-  font-size: 0.72rem;
+  font-size: 0.85rem;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
   color: var(--indigo);
   cursor: pointer;
 }
 
-.quiz-card__toggle input {
+.quiz-settings__toggle input {
   cursor: pointer;
 }
 

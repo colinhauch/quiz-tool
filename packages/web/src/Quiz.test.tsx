@@ -85,6 +85,11 @@ function stubWideLayout(wide: boolean) {
   );
 }
 
+async function openCardSettings() {
+  fireEvent.click(await screen.findByRole("button", { name: "Open settings" }));
+  return screen.findByRole("dialog", { name: "Card settings" });
+}
+
 beforeEach(() => {
   // The quiz card's feedback control checks for itself that someone is signed in.
   setSignedInSource(() => true);
@@ -363,14 +368,16 @@ describe("Quiz", () => {
   it("defaults the autocomplete toggle on", async () => {
     stubFetch([tokyo], { correct: true, acceptedAnswer: "Japan" });
     render(<Quiz />);
-    expect(await screen.findByRole("checkbox", { name: /autocomplete/i })).toBeChecked();
+    await openCardSettings();
+    expect(screen.getByRole("checkbox", { name: /autocomplete/i })).toBeChecked();
   });
 
   it("shows no suggestions and fetches no entities when the toggle is off", async () => {
     const fetchMock = stubFetch([tokyo], { correct: true, acceptedAnswer: "Japan" });
     render(<Quiz />);
 
-    fireEvent.click(await screen.findByRole("checkbox", { name: /autocomplete/i }));
+    await openCardSettings();
+    fireEvent.click(screen.getByRole("checkbox", { name: /autocomplete/i }));
     fireEvent.change(screen.getByLabelText(/your answer/i), { target: { value: "jap" } });
 
     await waitFor(() =>
@@ -386,7 +393,8 @@ describe("Quiz", () => {
     stubFetch([tokyo], { correct: true, acceptedAnswer: "Japan" });
     render(<Quiz />);
 
-    fireEvent.click(await screen.findByRole("checkbox", { name: /autocomplete/i }));
+    await openCardSettings();
+    fireEvent.click(screen.getByRole("checkbox", { name: /autocomplete/i }));
     fireEvent.change(screen.getByLabelText(/your answer/i), { target: { value: "Japan" } });
     fireEvent.click(screen.getByRole("button", { name: /^submit$/i }));
 
@@ -396,11 +404,29 @@ describe("Quiz", () => {
   it("persists the toggle choice across remounts", async () => {
     stubFetch([tokyo], { correct: true, acceptedAnswer: "Japan" });
     const first = render(<Quiz />);
-    fireEvent.click(await screen.findByRole("checkbox", { name: /autocomplete/i }));
+    await openCardSettings();
+    fireEvent.click(screen.getByRole("checkbox", { name: /autocomplete/i }));
     first.unmount();
 
     render(<Quiz />);
-    expect(await screen.findByRole("checkbox", { name: /autocomplete/i })).not.toBeChecked();
+    await openCardSettings();
+    expect(screen.getByRole("checkbox", { name: /autocomplete/i })).not.toBeChecked();
+  });
+
+  it("keeps the strip to its label and gear, and closes settings on escape", async () => {
+    stubFetch([tokyo], { correct: true, acceptedAnswer: "Japan" });
+    const { container } = render(<Quiz />);
+
+    await screen.findByText("What country is Tokyo in?");
+    expect(container.querySelector(".quiz-card__strip input")).not.toBeInTheDocument();
+
+    const settingsButton = screen.getByRole("button", { name: "Open settings" });
+    await openCardSettings();
+    expect(screen.getByRole("dialog", { name: "Card settings" })).toHaveAttribute("aria-modal", "true");
+
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(screen.queryByRole("dialog", { name: "Card settings" })).not.toBeInTheDocument();
+    expect(settingsButton).toHaveFocus();
   });
 
   it("offers the per-question feedback control before answering, with a pre-answer snapshot", async () => {
