@@ -18,10 +18,13 @@ interface AnswerBoxProps {
 const LISTBOX_ID = "answer-suggestions";
 
 /**
- * The answer input with type-scoped autocomplete. As the learner types, an
- * inline list of candidate entities appears directly beneath the field (in
- * normal flow, so it pushes the Submit button down rather than floating over
- * it — a dropdown that overlaps gets hidden behind a phone keyboard). Choosing
+ * The answer input with type-scoped autocomplete. As the learner types, a
+ * list of candidate entities appears directly beneath the field. On narrow
+ * screens it sits in normal flow, pushing the Submit button down — a dropdown
+ * that overlaps gets hidden behind a phone keyboard. On desktop (#188) it's
+ * an out-of-flow overlay instead, so showing/hiding it never shifts the
+ * input, verdict, or button; that split is CSS-only (see `.answer-suggestions`
+ * in index.css), the markup here is identical at both widths. Choosing
  * a suggestion fills the box with that entity's canonical label; it never
  * submits. Free-text the learner types instead of picking is submitted as-is.
  * With `suggestEnabled` off it is exactly the old plain input.
