@@ -17,7 +17,7 @@ A quiz app that teaches world geography from a knowledge graph, tracks every ans
 
 ## Branching and deployment
 
-Three long-lived branches promote forward: `dev` → `test` → `prod`. Feature work branches off `dev` and PRs back into it; changes move `dev`→`test`→`prod` by PR, never by committing to `test`/`prod` directly. Each promotion is gated by the `checks` CI job (typecheck, tests, pack validation) — keep that job name stable, branch protection requires it.
+Three long-lived branches promote forward: `dev` → `test` → `prod`. Feature work branches off `dev` and PRs back into it; changes move `dev`→`test`→`prod` by PR, never by committing to `test`/`prod` directly. Each promotion is gated by the `checks` CI job (typecheck, tests, pack validation) — keep that job name stable, the branch rulesets require it by name. A ruleset on each of `dev`/`test`/`prod` also blocks deletion and force-push (enforced now that the repo is public).
 
 Each long-lived branch auto-deploys (CF Workers Builds) to its own Worker + isolated Supabase schema in one shared project:
 
@@ -27,7 +27,7 @@ Each long-lived branch auto-deploys (CF Workers Builds) to its own Worker + isol
 | `test` | quiz-test.colinhauch.com | `test` |
 | `dev` | quiz-dev.colinhauch.com | `dev` |
 
-`prod` is the default branch and production. Config lives in `packages/server/wrangler.toml` and `.github/workflows/ci.yml`.
+`prod` is production. `dev` is the repository's default branch — chosen so PR diffs and "changed vs default" tooling compare against active work rather than against `prod`. This is a GitHub/tooling default only; it does not change the promotion flow above, and CF Workers Builds still deploys each branch by name. Config lives in `packages/server/wrangler.toml` and `.github/workflows/ci.yml`.
 
 ## Three kinds of documentation
 
