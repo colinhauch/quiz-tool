@@ -201,6 +201,28 @@ describe("Quiz", () => {
     );
   });
 
+  it("prefetches the next question once answered, so Next needs no fresh draw", async () => {
+    const fetchMock = stubFetch([tokyo, paris], { correct: true, acceptedAnswer: "Japan" });
+    render(<Quiz />);
+
+    const questionDraws = () =>
+      fetchMock.mock.calls.filter(([url]) => url === "/api/question").length;
+
+    fireEvent.change(await screen.findByLabelText(/your answer/i), { target: { value: "Japan" } });
+    fireEvent.click(screen.getByRole("button", { name: /^submit$/i }));
+
+    // The verdict is showing and the next question has already been drawn in the
+    // background — two draws (this card + the prefetched one) before any Next click.
+    const next = await screen.findByRole("button", { name: /next question/i });
+    await waitFor(() => expect(questionDraws()).toBe(2));
+
+    fireEvent.click(next);
+    expect(await screen.findByText("What country is Paris in?")).toBeInTheDocument();
+    // No extra draw, and the transition never fell to the bare loading screen.
+    expect(questionDraws()).toBe(2);
+    expect(screen.queryByText(/loading a question/i)).not.toBeInTheDocument();
+  });
+
   it("suggests entities of the answer's type as the learner types", async () => {
     stubFetch([tokyo], { correct: true, acceptedAnswer: "Japan" });
     render(<Quiz />);

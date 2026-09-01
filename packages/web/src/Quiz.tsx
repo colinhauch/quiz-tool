@@ -114,6 +114,11 @@ export function Quiz() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const nextButtonRef = useRef<HTMLButtonElement>(null);
   const settingsButtonRef = useRef<HTMLButtonElement>(null);
+  // The next question, drawn in the background while the learner reads the
+  // verdict. Holding the promise (not the resolved value) lets "Next" swap
+  // instantly when it has landed and simply await it when it hasn't — either
+  // way without unmounting the card to a bare loading screen. See loadQuestion.
+  const prefetchedRef = useRef<Promise<QuestionResponse> | null>(null);
   const wide = useWideLayout();
 
   function toggleSuggest(enabled: boolean) {
@@ -127,10 +132,16 @@ export function Quiz() {
   }
 
   const loadQuestion = useCallback(async () => {
-    setView({ state: "loading" });
+    // Consume a background prefetch if one is in flight. When it is, keep the
+    // current card mounted and await it — no flash. Only a cold load (first
+    // question of the session, or a failed prefetch) falls to the bare loading
+    // screen.
+    const pending = prefetchedRef.current;
+    prefetchedRef.current = null;
+    if (!pending) setView({ state: "loading" });
     setInput("");
     try {
-      const question = await getQuestion();
+      const question = await (pending ?? getQuestion());
       setView({ state: "asking", question });
     } catch {
       setView({ state: "error" });
@@ -140,6 +151,19 @@ export function Quiz() {
   useEffect(() => {
     void loadQuestion();
   }, [loadQuestion]);
+
+  // Draw the next question in the background once the current one is answered,
+  // so "Next" is instant. The answer's rating update has already landed by now,
+  // so this draw sees fresh ratings. A prefetched-but-unseen card (learner
+  // leaves without clicking Next) is simply skipped in the scheduler's cycle.
+  useEffect(() => {
+    if (view.state !== "answered") return;
+    const pending = getQuestion();
+    // Keep the rejection from surfacing as unhandled; loadQuestion re-awaits
+    // this promise and routes any failure to the error state.
+    pending.catch(() => {});
+    prefetchedRef.current = pending;
+  }, [view.state, view.state === "answered" ? view.question.cardId : null]);
 
   useEffect(() => {
     if (view.state === "answered") {
