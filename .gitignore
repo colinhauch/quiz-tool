@@ -52,5 +52,7 @@ dist/
 packages/web/public/flags/
 
 # Claude Code local state (worktrees, job scratch)
-.claude/
-.agents/
+.claude/*
+!.claude/skills/
+.agents/*
+!.agents/skills/
