@@ -2,6 +2,7 @@ import type { VisualAid as VisualAidData } from "@geo/contract";
 import { fireEvent, render } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { VisualAid } from "./VisualAid.js";
+import { MapAid } from "./MapAid.js";
 
 const tokyo: VisualAidData = {
   kind: "map",
@@ -87,6 +88,28 @@ describe("VisualAid", () => {
   it("renders nothing when there is no visual", () => {
     const { container } = render(<VisualAid visual={undefined} />);
     expect(container).toBeEmptyDOMElement();
+  });
+
+  it("renders the bare zoomed-out world with no pin/label/coords/slider when there are no coordinates (#186)", () => {
+    const { container, queryByRole, queryByText } = render(<MapAid />);
+
+    expect(container.querySelector("svg")).toHaveAttribute("viewBox", WORLD_VIEWBOX);
+    expect(container.querySelector(".map-aid__land")).toBeInTheDocument();
+    expect(container.querySelector("circle")).not.toBeInTheDocument();
+    expect(container.querySelector(".map-aid__label")).not.toBeInTheDocument();
+    expect(container.querySelector(".map-aid__coords")).not.toBeInTheDocument();
+    expect(queryByRole("slider")).not.toBeInTheDocument();
+    expect(queryByText("Tokyo")).not.toBeInTheDocument();
+  });
+
+  it("reserves the same slider-row footprint with and without coordinates (#186)", () => {
+    const { container: noCoords } = render(<MapAid />);
+    const { container: withCoords } = render(<VisualAid visual={enriched} />);
+
+    const noCoordsRow = noCoords.querySelector(".map-aid__zoom-row");
+    const withCoordsRow = withCoords.querySelector(".map-aid__zoom-row");
+    expect(noCoordsRow).toBeInTheDocument();
+    expect(withCoordsRow).toBeInTheDocument();
   });
 
   it("renders an image descriptor as an <img> with its src and generic alt (#180)", () => {

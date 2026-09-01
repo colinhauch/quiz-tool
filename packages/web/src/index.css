@@ -526,6 +526,15 @@ body {
   background: var(--platinum);
 }
 
+/* Reserved whether or not a slider is shown (#186): the asking (no coords) and
+   answered (coords) states must be the same height, so this row's footprint
+   is fixed and the slider — when present — fills it rather than adding to it. */
+.map-aid__zoom-row {
+  display: flex;
+  align-items: center;
+  height: 1.25rem;
+}
+
 /* 1-D zoom track (spec #156): whole-world at the left, the pinned region at the
    right. Aimed at the one server-fixed target — this is zoom, not panning. */
 .map-aid__zoom {
