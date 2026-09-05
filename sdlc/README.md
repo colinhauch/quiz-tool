@@ -50,9 +50,11 @@ Each stage: what you produce, and what drives it. A stage's committed artifact i
 the gate — you review it, then fire the next stage.
 
 ### 1. Plan → `intent.md`
-Capture the raw idea in your own words: problem, why, outcome, constraints,
-out-of-scope, open questions. Brainstorm with Claude first if it's fuzzy. Commit
-before synthesizing anything. Set `Status: accepted` when you're ready to build.
+Run `/intent` — it brainstorms the raw idea with you, then writes it up: problem,
+why, outcome, constraints, out-of-scope, open questions. Half-formed ideas can
+wait in `sdlc/ideas.md` (a scratch inbox); `/intent` promotes one when it's ripe.
+Commit before synthesizing anything. Set `Status: accepted` when you're ready to
+build.
 
 ### 2. Design → `spec.md`
 Turn the accepted intent into requirements + design in one pass, constrained by

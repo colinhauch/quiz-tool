@@ -34,12 +34,24 @@ git timestamps of `intent.md → spec.md → plan.md → merge` for a feature fo
 give every interval the article measures. A future dashboard is just a script
 over `git log -- sdlc/features/<slug>/`. Don't build a metrics store; query git.
 
-## The skill
+## The skills
 
-`sdlc/skill/` holds the `sdlc` skill, symlinked into `.claude/skills/sdlc`. It
-scaffolds a feature folder from `templates/` and navigates the chain. Editing it
-here updates the live skill (it's the same files through the symlink). Keeping
-the source under `sdlc/` keeps the whole concern in one portable tree.
+Skill sources live under `sdlc/`, symlinked into `.claude/skills/`, so the whole
+concern stays one portable tree. Editing here updates the live skill.
+
+- `sdlc/skill/` → `sdlc` — scaffolds a feature folder and navigates the chain.
+- `sdlc/intent-skill/` → `intent` — Stage 1 front door: `/intent` interviews a
+  raw idea and writes `intent.md`.
+
+## Ideas inbox (pre-intent)
+
+`sdlc/ideas.md` is a scratch list for half-formed concepts — cheaper than a
+feature folder for something that isn't a commitment yet. `/intent` promotes an
+entry into `sdlc/features/<slug>/intent.md` when it's ripe. We kept intent in the
+feature folder (not a dedicated top-level `intent/`, as the article suggests):
+the article's separate intent home serves many non-engineer contributors across
+repos; for a solo dev the chain-together, copyable layout wins. `ideas.md` is the
+low-ceremony capture the article's separate home would otherwise provide.
 
 ## Roadmap (not built)
 
