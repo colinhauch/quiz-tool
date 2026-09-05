@@ -56,6 +56,14 @@ _Avoid_: Decoy, foil, wrong answer
 The ordered cards ahead of the learner. Pack filtering is applied when it is built, and drawing takes from its head, so a pass asks every card once before repeating any. Provisional — the scheduler owns its ordering policy.
 _Avoid_: Deck, playlist, buffer, backlog
 
+**Prompt Visual**:
+The visual shown *while the learner is being asked* — part of the question itself, like the flag in a flag question or the highlighted map in a "name this country" question. A question may have none.
+_Avoid_: Question image, hint, media
+
+**Reveal Visual**:
+The visual shown *after the learner answers* — context on the answer, typically the map locating the place. It has nothing to show while asking. Distinct from Prompt Visual because *when* a visual appears decides whether mobile spends screen on it: the wide layout reserves space for both at all times; the mobile answering view reclaims any slot with nothing to show right now (a Reveal Visual is absent while asking).
+_Avoid_: Answer image, result media
+
 ### Selection
 
 **Included**:
