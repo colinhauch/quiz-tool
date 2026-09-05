@@ -31,10 +31,15 @@ are not.
 
 ## Requirements
 
-Numbered and testable. R1–R7 are behavioral (verifiable at the `Quiz` seam under
-a forced narrow layout). R8–R10 are geometric/keyboard requirements that jsdom
-cannot exercise — they are verified manually / via prototype (see *Testing
-Decisions*).
+Numbered and testable. **All** are verifiable at the `Quiz` seam under a forced
+narrow layout. jsdom cannot render a real on-screen keyboard, but the app reacts
+to the keyboard only through the `visualViewport` signal — which we can stub — so
+even the geometry/stability requirements (R8–R10) get automated coverage by
+driving a fake viewport resize. We do **not** gate this feature on manual
+validation; a real-device pass is an optional final smoke check, not a
+requirement (see *Testing Decisions*). The design constraint this imposes: the
+view must behave correctly and remain stable in the **no-keyboard** case too — it
+must never depend on a keyboard being present to look right.
 
 1. Below the existing narrow breakpoint (`<900px`, one `matchMedia` boundary),
    the app renders a single dedicated mobile answering view; the wide layout is
@@ -104,6 +109,9 @@ Decisions*).
 18. As a learner answering a "which highlighted country" map question, I want the
     map (its promptVisual) to stay visible while I answer, so that I can still see
     what I'm being asked about.
+19. As a mobile learner using the autocomplete feature, I want to be able to interact
+    with the autocomplete feature (scroll, select) without the keyboard closing and
+    moving UI elements around distractingly. 
 
 ## Design
 
@@ -172,17 +180,29 @@ absent in jsdom). All behavioral requirements are reachable here:
   answering.
 - R7, R8: after submit, the verdict (`role="status"`) is shown, the typed answer
   stays visible-but-disabled, and advancing yields a fresh enabled input — with the
-  focus target being the input, not a control that would blur it.
+  focus target being the input, not a control that would blur it. R8 is asserted as
+  a focus fact (focus lands on the input, never on a control whose focus would drop
+  the keyboard), which needs no keyboard to verify.
+- R9, R10 via a **stubbed `visualViewport`**: the test installs a fake
+  `window.visualViewport` and fires a resize simulating the keyboard opening
+  (height shrinks) and closing. Assert that the input + suggestions stay within the
+  reported visible area (R9) and that the positions of the tracked elements do not
+  change across a keyboard open/close cycle or a focus change, while they *are*
+  allowed to change on the asking→answered reveal (R10). This is a real behavioral
+  test of the mechanic, not a proxy — the only thing faked is the browser signal
+  the mechanic consumes.
 
 **Prior art:** `Quiz.test.tsx` (answering-loop behavior, the `setLayout` helper,
 verdict assertions via `role="status"`), `VisualAid.test.tsx` (visual dispatch by
-kind), `suggestions.test.ts` (autocomplete filtering). Runner: `vitest run` in
+kind), `suggestions.test.ts` (autocomplete filtering). The `setLayout` helper is
+the model for the new `visualViewport` stub — a small, explicit environment shim
+in the test, guarded like the jsdom-absent `matchMedia`. Runner: `vitest run` in
 `@geo/web`.
 
-**Explicitly not automated (jsdom can't):** R9 and R10's keyboard geometry — jsdom
-has no on-screen keyboard and no meaningful `visualViewport`. These are verified by
-**manual testing on a real phone** and via the prototype. The spec calls this out
-rather than faking a green test that proves nothing.
+**Optional real-device smoke check (not a gate):** a final manual pass on a phone
+can catch browser-specific keyboard quirks the stub can't model, but the feature's
+correctness is defined by the automated suite above, and "done" does not wait on a
+manual pass. The no-keyboard behavior must be fully correct on its own.
 
 ## Flagged concerns
 
@@ -191,9 +211,12 @@ rather than faking a green test that proves nothing.
   design/prototype step, not silently assumed. If a reviewer expects the spec to
   fully pin the visual design, that expectation is wrong for this feature — that's
   what the prototype is for.
-- **jsdom can't verify the headline requirement.** The keyboard-stability behavior
-  that motivates the whole effort is exactly what the automated seam can't reach.
-  We accept manual/prototype verification for R9/R10 rather than testing a proxy.
+- **The keyboard itself can't be rendered in jsdom — but the mechanic can be
+  tested.** The app reacts to the keyboard only via `visualViewport`, so a stubbed
+  viewport resize exercises R9/R10 for real without a keyboard. Residual risk is
+  narrowed to real-device browser quirks, covered by an optional smoke check, not a
+  requirement gate. Non-negotiable design consequence: the view must be correct and
+  stable with no keyboard present.
 - **Keyboard persistence fights browser defaults.** Some mobile browsers dismiss
   the keyboard on any blur or on submit; keeping it up across a question boundary
   may require keeping a focused input at all times. This could constrain the
