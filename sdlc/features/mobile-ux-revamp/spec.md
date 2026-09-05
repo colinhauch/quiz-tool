@@ -1,6 +1,6 @@
 # Spec: Mobile UI revamp — a keyboard-first mobile answering view  (from intent)
 
-Status: draft
+Status: accepted
 
 Requirements + design in one pass. Produced from `intent.md`, constrained by
 `CONTEXT.md` vocabulary and the existing `promptVisual` / `revealVisual` model in
