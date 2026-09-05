@@ -53,10 +53,18 @@ the Supabase schema. The web app's page-load / refresh path.
   requests? Workers isolates are stateless across requests, so this may be the
   real reason repeats show up even *without* a manual refresh. Confirm whether
   that's the root cause or a separate bug.
-- Related symptom, possibly the same root cause: with **all packs selected**, the
-  quiz sometimes serves **only flag questions** — the included pool or the
-  re-bin appears to collapse to one pack/tier. May be its own bug (repro →
-  failing test → fix) rather than part of this feature. Decide in spec/triage.
+- Related bug, **diagnosed** (repro: skipped test
+  `packages/engine/src/scheduler.test.ts` → "surfaces a newly included pack
+  within a few cycles at real pool sizes"): with **all packs selected** the quiz
+  serves **only flag questions** for a long run. Root cause — `applySelection`
+  (`packages/engine/src/scheduler.ts`) adds a newly-selected pack to `included`
+  but **not to the bags**; new-pack cards fold in only when a tier bag re-bins,
+  and with unrated (all-medium) ratings only the medium bag yields, so nothing
+  re-bins until it fully drains (~200 cards in prod). Matches the spec's letter
+  (`scheduler.md`: "picked up on the next re-bin") but the spec assumed re-bin is
+  prompt. **Fix is a design decision** (fold new packs in eagerly on
+  `applySelection` vs. rebuild vs. spec change) and is entangled with this
+  feature — resolve in spec.
 - Where is the state persisted, and when is it written (every draw? every
   answer?) and invalidated (pack change)?
 - How is "the learner" identified for keying the saved state (single-user mode

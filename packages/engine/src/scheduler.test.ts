@@ -260,6 +260,27 @@ describe("applySelection", () => {
     expect(after.included).toEqual(["cities"]);
   });
 
+  // KNOWN BUG (skipped until fixed): repro of "all packs selected but only flag
+  // questions" — sdlc/features/persist-bag-state/intent.md. A large pack was
+  // included when the scheduler was built, then more packs are selected. All
+  // cards unrated → all medium, so only the medium bag has cards and it drains
+  // without replacement. With ~50 flags cards the medium bag won't empty for ~50
+  // draws, so the newly selected pack stays invisible far longer than a learner
+  // would ever wait. Un-skip when applySelection folds new packs in eagerly.
+  it.skip("surfaces a newly included pack within a few cycles at real pool sizes", () => {
+    const g = graphOf([...pool("flags", 50), ...pool("cities", 5)], ["flags", "cities"]);
+    const ratings = emptyRatings(); // all medium
+    let s = buildScheduler(g, ratings, "u", ["flags"], () => 0.5);
+    s = applySelection(g, s, ["flags", "cities"]); // learner selects all packs
+    const seen = new Set<string>();
+    for (let i = 0; i < 24; i++) {
+      const out = drawNext(g, ratings, "u", s, () => 0.5);
+      seen.add(out.card.statement.pack);
+      s = out.scheduler;
+    }
+    expect(seen.has("cities")).toBe(true); // RED today: only "flags" appears
+  });
+
   it("draws a newly included pack's cards on the next re-bin", () => {
     const g = graphOf([...pool("cities", 2), ...pool("langs", 2)], ["cities", "langs"]);
     const ratings = emptyRatings();
