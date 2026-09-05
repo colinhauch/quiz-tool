@@ -43,7 +43,8 @@ the source under `sdlc/` keeps the whole concern in one portable tree.
 
 ## Roadmap (not built)
 
-Ordered by ROI; each ~one session, independently useful.
+Live checklist: `sdlc/TODO.md`. Ordered by ROI; each ~one session, independently
+useful.
 
 1. **Wire the chain end to end** — `sdlc` skill scaffolds; `to-spec` writes
    `spec.md`; plan mode commits `plan.md`; `code-review` writes `review.md`.
