@@ -36,11 +36,13 @@ over `git log -- sdlc/features/<slug>/`. Don't build a metrics store; query git.
 
 ## The skills
 
-Skill sources live under `sdlc/`, symlinked into `.claude/skills/`, so the whole
-concern stays one portable tree. Editing here updates the live skill.
+Skill sources live under `sdlc/skills/<name>/`, each symlinked into
+`.claude/skills/<name>`, so the whole concern stays one portable tree. Folder
+name = skill name; add a new skill by adding a folder and a symlink. Editing here
+updates the live skill.
 
-- `sdlc/skill/` → `sdlc` — scaffolds a feature folder and navigates the chain.
-- `sdlc/intent-skill/` → `intent` — Stage 1 front door: `/intent` interviews a
+- `sdlc/skills/sdlc/` → `sdlc` — scaffolds a feature folder and navigates the chain.
+- `sdlc/skills/intent/` → `intent` — Stage 1 front door: `/intent` interviews a
   raw idea and writes `intent.md`.
 
 ## Ideas inbox (pre-intent)
