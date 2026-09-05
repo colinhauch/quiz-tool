@@ -1,6 +1,6 @@
 # Intent: persist bag-of-bags state across sessions
 
-Author: colin.hauch@gmail.com. Status: draft
+Author: colin.hauch@gmail.com. Status: accepted
 
 ## Problem
 The bag-of-bags scheduler's live state — which marbles are left in each bag and
