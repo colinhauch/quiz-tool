@@ -9,6 +9,8 @@ Check off when merged; keep this list current.
 - [ ] **CLAUDE.md verification block** — add `## Commands` + `## Verifying your
   work` to root `CLAUDE.md` (real build/test/typecheck commands, "run before
   reporting done"). Prereq for the verifier subagent and auto-mode. *(Test)*
+- [ ] **CLAUDE.md Refinement** - the current file has too much content and too
+many assumptions. We need to refine it. 
 
 ## Next
 
