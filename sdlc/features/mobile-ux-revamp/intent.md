@@ -1,6 +1,6 @@
 # Intent: Mobile UI revamp — make the app genuinely usable on a phone
 
-Status: draft
+Status: accepted
 
 ## Problem
 The mobile UI is difficult to use and inhibits engagement. UI elements jump
