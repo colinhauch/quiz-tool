@@ -1,6 +1,8 @@
 # Issue tracker: GitHub
 
-Issues and PRDs for this repo live as GitHub issues. Use the `gh` CLI for all operations.
+Tickets, PRDs, and triage for this repo live as GitHub issues; use the `gh` CLI
+for all operations. **Exception:** the feature SDLC artifacts (intent/spec/plan/
+review) are files, not issues — see "SDLC artifacts are files" below.
 
 ## Conventions
 
@@ -25,13 +27,33 @@ When set to `yes`, PRs run through the same labels and states as issues, using t
 
 GitHub shares one number space across issues and PRs, so a bare `#42` may be either — resolve with `gh pr view 42` and fall back to `gh issue view 42`.
 
+## SDLC artifacts are files (source of truth)
+
+The feature SDLC chain — `intent.md`, `spec.md`, `plan.md`, `review.md` — is
+**canonical as files** under `sdlc/features/<slug>/`, not as issues. See
+`sdlc/README.md` (playbook) and `sdlc/CLAUDE.md` (source-of-truth rules). A
+GitHub issue may exist as an **optional linked mirror** for status/assignment/
+blocking, but it never holds the canonical artifact text — its body points at the
+file. This overrides the generic rules below whenever the thing being published
+is one of those artifacts.
+
 ## When a skill says "publish to the issue tracker"
 
-Create a GitHub issue.
+**If it's an SDLC artifact (a spec, plan, intent, or review):** write the file to
+`sdlc/features/<slug>/<artifact>.md` first — that is the published record. Then,
+only if the user wants issue-side tracking, create a GitHub issue whose body is a
+short summary plus a link to the file (never a copy of the full artifact). The
+`to-spec` skill says "publish to the issue tracker"; for a spec this means write
+`spec.md`, with the mirror issue optional.
+
+**Otherwise (tickets, PRDs, triage items):** create a GitHub issue as usual.
+Tickets are the tracking layer where issues earn their place (native blocking
+edges, assignment); they link back to the feature folder.
 
 ## When a skill says "fetch the relevant ticket"
 
-Run `gh issue view <number> --comments`.
+Run `gh issue view <number> --comments`. For an SDLC artifact, read the file in
+`sdlc/features/<slug>/` — it is the record; the issue is only a pointer.
 
 ## Wayfinding operations
 
