@@ -53,6 +53,10 @@ the Supabase schema. The web app's page-load / refresh path.
   requests? Workers isolates are stateless across requests, so this may be the
   real reason repeats show up even *without* a manual refresh. Confirm whether
   that's the root cause or a separate bug.
+- Related symptom, possibly the same root cause: with **all packs selected**, the
+  quiz sometimes serves **only flag questions** — the included pool or the
+  re-bin appears to collapse to one pack/tier. May be its own bug (repro →
+  failing test → fix) rather than part of this feature. Decide in spec/triage.
 - Where is the state persisted, and when is it written (every draw? every
   answer?) and invalidated (pack change)?
 - How is "the learner" identified for keying the saved state (single-user mode
