@@ -2,7 +2,7 @@
 
 How this repo takes a feature from idea to production. It adapts Anthropic's
 AI-native SDLC playbook (`docs/AI_SDLC_Article.md`) to a **single developer**.
-The reasoning behind the adaptation lives in `docs/ainativesdlc.md`; this file is
+The reasoning behind the adaptation lives in `sdlc/CLAUDE.md`; this file is
 the operational how-to.
 
 ## The idea in one line
@@ -28,7 +28,7 @@ sdlc/features/<slug>/
   `flag-hints`, `scheduler-elo`).
 - **The file is the source of truth.** A GitHub issue or PR may link to it, but
   the committed markdown is canonical. (This reverses the earlier issues-first
-  convention; see `docs/ainativesdlc.md`.)
+  convention; see `sdlc/CLAUDE.md`.)
 - Templates in `sdlc/templates/`. Copy what you need.
 
 ## Right-size the chain
@@ -61,10 +61,7 @@ Review it against the intent: does it solve the stated problem, are the open
 questions answered? Resolve **flagged concerns** before building.
 
 ### 3. Build → `plan.md` + code
-Start in **plan mode**, hand Claude the spec, iterate until an unseen session
-could build from the plan alone. **Commit `plan.md`**, then `implement`. This is
-the highest-value resume point. If implementation departs from the plan, update
-`plan.md` in the same commit. Use worktrees for parallel features.
+Start in **plan mode**, hand Claude the spec, iterate until an unseen session could build from the plan alone. **Commit `plan.md`**, then `implement` (using test driven development). This is the highest-value resume point. If implementation departs from the plan, update `plan.md` in the same commit. Use worktrees for parallel features.
 
 ### 4. Test → tests + CI
 Every session verifies its own work before you see it. Bug fixes are **test-first**
@@ -81,8 +78,8 @@ don't auto-merge.
 ### 6. Maintain → new `intent.md`
 Not built yet. The eventual close: a signal (CI failure rate, post-deploy 5xx,
 grading-error rate) trips a deterministic watcher, which invokes Claude to
-diagnose and write a fresh `intent.md` back into the queue. See experiment 3 in
-`docs/ainativesdlc.md`.
+diagnose and write a fresh `intent.md` back into the queue. See the roadmap in
+`sdlc/CLAUDE.md`.
 
 ## Review policy
 
