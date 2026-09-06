@@ -37,9 +37,14 @@ command = "pnpm bundle-packs && pnpm --filter @geo/web build"
 [vars]
 SUPABASE_URL = "https://fmxjevgxlnqujsqeqfwt.supabase.co"
 SUPABASE_PUBLISHABLE_KEY = "sb_publishable_fAoIRUV4B8RRdytsQRPgjw_tGhmvYdo"
-# No DB_SCHEMA here on purpose: prod reads/writes the default `public` schema.
-# dev/test override it below to hit their own schemas in the SAME project (one
-# auth pool, isolated data) — see migration 20260821000000_env_schemas_dev_test.
+# Prod reads/writes the default `public` schema. This is now stated explicitly
+# (rather than left unset) so a leftover Cloudflare *secret* named DB_SCHEMA
+# can't silently repoint prod at another schema unnoticed — and DEPLOY_ENV lets
+# the runtime guard (schema-guard.ts) catch it even if a secret still overrides
+# this var. dev/test set their own schemas below (one auth pool, isolated data)
+# — see migration 20260821000000_env_schemas_dev_test.
+DEPLOY_ENV = "prod"
+DB_SCHEMA = "public"
 
 # Binds quiz.colinhauch.com to this Worker on deploy. wrangler creates the DNS
 # record AND provisions the TLS cert automatically — no dashboard, no manual DNS.
@@ -95,6 +100,7 @@ name = "quiz-tool-dev"
 SUPABASE_URL = "https://fmxjevgxlnqujsqeqfwt.supabase.co"
 SUPABASE_PUBLISHABLE_KEY = "sb_publishable_fAoIRUV4B8RRdytsQRPgjw_tGhmvYdo"
 # Same project as prod, but data lands in the `dev` schema (isolated tables).
+DEPLOY_ENV = "dev"
 DB_SCHEMA = "dev"
 
 [[env.dev.routes]]
@@ -108,6 +114,7 @@ name = "quiz-tool-test"
 SUPABASE_URL = "https://fmxjevgxlnqujsqeqfwt.supabase.co"
 SUPABASE_PUBLISHABLE_KEY = "sb_publishable_fAoIRUV4B8RRdytsQRPgjw_tGhmvYdo"
 # Same project as prod, but data lands in the `test` schema (isolated tables).
+DEPLOY_ENV = "test"
 DB_SCHEMA = "test"
 
 [[env.test.routes]]
