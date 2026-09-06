@@ -20,6 +20,7 @@ import {
   createSupabaseAnswerStore,
   createSupabaseFeedbackStore,
   createSupabaseRatingStore,
+  createSupabaseSchedulerStore,
   createSupabaseSelectionStore,
 } from "./supabase-storage.js";
 
@@ -60,6 +61,7 @@ function getApp(env: Env) {
         store: createSupabaseAnswerStore(client),
         selection: createSupabaseSelectionStore(client),
         rating: createSupabaseRatingStore(client),
+        scheduler: createSupabaseSchedulerStore(client),
         feedback: createSupabaseFeedbackStore(client),
       }),
     });

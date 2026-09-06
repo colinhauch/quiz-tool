@@ -1,10 +1,12 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { AnswerRecord } from "./storage.js";
+import { DEFAULT_TIERS, type Scheduler } from "@geo/engine";
 import {
   createSupabaseAnswerStore,
   createSupabaseFeedbackStore,
   createSupabaseRatingStore,
+  createSupabaseSchedulerStore,
   createSupabaseSelectionStore,
 } from "./supabase-storage.js";
 
@@ -140,6 +142,39 @@ describe.skipIf(!ready)("Supabase stores (integration, RLS)", () => {
     };
     await store.record(withSnapshot);
     expect(await store.all()).toEqual([withSnapshot]);
+  });
+
+  it("reads null on first run, then round-trips scheduler state, isolated per user", async () => {
+    const a = await signedInUser(admin);
+    const b = await signedInUser(admin);
+    createdUserIds.push(a.id, b.id);
+
+    const schA = createSupabaseSchedulerStore(a.client);
+    const schB = createSupabaseSchedulerStore(b.client);
+
+    const state: Scheduler = {
+      included: ["capital-cities"],
+      tiers: DEFAULT_TIERS,
+      packRatio: {},
+      difficultyBag: ["medium", "easy"],
+      packBag: ["capital-cities"],
+      drawn: ["cc:tokyo-japan:object"],
+      current: "cc:paris-france:object",
+    };
+
+    // Never saved => null, for both users.
+    expect(await schA.read()).toBeNull();
+
+    await schA.write(state);
+    expect(await schA.read()).toEqual(state);
+
+    // Whole-value overwrite (single-row upsert), not a merge.
+    const next: Scheduler = { ...state, drawn: [], current: null };
+    await schA.write(next);
+    expect(await schA.read()).toEqual(next);
+
+    // B's state is untouched by A's writes.
+    expect(await schB.read()).toBeNull();
   });
 
   it("keeps ability per-user but difficulty global (shared across users)", async () => {
