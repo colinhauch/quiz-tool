@@ -52,14 +52,40 @@ _Avoid_: Renderer, formatter, template function
 A plausible but wrong option offered alongside the correct one in a multiple-choice question.
 _Avoid_: Decoy, foil, wrong answer
 
-**Question Queue**:
-The ordered cards ahead of the learner. Pack filtering is applied when it is built, and drawing takes from its head, so a pass asks every card once before repeating any. Provisional — the scheduler owns its ordering policy.
-_Avoid_: Deck, playlist, buffer, backlog
+### Scheduling
+
+**Scheduler**:
+The engine's decision about which card to ask next — a filtered three-level draw (difficulty, then pack, then a live filter) over the eligible pool, plus the small durable per-learner state it carries. Replaced the provisional **Question Queue** (retired).
+_Avoid_: Queue, deck, playlist, sequencer
+
+**Eligible pool**:
+Every card the current selection can draw — enumerated live from the included packs (both hidden slots, comparisons excluded). Not stored; recomputed each draw, so a difficulty or selection change takes effect at once. Its size is the `queued` count.
+_Avoid_: Deck, candidate set, backlog
+
+**Difficulty bag**:
+A shuffle bag of tier marbles in a fixed ratio; a draw pops one to pick the difficulty band. Honors the ratio exactly per cycle. Was the "top bag" of the materialized design.
+_Avoid_: Top bag, tier bag, difficulty queue
+
+**Pack bag**:
+A shuffle bag of pack marbles (one per included pack by default); a draw pops one to pick the pack, so a pass spreads across selected packs. A newly selected pack's marble is appended so it draws immediately.
+_Avoid_: Pack queue, rotation
+
+**Drawn set**:
+The card ids already handed out this pass — the exclusion list the draw filters against, so a card is not repeated until its slice is exhausted. Persisted; cleared per slice on refill. Distinct from the *Answer Log*: the drawn set is disposable scheduler state, not a record of what happened.
+_Avoid_: Seen list, history, exclusion bag
+
+**Slice**:
+The eligible cards matching one `(difficulty band, pack)` pair — the unit a single draw filters to, and the unit a refill un-excludes.
+_Avoid_: Bin, bucket, tier bag
+
+**Current**:
+The card drawn but not yet answered, held in the scheduler state. Re-served on every request until answered, so a refresh resumes it and cannot skip it.
+_Avoid_: Active card, pending, held question
 
 ### Selection
 
 **Included**:
-A pack the queue currently draws from. The committed state, changed only by saving. This is what "selected" means when the subject is the server.
+A pack the scheduler currently draws from. The committed state, changed only by saving. This is what "selected" means when the subject is the server.
 _Avoid_: Active, enabled, selected, on
 
 **Checked**:

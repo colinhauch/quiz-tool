@@ -1,8 +1,8 @@
-# Scheduler: Elo bag-of-bags
+# Scheduler: Elo filtered draw
 
-> **[UNREVIEWED]** — Designed in conversation, never built. Supersedes the `RandomLeastRecentScheduler` sketch in [README.md](README.md) and [interfaces.md](interfaces.md), which was never implemented. The **Question Queue** ([../../packages/engine/src/queue.ts](../../packages/engine/src/queue.ts)) is the provisional stand-in this replaces.
+> **[UNREVIEWED]** — The rating model and the tuning constants (K, seed, tier bands, ratio) are drafted, not human-verified; the *selection* design below is built and covered by tests (`packages/engine/src/scheduler.ts`, `sdlc/features/persist-bag-state`). Supersedes the `RandomLeastRecentScheduler` sketch in [README.md](README.md) and [interfaces.md](interfaces.md) and the provisional **Question Queue** (`queue.ts`), both retired.
 
-The scheduler decides which **card** to ask next. This design keeps selection *random* while *guaranteeing a difficulty distribution* — and adapts to the learner — by combining Elo ratings with a nested shuffle-bag draw. It **replaces spaced repetition**: there is no forgetting model in v1.
+The scheduler decides which **card** to ask next. This design keeps selection *random* while *guaranteeing a difficulty distribution and a spread across packs* — and adapts to the learner — by combining Elo ratings with a filtered three-level draw over the live card list. It **replaces spaced repetition**: there is no forgetting model in v1.
 
 ## Why not spaced repetition
 
@@ -41,24 +41,39 @@ The two ratings move by the **same magnitude in opposite directions**: `θ += K�
 
 A card's question is satisfied by *any* true answer to its hidden slot: "name a city in Brazil" generated from the Recife statement is answered correctly by "São Paulo," because São Paulo *is* a city in Brazil. So the rating outcome is simply: **did the learner's resolved answer satisfy the asked card's hidden slot?** — `1` if it resolves to a true statement fulfilling the slot, `0` otherwise. An answer that resolves to an edge *not in the graph* (`s(NYC, isIn, Brazil)`) is `0`, logged as misconception signal, and moves **no** card's `D` (there is no valid card for it). Exactly one card is rated per answer.
 
-## Selection: bag of bags
+## Selection: a filtered three-level draw
 
-A **shuffle bag** is sampling without replacement: fill it, draw until empty, refill. It buys coverage (everything gets drawn once per cycle), no repeats within a cycle, and — nested — a guaranteed distribution.
+Selection is a **filtered three-level draw** over the live eligible pool — no materialized per-tier bags of card ids. (The earlier design *did* materialize one inner bag per tier; `persist-bag-state` replaced it. A per-learner bag snapshot could fight the global difficulty rating, and adding a pack to the selection left its cards invisible for a whole cycle because they were folded in only on the next re-bin — the "all packs selected but only flag questions" bug.)
 
-- **Top bag** holds difficulty-tier *marbles* in a fixed ratio (e.g. easy/medium/hard). Drawn as a shuffle bag, the ratio is honored *exactly* per cycle, not just in expectation. This is the difficulty-mix knob. The exact tiers, thresholds, and ratio are tuning left for later.
-- **Inner bags**, one per tier, hold the actual cards whose `P(success)` falls in that tier's band (e.g. easy = P > 0.8, hard = P < 0.2). Drawn without replacement.
+A **shuffle bag** is sampling without replacement: fill it, draw until empty, refill. Two bags of *marbles* drive the draw:
 
-A draw picks a marble from the top bag (say "easy"), then a card from that tier's inner bag.
+- **Difficulty bag** — difficulty-tier marbles in a fixed ratio (e.g. easy/medium/hard). Drawn as a shuffle bag, the ratio is honored *exactly* per cycle, not just in expectation. This is the difficulty-mix knob; the tiers, thresholds, and ratio are tuning left for later.
+- **Pack bag** — pack marbles, one per **included** pack by default (a configurable pack ratio). Drawn without replacement, so a pass spreads across the selected packs instead of getting stuck on one.
 
-### Binning and re-binning
+The card is chosen by **live filtering**, not from a stored bag. Pop a difficulty marble `d` and a pack marble `p`, then filter the current **eligible pool** — every card from the included packs, both hidden slots, comparisons excluded — to `pack = p`, `P(success)` within tier `d`'s band, and **not in the drawn set**. One survivor is picked at random and becomes the **current** card, held until answered. A brand-new card, seeded at `D = θ = 1500`, has `P(success) = 0.5` and filters into the medium tier — that *is* the new-card introduction, no separate lane.
 
-The **eligible pool** is every card enumerated from the learner's **included** packs, both hidden slots, comparisons excluded. At the start (page load / pack change) the whole pool is binned by `P(success)` into the inner bags. A brand-new card, seeded at `D = θ = 1500`, has `P(success) = 0.5` and lands in the medium tier — that *is* the new-card introduction story, no separate lane.
+### The drawn set and slice refill
 
-When **one inner bag empties, re-bin only that bag**: recompute which currently-eligible cards fall in *its* band (ratings have drifted since the session began, because every answer nudges `D` and `θ`) and refill just it. **The other bags are untouched; the whole pool is not reshuffled.** Re-draws are allowed — a card answered earlier can return when its bag refills; there is no within-session exclusion in v1 (that is the intended cross-session mechanism, deferred).
+The **drawn set** is the exclusion list: card ids already handed out this pass. Difficulty is read **live** from the rating cache on every draw and never stored in the state, so a card that got easier or harder for the population moves to the right band immediately, for everyone — no per-learner re-bin, no stale snapshot.
 
-If the top bag draws a tier whose inner bag is empty, **re-bin that tier to refill it**; if it is *still* empty (the learner genuinely has no eligible cards in that band), **redraw a different marble** from the top bag. The top bag itself refills with the same ratio when it empties.
+A `(d, p)` pair names a **slice** of the pool. When a slice has no un-drawn card left (exhausted), the drawn ids *belonging to that slice* are cleared — the "refill", expressed as un-exclude — so its cards are eligible again and the learner revisits rather than dead-ends. Because the filter is live, a card that drifted out of the band since it was drawn is not re-admitted here; it belongs to whichever slice now owns it.
 
-Ratings drift *during* a session but a card does not change bins until its home bag is re-binned — stable within a cycle, adaptive across cycles.
+Because the pack bag draws **without replacement**, the pack marble is *peeked*, not consumed, whenever its pack has no card in the drawn band: that is a difficulty *mismatch*, and spending the pack's turn on it would let another pack repeat before this one is seen. The marble is spent only when the pack yields a card. A pack with no eligible cards at all discards its marble (a stall guard). The loop is bounded — every `(tier, pack)` pair is examined before it concludes the pool is empty and throws the empty-pool error the selection contract (never an empty included set) is meant to prevent.
+
+### Selection changes take effect immediately
+
+Deselecting a pack removes its marbles from the pack bag and drops its cards from the drawn set at once. Selecting a pack appends its marble so it is drawable on the **very next draw** — the mechanism that dissolves the only-flag-questions bug. The difficulty bag is untouched: a selection change alters *which* cards are eligible, not the difficulty mix.
+
+## The state is durable, per learner
+
+The whole draw — the two bags, the drawn set, the held **current** card, and the ratio config (`tiers`, `packRatio`) — is one small JSON document persisted per learner: a `scheduler_state` row under the same RLS as ratings and answers (single-user local mode is a one-row table). It is written through on every draw, every answer, and every selection change, and restored on a fresh request. The in-memory scheduler is a per-isolate **cache**, not the source of truth.
+
+Two learner-visible consequences:
+
+- **Resume, don't refill.** A refresh, a fresh Cloudflare Worker isolate, or a new device re-serves the exact **current** question and continues the same pass, instead of rebuilding from scratch and re-serving already-seen cards.
+- **A refresh can't skip.** `current` is re-served (drawing nothing) until it is answered, so reloading cannot hand the learner an easier question.
+
+The state is a **disposable cache** that never contradicts the Answer Log or the rating caches: on restore it is reconciled to the authoritative selection (stale ids and a stale `current` dropped, deselected packs removed) and, if the tier config has changed since it was saved, the difficulty bag is rebuilt. Lost entirely, it rebuilds from the persisted selection.
 
 ## Ratings are cached, the log is truth
 
@@ -74,8 +89,9 @@ This bends the "**the log stores no derived judgments**" rule in [README.md](REA
 
 - **Partial-credit accretion** (v2): a "close but wrong" answer (São Paulo when the card was generated from Recife, resolving to a *different* true statement) splitting graded credit across the resolved card and the generated-from card. Binary v1 logs latency and both card references so the data to *design* this accumulates; it turns on by replay.
 - **Comparison cards** (v2): two statements, two hidden values, no single `(statement, hidden-slot)` coordinate, so no home for a `D`. Excluded from Elo and the bags for v1.
-- **Top-level bag of packs**: pick a pack, then a tier, then a card — so an emptied pack refills before another is drawn from. A future third nesting level.
-- **Cross-session recency exclusion**: remove recently-answered cards from all bags at the start of a new session, re-admitting only when the pool is exhausted.
+- **Non-default pack/difficulty ratios**: the pack ratio and tier ratio are configurable parameters, but only the one-marble-per-pack default and `DEFAULT_TIERS` ship now; there is no operator-facing config to set a non-default without a code change (built via `persist-bag-state`, deferred there).
+- **Normalizing the drawn set**: it lives inside the state document for v1 (grows toward pool size over a pass, tens of KB); a child table is noted if per-draw write cost ever bites.
+- **A recency window across passes**: the drawn set already excludes within a pass and persists across sessions, so a resumed pass does not repeat; a broader "don't re-ask what I saw last week" window on top of that is not built.
 - **Per-relation / per-region θ**, **pack-authored difficulty priors**, and **tier thresholds + ratio tuning** — all data-driven, revisited once alpha shows whether the single-θ-per-pack conflation or the seed values actually hurt.
 - **Revisiting statement-vs-card accreditation** — which coordinate a "wrong-but-valid" answer credits.
 ```

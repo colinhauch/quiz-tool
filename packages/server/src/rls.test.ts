@@ -172,6 +172,28 @@ describe.skipIf(!ready)("RLS: answers, pack_selection, pack_selection_state", ()
     expect(insertErr?.code).toBe("42501");
   });
 
+  it("user A cannot read or write user B's scheduler_state", async () => {
+    const a = await signedInUser(admin);
+    const b = await signedInUser(admin);
+    createdUserIds.push(a.id, b.id);
+
+    await admin.from("scheduler_state").insert({ user_id: b.id, state: { included: ["capital-cities"] } });
+
+    const { data: seen } = await a.client.from("scheduler_state").select("*");
+    expect(seen).toEqual([]);
+
+    const { error: insertErr } = await a.client
+      .from("scheduler_state")
+      .insert({ user_id: b.id, state: { included: ["core-geo"] } });
+    expect(insertErr?.code).toBe("42501");
+
+    const { data: stillThere } = await admin
+      .from("scheduler_state")
+      .select("state")
+      .eq("user_id", b.id);
+    expect(stillThere).toEqual([{ state: { included: ["capital-cities"] } }]);
+  });
+
   it("card_difficulty is global: any authenticated user reads and upserts it", async () => {
     const a = await signedInUser(admin);
     const b = await signedInUser(admin);

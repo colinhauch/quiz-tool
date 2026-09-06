@@ -347,8 +347,14 @@ describe("two-pack graph over the server seam", () => {
 
     // A pass is without replacement, so two draws exhaust this two-card graph
     // and must yield one question from each pack — that is what interweaving
-    // means. Which order they arrive in is the shuffle's business.
+    // means. Which order they arrive in is the shuffle's business. /question is
+    // idempotent until answered, so the first card is answered to advance to the second.
     const first = questionResponseSchema.parse(await (await app.request("/question")).json());
+    await app.request("/answer", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ cardId: first.cardId, input: "?" }),
+    });
     const second = questionResponseSchema.parse(await (await app.request("/question")).json());
 
     expect([first.packId, second.packId].sort()).toEqual(["owner", "statements-only"]);
