@@ -33,6 +33,7 @@ import {
   type Ratings,
   type Scheduler,
   type RatingSnapshot,
+  type Tier,
 } from "@geo/engine";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { type Context, Hono } from "hono";
@@ -108,6 +109,22 @@ function selectablePacks(pack: Pack): string[] {
       .map((card) => card.statement.pack),
   );
   return [...pack.packs.keys()].filter((id) => yielding.has(id));
+}
+
+/**
+ * Whether two tier configs match by value (name, band, marbles), so a restored
+ * scheduler saved under a since-changed tier config is detected and its
+ * difficulty bag rebuilt to the current ratio. Order-sensitive on purpose: the
+ * tiers are a fixed, ordered ratio, not a set.
+ */
+function tiersEqual(a: readonly Tier[], b: readonly Tier[]): boolean {
+  return (
+    a.length === b.length &&
+    a.every((t, i) => {
+      const o = b[i];
+      return o !== undefined && t.name === o.name && t.min === o.min && t.max === o.max && t.marbles === o.marbles;
+    })
+  );
 }
 
 /** How many drawable cards a pack contributes — the honest "how many questions is this?". */
@@ -228,7 +245,7 @@ export function createApp({
         // has changed since the state was saved, adopt it and clear the
         // difficulty bag — the next draw refills it to the new ratio.
         state = applySelection(pack, persisted, included);
-        if (JSON.stringify(state.tiers) !== JSON.stringify(DEFAULT_TIERS)) {
+        if (!tiersEqual(state.tiers, DEFAULT_TIERS)) {
           state = { ...state, tiers: DEFAULT_TIERS, difficultyBag: [] };
         }
       } else {

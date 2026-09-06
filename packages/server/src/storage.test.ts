@@ -1,7 +1,7 @@
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type { Scheduler } from "@geo/engine";
+import { DEFAULT_TIERS, type Scheduler } from "@geo/engine";
 import { afterEach, describe, expect, it } from "vitest";
 import {
   type AnswerRecord,
@@ -125,11 +125,7 @@ describe("createFeedbackStore (in-memory)", () => {
 
 const scheduler: Scheduler = {
   included: ["capital-cities"],
-  tiers: [
-    { name: "hard", min: 0, max: 0.2, marbles: 1 },
-    { name: "medium", min: 0.2, max: 0.8, marbles: 3 },
-    { name: "easy", min: 0.8, max: 1.01, marbles: 2 },
-  ],
+  tiers: DEFAULT_TIERS,
   packRatio: {},
   difficultyBag: ["medium", "easy", "hard"],
   packBag: ["capital-cities"],

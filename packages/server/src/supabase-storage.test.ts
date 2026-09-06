@@ -1,7 +1,7 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { AnswerRecord } from "./storage.js";
-import type { Scheduler } from "@geo/engine";
+import { DEFAULT_TIERS, type Scheduler } from "@geo/engine";
 import {
   createSupabaseAnswerStore,
   createSupabaseFeedbackStore,
@@ -154,11 +154,7 @@ describe.skipIf(!ready)("Supabase stores (integration, RLS)", () => {
 
     const state: Scheduler = {
       included: ["capital-cities"],
-      tiers: [
-        { name: "hard", min: 0, max: 0.2, marbles: 1 },
-        { name: "medium", min: 0.2, max: 0.8, marbles: 3 },
-        { name: "easy", min: 0.8, max: 1.01, marbles: 2 },
-      ],
+      tiers: DEFAULT_TIERS,
       packRatio: {},
       difficultyBag: ["medium", "easy"],
       packBag: ["capital-cities"],
