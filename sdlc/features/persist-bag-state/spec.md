@@ -1,6 +1,6 @@
 # Spec: durable scheduler state via a filtered three-level draw
 
-Status: draft | accepted | rejected
+Status: accepted
 
 Derived from `intent.md` (accepted). This is a **scheduler redesign**, not a
 serialization of the current bags: it replaces materialized inner bags with a
