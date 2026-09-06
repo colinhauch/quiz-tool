@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { makeCardId } from "./card.js";
+import { type Card, makeCardId } from "./card.js";
 import { type Ratings, SEED_RATING, emptyRatings } from "./rating.js";
 import {
-  DEFAULT_TIERS,
   applySelection,
   buildScheduler,
   drawNext,
   eligibleCards,
+  markAnswered,
   type Scheduler,
   type Tier,
 } from "./scheduler.js";
@@ -68,8 +68,10 @@ function seeded(values: number[]): () => number {
   return () => values[i++ % values.length] as number;
 }
 
-const tierByProbability = (cardId: string, d: Record<string, number>): string => {
-  const diff = d[cardId] ?? SEED_RATING;
+const cardId = (card: Card): string => makeCardId(card.statement.id, card.hiddenSlot);
+
+const tierByProbability = (id: string, d: Record<string, number>): string => {
+  const diff = d[id] ?? SEED_RATING;
   return diff <= EASY_D ? "easy" : diff >= HARD_D ? "hard" : "medium";
 };
 
@@ -121,61 +123,45 @@ describe("buildScheduler", () => {
       { name: "low", min: 0, max: 0.4, marbles: 1 },
       { name: "high", min: 0.6, max: 1.01, marbles: 1 }, // gap 0.4–0.6: a card at P=0.5 bins nowhere
     ];
-    expect(() => buildScheduler(g, emptyRatings(), "u", ["geo"], () => 0, gappy)).toThrow(/contiguous|cover/);
-  });
-
-  it("bins the whole eligible pool by P(success)", () => {
-    const stmts = pool("geo", 6);
-    const g = graphOf(stmts, ["geo"]);
-    const d = tieredDifficulty("geo", 2, 3, 1);
-    const s = buildScheduler(g, ratingsWith(d), "u", ["geo"], () => 0);
-    expect(s.bags.easy).toHaveLength(2);
-    expect(s.bags.medium).toHaveLength(3);
-    expect(s.bags.hard).toHaveLength(1);
-  });
-
-  it("puts a brand-new (unrated) card in the medium tier", () => {
-    const g = graphOf(pool("geo", 3), ["geo"]);
-    // No ratings at all: every card reads back at the seed → P = 0.5 → medium.
-    const s = buildScheduler(g, emptyRatings(), "u", ["geo"], () => 0);
-    expect(s.bags.medium).toHaveLength(3);
-    expect(s.bags.easy).toHaveLength(0);
-    expect(s.bags.hard).toHaveLength(0);
-  });
-
-  it("fills the top bag to the tier ratio", () => {
-    const g = graphOf(pool("geo", 6), ["geo"]);
-    const s = buildScheduler(g, ratingsWith(tieredDifficulty("geo", 2, 3, 1)), "u", ["geo"], () => 0);
-    const counts = s.topBag.reduce<Record<string, number>>((m, t) => ((m[t] = (m[t] ?? 0) + 1), m), {});
-    expect(counts).toEqual({ hard: 1, medium: 3, easy: 2 });
+    expect(() => buildScheduler(g, ["geo"], () => 0, gappy)).toThrow(/contiguous|cover/);
   });
 
   it("refuses a selection that yields no eligible cards", () => {
     const g = graphOf(pool("geo", 3), ["geo"]);
-    expect(() => buildScheduler(g, emptyRatings(), "u", [], () => 0)).toThrow(/no eligible cards/);
-    expect(() => buildScheduler(g, emptyRatings(), "u", ["other"], () => 0)).toThrow(/no eligible cards/);
+    expect(() => buildScheduler(g, [], () => 0)).toThrow(/no eligible cards/);
+    expect(() => buildScheduler(g, ["other"], () => 0)).toThrow(/no eligible cards/);
+  });
+
+  it("carries the selection and never binds ratings into fresh state", () => {
+    // A fresh build no longer needs ratings — difficulty is filtered live at draw
+    // time — so the only thing it records is the selection and the empty draw.
+    const g = graphOf(pool("geo", 3), ["geo"]);
+    const s = buildScheduler(g, ["geo"], () => 0);
+    expect(s.included).toEqual(["geo"]);
+    expect(s.drawn).toEqual([]);
+    expect(s.current).toBeNull();
   });
 });
 
 describe("drawNext", () => {
-  it("honours the tier ratio exactly over a full cycle, with no within-cycle repeats", () => {
-    // Enough distinct cards per tier that one cycle never empties a bag, so each
-    // drawn card's tier equals the marble that drew it.
+  it("honours the tier ratio exactly over a full difficulty cycle, no within-cycle repeats", () => {
+    // Enough distinct cards per tier that one cycle never empties a slice, so
+    // each drawn card's tier equals the marble that drew it.
     const stmts = pool("geo", 12);
     const g = graphOf(stmts, ["geo"]);
     const d = tieredDifficulty("geo", 4, 5, 3); // easy 4, medium 5, hard 3
     const ratings = ratingsWith(d);
     const rng = seeded([0.1, 0.42, 0.73, 0.9, 0.27, 0.55, 0.83, 0.05, 0.61, 0.36, 0.7, 0.2]);
 
-    let s: Scheduler = buildScheduler(g, ratings, "u", ["geo"], rng);
+    let s: Scheduler = buildScheduler(g, ["geo"], rng);
     const drawnTiers: string[] = [];
     const drawnCards: string[] = [];
-    const cycle = DEFAULT_TIERS.reduce((n, t) => n + t.marbles, 0); // 6
+    const cycle = 6; // DEFAULT_TIERS marbles: hard 1 + medium 3 + easy 2
     for (let i = 0; i < cycle; i++) {
       const out = drawNext(g, ratings, "u", s, rng);
-      const cardId = makeCardId(out.card.statement.id, out.card.hiddenSlot);
-      drawnCards.push(cardId);
-      drawnTiers.push(tierByProbability(cardId, d));
+      const id = cardId(out.card);
+      drawnCards.push(id);
+      drawnTiers.push(tierByProbability(id, d));
       s = out.scheduler;
     }
     const tierCounts = drawnTiers.reduce<Record<string, number>>((m, t) => ((m[t] = (m[t] ?? 0) + 1), m), {});
@@ -184,16 +170,16 @@ describe("drawNext", () => {
   });
 
   it("is deterministic under a seeded rng", () => {
-    const g = graphOf(pool("geo", 6), ["geo"]);
-    const d = tieredDifficulty("geo", 2, 3, 1);
+    const g = graphOf(pool("geo", 12), ["geo"]);
+    const d = tieredDifficulty("geo", 4, 5, 3);
     const ratings = ratingsWith(d);
     const draw = () => {
-      const rng = seeded([0.13, 0.62, 0.44, 0.9, 0.05, 0.71, 0.38]);
-      let s = buildScheduler(g, ratings, "u", ["geo"], rng);
+      const rng = seeded([0.13, 0.62, 0.44, 0.9, 0.05, 0.71, 0.38, 0.22, 0.5, 0.81, 0.03, 0.66]);
+      let s = buildScheduler(g, ["geo"], rng);
       const ids: string[] = [];
       for (let i = 0; i < 6; i++) {
         const out = drawNext(g, ratings, "u", s, rng);
-        ids.push(makeCardId(out.card.statement.id, out.card.hiddenSlot));
+        ids.push(cardId(out.card));
         s = out.scheduler;
       }
       return ids;
@@ -201,76 +187,128 @@ describe("drawNext", () => {
     expect(draw()).toEqual(draw());
   });
 
-  it("re-bins only the emptied inner bag, leaving the others untouched", () => {
-    // One easy card, plenty of medium/hard. Drawing easy twice empties the easy
-    // bag; the second easy draw must re-bin easy (finding the same lone card
-    // again — re-draws allowed) without disturbing medium/hard contents.
-    const g = graphOf(pool("geo", 6), ["geo"]);
-    const d = tieredDifficulty("geo", 1, 3, 2);
-    const ratings = ratingsWith(d);
-    // rng chosen so the first two marbles are both easy is impossible (ratio has
-    // one easy marble/cycle); instead assert the mechanism directly on state.
-    let s = buildScheduler(g, ratings, "u", ["geo"], () => 0);
-    const mediumBefore = [...(s.bags.medium ?? [])];
-    // Force an easy draw by handing a scheduler whose top bag is a lone "easy".
-    s = { ...s, topBag: ["easy"] };
-    const first = drawNext(g, ratings, "u", s, () => 0);
-    expect(first.scheduler.bags.easy).toHaveLength(0); // easy drained
-    // Draw easy again: re-bin refills easy from the pool (the same card returns).
-    const second = drawNext(g, ratings, "u", { ...first.scheduler, topBag: ["easy"] }, () => 0);
-    expect(makeCardId(second.card.statement.id, second.card.hiddenSlot)).toBe(makeCardId("geo:0", "object"));
-    // Medium bag never touched by the easy draws.
-    expect(second.scheduler.bags.medium).toEqual(mediumBefore);
+  it("honours the pack ratio over a pack cycle, spreading across selected packs", () => {
+    // Two packs, one marble each (default ratio), each with a full tier spread so
+    // no slice is ever empty. Over four draws (two pack cycles) each pack appears
+    // exactly twice — the draw does not get stuck on one pack.
+    const g = graphOf([...pool("a", 9), ...pool("b", 9)], ["a", "b"]);
+    const ratings = ratingsWith({ ...tieredDifficulty("a", 3, 3, 3), ...tieredDifficulty("b", 3, 3, 3) });
+    const rng = seeded([0.3, 0.7, 0.1, 0.9, 0.5, 0.2, 0.8, 0.4, 0.6, 0.15, 0.85, 0.35]);
+    let s = buildScheduler(g, ["a", "b"], rng);
+    const packs: string[] = [];
+    for (let i = 0; i < 4; i++) {
+      const out = drawNext(g, ratings, "u", s, rng);
+      packs.push(out.card.statement.pack);
+      s = out.scheduler;
+    }
+    const counts = packs.reduce<Record<string, number>>((m, p) => ((m[p] = (m[p] ?? 0) + 1), m), {});
+    expect(counts).toEqual({ a: 2, b: 2 });
   });
 
-  it("falls back without stalling when a drawn tier has no eligible cards", () => {
-    // No hard cards at all. Every hard marble must re-bin (empty), then redraw
-    // another marble, and still hand out a real card.
+  it("sets current to the drawn card and excludes every prior draw within a pass", () => {
+    const g = graphOf(pool("geo", 6), ["geo"]); // all medium
+    const rng = seeded([0.11, 0.37, 0.59, 0.83, 0.05, 0.71, 0.29, 0.47]);
+    let s = buildScheduler(g, ["geo"], rng);
+    const seen: string[] = [];
+    for (let i = 0; i < 6; i++) {
+      const out = drawNext(g, emptyRatings(), "u", s, rng);
+      const id = cardId(out.card);
+      expect(out.scheduler.current).toBe(id); // current holds the just-drawn card
+      seen.push(id);
+      s = out.scheduler;
+    }
+    expect(new Set(seen).size).toBe(6); // a whole pass before any repeat
+  });
+
+  it("markAnswered clears current and keeps the card in drawn", () => {
+    const g = graphOf(pool("geo", 3), ["geo"]);
+    const out = drawNext(g, emptyRatings(), "u", buildScheduler(g, ["geo"], () => 0), () => 0);
+    const id = cardId(out.card);
+    const after = markAnswered(out.scheduler, id);
+    expect(after.current).toBeNull();
+    expect(after.drawn).toContain(id);
+  });
+
+  it("slice refill re-admits a drawn card and re-bins it by live difficulty", () => {
+    // Draw geo:0 as a medium card, then re-rate it hard. Drawing the hard slice
+    // (now holding only geo:0, which is excluded) must refill that slice and hand
+    // geo:0 back — proof the exclusion clears per slice AND the card re-bins live.
+    const g = graphOf(pool("geo", 3), ["geo"]);
+    const c0 = makeCardId("geo:0", "object");
+    const s0 = { ...buildScheduler(g, ["geo"], () => 0), difficultyBag: ["medium"] };
+    const first = drawNext(g, emptyRatings(), "u", s0, () => 0);
+    expect(cardId(first.card)).toBe(c0);
+    expect(first.scheduler.drawn).toContain(c0);
+
+    const hardRatings = ratingsWith({ [c0]: HARD_D });
+    const second = drawNext(g, hardRatings, "u", { ...first.scheduler, difficultyBag: ["hard"] }, () => 0);
+    expect(cardId(second.card)).toBe(c0); // re-admitted in the hard band it now belongs to
+  });
+
+  it("does not stall when a difficulty marble points at a tier with no cards", () => {
+    // [risk: draw-loop budget] — all-medium pool, but a lone hard marble. The
+    // empty hard slice must fall through to a real (medium) card, never spin.
     const g = graphOf(pool("geo", 5), ["geo"]);
-    const d = tieredDifficulty("geo", 2, 3, 0); // zero hard
-    const ratings = ratingsWith(d);
-    let s = buildScheduler(g, ratings, "u", ["geo"], () => 0);
-    // A top bag of only hard marbles: no hard cards exist, so it must fall
-    // through to a fresh cycle and draw a real (easy/medium) card.
-    s = { ...s, topBag: ["hard"] };
-    const out = drawNext(g, ratings, "u", s, () => 0);
+    const s = { ...buildScheduler(g, ["geo"], () => 0), difficultyBag: ["hard"] };
+    const out = drawNext(g, emptyRatings(), "u", s, () => 0);
     expect(out.card).toBeDefined();
-    expect(["easy", "medium"]).toContain(tierByProbability(makeCardId(out.card.statement.id, out.card.hiddenSlot), d));
+    expect(tierByProbability(cardId(out.card), {})).toBe("medium");
   });
 
-  it("shifts the tier a card sits in when its rating changes", () => {
-    const g = graphOf(pool("geo", 1), ["geo"]);
-    const cardId = makeCardId("geo:0", "object");
-    // Rated hard → binned hard; re-rated easy → binned easy.
-    expect(buildScheduler(g, ratingsWith({ [cardId]: HARD_D }), "u", ["geo"], () => 0).bags.hard).toHaveLength(1);
-    expect(buildScheduler(g, ratingsWith({ [cardId]: EASY_D }), "u", ["geo"], () => 0).bags.easy).toHaveLength(1);
+  it("throws when the pool is genuinely empty", () => {
+    // [risk: draw-loop budget] — the other end of the bound: an empty selection
+    // yields nothing, and the bounded loop must conclude empty rather than spin.
+    const g = graphOf(pool("geo", 3), ["geo"]);
+    const empty: Scheduler = { ...buildScheduler(g, ["geo"], () => 0), included: [], packBag: [], packRatio: {} };
+    expect(() => drawNext(g, emptyRatings(), "u", empty, () => 0)).toThrow(/no eligible cards/);
   });
 });
 
 describe("applySelection", () => {
-  it("stops a deselected pack's cards immediately", () => {
+  it("stops a deselected pack immediately and keeps the other flowing", () => {
     const g = graphOf([...pool("cities", 3), ...pool("langs", 3)], ["cities", "langs"]);
-    const ratings = emptyRatings(); // all medium
-    const s = buildScheduler(g, ratings, "u", ["cities", "langs"], () => 0);
-    const after = applySelection(g, s, ["cities"]);
-    const remaining = Object.values(after.bags).flat();
-    expect(remaining.length).toBeGreaterThan(0);
-    expect(remaining.every((id) => id.startsWith("cities:"))).toBe(true);
-    expect(remaining.some((id) => id.startsWith("langs:"))).toBe(false);
-    expect(after.included).toEqual(["cities"]);
+    let s = applySelection(g, buildScheduler(g, ["cities", "langs"], () => 0), ["cities"]);
+    expect(s.included).toEqual(["cities"]);
+    for (let i = 0; i < 6; i++) {
+      const out = drawNext(g, emptyRatings(), "u", { ...s, difficultyBag: ["medium"] }, () => 0);
+      expect(out.card.statement.pack).toBe("cities");
+      s = out.scheduler;
+    }
   });
 
-  // KNOWN BUG (skipped until fixed): repro of "all packs selected but only flag
-  // questions" — sdlc/features/persist-bag-state/intent.md. A large pack was
-  // included when the scheduler was built, then more packs are selected. All
-  // cards unrated → all medium, so only the medium bag has cards and it drains
-  // without replacement. With ~50 flags cards the medium bag won't empty for ~50
-  // draws, so the newly selected pack stays invisible far longer than a learner
-  // would ever wait. Un-skip when applySelection folds new packs in eagerly.
-  it.skip("surfaces a newly included pack within a few cycles at real pool sizes", () => {
+  it("drops a deselected pack's cards (and a stale current) from drawn", () => {
+    const g = graphOf([...pool("cities", 2), ...pool("langs", 2)], ["cities", "langs"]);
+    // Draw a langs card so it lands in drawn and as current.
+    const drawnLangs = drawNext(
+      g,
+      emptyRatings(),
+      "u",
+      { ...buildScheduler(g, ["cities", "langs"], () => 0), difficultyBag: ["medium"], packBag: ["langs"] },
+      () => 0,
+    );
+    expect(drawnLangs.card.statement.pack).toBe("langs");
+    const after = applySelection(g, drawnLangs.scheduler, ["cities"]);
+    expect(after.drawn.some((id) => id.startsWith("langs:"))).toBe(false);
+    expect(after.current).toBeNull();
+  });
+
+  it("makes a re-selected pack drawable on the very next draw", () => {
+    const g = graphOf([...pool("cities", 3), ...pool("langs", 3)], ["cities", "langs"]);
+    let s = applySelection(g, buildScheduler(g, ["cities", "langs"], () => 0), ["cities"]); // drop langs
+    s = applySelection(g, s, ["cities", "langs"]); // add it back
+    const out = drawNext(g, emptyRatings(), "u", { ...s, difficultyBag: ["medium"] }, () => 0);
+    expect(out.card.statement.pack).toBe("langs"); // the appended marble draws first
+  });
+
+  // The committed repro of "all packs selected but only flag questions"
+  // (sdlc/features/persist-bag-state/intent.md). A large pack was included when
+  // the scheduler was built, then more packs are selected. With the old
+  // materialized bags the new pack stayed invisible for ~50 draws; the filtered
+  // draw appends the new pack's marble so it surfaces at once.
+  it("surfaces a newly included pack within a few cycles at real pool sizes", () => {
     const g = graphOf([...pool("flags", 50), ...pool("cities", 5)], ["flags", "cities"]);
     const ratings = emptyRatings(); // all medium
-    let s = buildScheduler(g, ratings, "u", ["flags"], () => 0.5);
+    let s = buildScheduler(g, ["flags"], () => 0.5);
     s = applySelection(g, s, ["flags", "cities"]); // learner selects all packs
     const seen = new Set<string>();
     for (let i = 0; i < 24; i++) {
@@ -278,22 +316,6 @@ describe("applySelection", () => {
       seen.add(out.card.statement.pack);
       s = out.scheduler;
     }
-    expect(seen.has("cities")).toBe(true); // RED today: only "flags" appears
-  });
-
-  it("draws a newly included pack's cards on the next re-bin", () => {
-    const g = graphOf([...pool("cities", 2), ...pool("langs", 2)], ["cities", "langs"]);
-    const ratings = emptyRatings();
-    // Start on cities only, then include langs.
-    let s = buildScheduler(g, ratings, "u", ["cities"], () => 0);
-    s = applySelection(g, s, ["cities", "langs"]);
-    // Drain until the medium bag re-bins; langs cards must appear.
-    const seen = new Set<string>();
-    for (let i = 0; i < 12; i++) {
-      const out = drawNext(g, ratings, "u", s, () => 0.5);
-      seen.add(out.card.statement.pack);
-      s = out.scheduler;
-    }
-    expect(seen.has("langs")).toBe(true);
+    expect(seen.has("cities")).toBe(true);
   });
 });

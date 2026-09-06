@@ -16,6 +16,7 @@ export {
   buildScheduler,
   drawNext,
   applySelection,
+  markAnswered,
   eligibleCards,
   type Scheduler,
   type Tier,

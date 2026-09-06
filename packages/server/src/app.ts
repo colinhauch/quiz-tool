@@ -16,7 +16,9 @@ import {
   applyAnswer,
   applySelection,
   buildScheduler,
+  type Card,
   checkAnswer,
+  DEFAULT_TIERS,
   difficultyOf,
   drawNext,
   eligibleCards,
@@ -24,6 +26,7 @@ import {
   enumerateCards,
   findCard,
   generateQuestion,
+  markAnswered,
   ownerPackId,
   probabilityOfSuccess,
   type Pack,
@@ -36,13 +39,14 @@ import { type Context, Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { type AuthEnv, type AuthOptions, createAuthMiddleware } from "./auth.js";
 import type { Catalog } from "./catalog.js";
-import type { AnswerStore, FeedbackStore, RatingStore, SelectionStore } from "./storage.js";
+import type { AnswerStore, FeedbackStore, RatingStore, SchedulerStore, SelectionStore } from "./storage.js";
 
-/** The stores that serve one learner: their answer log, pack selection, Elo ratings, and feedback channel. */
+/** The stores that serve one learner: their answer log, pack selection, Elo ratings, scheduler state, and feedback channel. */
 export interface UserStores {
   store: AnswerStore;
   selection?: SelectionStore;
   rating?: RatingStore;
+  scheduler?: SchedulerStore;
   feedback?: FeedbackStore;
 }
 
@@ -65,6 +69,13 @@ export interface AppOptions {
    * update (the pre-scheduler behaviour). Supply it to calibrate on every answer.
    */
   rating?: RatingStore;
+  /**
+   * Single-user mode: where the learner's live scheduler state is persisted, so a
+   * refresh or a fresh isolate resumes the held question instead of refilling the
+   * pool. Omit to run without persistence — the scheduler lives only in the
+   * per-isolate cache (the pre-persistence behaviour).
+   */
+  scheduler?: SchedulerStore;
   /**
    * Multi-user mode: verify each request's Supabase JWT. Given together with
    * {@link AppOptions.storesForUser}, the data routes are guarded (401 without a
@@ -121,6 +132,7 @@ export function createApp({
   store,
   selection,
   rating,
+  scheduler,
   feedback,
   auth,
   storesForUser,
@@ -144,6 +156,7 @@ export function createApp({
     store: AnswerStore;
     selection?: SelectionStore;
     rating?: RatingStore;
+    scheduler?: SchedulerStore;
     feedback?: FeedbackStore;
     key: string;
   } {
@@ -154,12 +167,13 @@ export function createApp({
         store: built.store,
         selection: built.selection,
         rating: built.rating,
+        scheduler: built.scheduler,
         feedback: built.feedback,
         key: userId,
       };
     }
     // Guarded in the constructor: single-user mode always has an injected store.
-    return { store: store as AnswerStore, selection, rating, feedback, key: SINGLE_USER };
+    return { store: store as AnswerStore, selection, rating, scheduler, feedback, key: SINGLE_USER };
   }
 
   // First run selects everything, so introducing the picker regresses nothing.
@@ -174,41 +188,73 @@ export function createApp({
   const selectable = selectablePacks(pack).filter((id) => !catalog?.get(id)?.hidden);
 
   // The live schedulers, one per learner (keyed as `resolve` decides — a single
-  // shared key in single-user mode, the user id in multi-user mode). Each is
-  // held in memory and rebuilt from that learner's persisted selection and the
-  // current ratings on their first request: the *selection* is the durable
-  // thing, the bag state it produces is not. Entries are replaced rather than
+  // shared key in single-user mode, the user id in multi-user mode). This map is
+  // a per-isolate *cache*, not the source of truth: the durable state lives in
+  // the SchedulerStore, so a fresh isolate (or a refresh) resumes the held
+  // question instead of refilling the pool. Entries are replaced rather than
   // mutated, because every engine scheduler operation returns a new scheduler.
   //
-  // Built lazily rather than at construction because the selection and rating
-  // reads are async (Postgres over the network — see storage.ts), and `createApp`
-  // stays synchronous so its many callers need no `await`. The map memoises per
-  // key, so the reads run once per learner and every later handler reuses the
+  // Built lazily rather than at construction because the store reads are async
+  // (Postgres over the network — see storage.ts), and `createApp` stays
+  // synchronous so its many callers need no `await`. The map memoises per key, so
+  // the reads run once per learner per isolate and every later handler reuses the
   // scheduler.
   const schedulers = new Map<string, Scheduler>();
   async function ensureScheduler(
     c: Context<AuthEnv>,
   ): Promise<{
-    scheduler: Scheduler;
+    state: Scheduler;
     key: string;
     store: AnswerStore;
     selection?: SelectionStore;
     rating?: RatingStore;
-    /** The ratings just loaded to build the scheduler, when this call built it — so a first draw can reuse them instead of re-reading the whole cache. */
-    freshRatings?: Ratings;
+    scheduler?: SchedulerStore;
+    feedback?: FeedbackStore;
   }> {
     const resolved = resolve(c);
-    let scheduler = schedulers.get(resolved.key);
-    let freshRatings: Ratings | undefined;
-    if (!scheduler) {
+    let state = schedulers.get(resolved.key);
+    if (!state) {
+      // The authoritative selection, derived exactly as before: a stored set
+      // intersected with what is selectable, falling back to everything.
       const stored = (await resolved.selection?.read()) ?? null;
       const initial = stored ? stored.filter((id) => selectable.includes(id)) : selectable;
       const included = initial.length > 0 ? initial : selectable;
-      freshRatings = await loadRatings(resolved.rating, resolved.key, included);
-      scheduler = buildScheduler(pack, freshRatings, resolved.key, included, rng);
-      schedulers.set(resolved.key, scheduler);
+
+      const persisted = (await resolved.scheduler?.read()) ?? null;
+      if (persisted) {
+        // Restore: reconcile the saved bags to the authoritative selection and
+        // drop stale ids (applySelection doubles as the reconciler). Difficulty
+        // is filtered live, so no ratings are needed. If the deployed tier config
+        // has changed since the state was saved, adopt it and clear the
+        // difficulty bag — the next draw refills it to the new ratio.
+        state = applySelection(pack, persisted, included);
+        if (JSON.stringify(state.tiers) !== JSON.stringify(DEFAULT_TIERS)) {
+          state = { ...state, tiers: DEFAULT_TIERS, difficultyBag: [] };
+        }
+      } else {
+        // Build fresh and persist, so the very first request seeds the store.
+        state = buildScheduler(pack, included, rng);
+        await resolved.scheduler?.write(state);
+      }
+      schedulers.set(resolved.key, state);
     }
-    return { scheduler, freshRatings, ...resolved };
+    return { state, ...resolved };
+  }
+
+  /**
+   * Renders a drawn card into the wire question plus its as-of-draw stats, parsed
+   * through the shared schema so an accidental answer leak fails here at the seam.
+   * Shared by the draw path and the `current`-re-serve path of `GET /question`.
+   */
+  async function renderQuestion(
+    answerStore: AnswerStore,
+    ratings: Ratings,
+    key: string,
+    card: Card,
+  ): Promise<unknown> {
+    const question = generateQuestion(pack, card.statement, card.hiddenSlot);
+    const stats = await cardStats(answerStore, ratings, key, question.cardId, card.statement.pack);
+    return questionResponseSchema.parse({ ...question, stats });
   }
 
   // Registered before the auth middleware so it stays public; every route below
@@ -218,24 +264,23 @@ export function createApp({
     app.use("*", createAuthMiddleware(auth));
   }
 
-  // The next question, drawn by the bag-of-bags scheduler over the current
-  // ratings. Ratings are re-read per draw because they drift as answers arrive
-  // (every answer nudges a card's difficulty and the learner's ability), and an
-  // emptied inner bag re-bins against the fresh numbers. Drawing advances the
-  // scheduler state, so a card is not handed out twice within a cycle. The
-  // response is parsed through the shared schema so the server cannot drift from
-  // the contract the browser trusts — and so an accidental answer leak fails
-  // here, at the seam.
+  // The next question. If a card is already held (`current`), it is **re-served**
+  // and nothing is drawn — so a refresh, a new isolate, or a new device resumes
+  // the exact question on screen and cannot skip it. Otherwise the three-level
+  // filtered draw picks a card over the current ratings (re-read per draw, since
+  // they drift as answers arrive), holds it as `current`, and the advanced state
+  // is written through to the store. The response is parsed through the shared
+  // schema so the server cannot drift from the contract the browser trusts.
   app.get("/question", async (c) => {
-    const { scheduler, key, store: s, rating, freshRatings } = await ensureScheduler(c);
-    // Reuse the ratings ensureScheduler just loaded on a learner's first draw;
-    // otherwise re-read, since they drift as answers arrive between draws.
-    const ratings = freshRatings ?? (await loadRatings(rating, key, scheduler.included));
-    const drawn = drawNext(pack, ratings, key, scheduler, rng);
+    const { state, key, store: s, rating, scheduler: schedStore } = await ensureScheduler(c);
+    const ratings = await loadRatings(rating, key, state.included);
+    if (state.current !== null) {
+      return c.json(await renderQuestion(s, ratings, key, findCard(pack, state.current)));
+    }
+    const drawn = drawNext(pack, ratings, key, state, rng);
     schedulers.set(key, drawn.scheduler);
-    const question = generateQuestion(pack, drawn.card.statement, drawn.card.hiddenSlot);
-    const stats = await cardStats(s, ratings, key, question.cardId, drawn.card.statement.pack);
-    return c.json(questionResponseSchema.parse({ ...question, stats }));
+    await schedStore?.write(drawn.scheduler);
+    return c.json(await renderQuestion(s, ratings, key, drawn.card));
   });
 
   // Every entity of a given type in the graph, for the client to cache and
@@ -262,7 +307,7 @@ export function createApp({
   // *committed* selection — the checkbox's pending state lives in the browser
   // until saved.
   app.get("/packs", async (c) => {
-    const { scheduler: live } = await ensureScheduler(c);
+    const { state: live } = await ensureScheduler(c);
     const counts = cardCounts(pack);
     const statements = new Map<string, number>();
     for (const statement of pack.statements) {
@@ -295,10 +340,11 @@ export function createApp({
     );
   });
 
-  // Commit a new selection. Cards from dropped packs leave the scheduler's bags
-  // immediately; a newly included pack's cards are picked up on the next re-bin.
-  // Nothing here touches the answer log: selection governs what will be asked,
-  // never what was.
+  // Commit a new selection. A dropped pack's cards leave the pack bag (and the
+  // drawn set) immediately; a newly included pack is drawable on the very next
+  // draw. The advanced state is written through alongside the selection so a
+  // reload restores the new selection's bags. Nothing here touches the answer
+  // log: selection governs what will be asked, never what was.
   app.put("/packs", async (c) => {
     let packIds: string[];
     try {
@@ -312,9 +358,11 @@ export function createApp({
       throw new HTTPException(400, { message: `not a selectable pack: ${unknown.join(", ")}` });
     }
 
-    const { scheduler, key, selection: sel } = await ensureScheduler(c);
-    schedulers.set(key, applySelection(pack, scheduler, packIds));
+    const { state, key, selection: sel, scheduler: schedStore } = await ensureScheduler(c);
+    const next = applySelection(pack, state, packIds);
+    schedulers.set(key, next);
     await sel?.write(packIds);
+    await schedStore?.write(next);
     return c.json({ ok: true });
   });
 
@@ -339,16 +387,18 @@ export function createApp({
       throw new HTTPException(404, { message: `unknown card: ${cardId}`, cause: err });
     }
 
-    const { store: s, rating: r, key } = resolve(c);
+    const { state, store: s, rating: r, key, scheduler: schedStore } = await ensureScheduler(c);
     // Move the card's global difficulty and this learner's pack ability, and
     // snapshot what the scheduler believed at ask time. The next draw re-reads
     // these ratings, so the answer feeds back into selection (#120). Without a
     // rating store, log as before.
     //
     // Compute the update (pure) first, then append the log row — the source of
-    // truth — and only then persist the rating caches. That order keeps the
-    // caches from ever leading the log: if the log append fails, the caches are
-    // untouched; if a cache write fails, replay rebuilds it from the row.
+    // truth — then persist the rating caches, and only then advance and persist
+    // the scheduler state. That order keeps the caches from ever leading the log
+    // (if the append fails, the caches are untouched; if a cache write fails,
+    // replay rebuilds it from the row), and leaves the scheduler write — a
+    // disposable cache — last, where a failure risks only a rare repeat.
     const update = r ? await computeRatingUpdate(r, pack, cardId, key, result.correct) : undefined;
     await s.record({
       cardId,
@@ -358,6 +408,11 @@ export function createApp({
       ...(update?.snapshot ? { snapshot: update.snapshot } : {}),
     });
     await update?.persist();
+    // Clear the held card and mark it drawn, so the next /question draws afresh
+    // rather than re-serving what was just answered.
+    const advanced = markAnswered(state, cardId);
+    schedulers.set(key, advanced);
+    await schedStore?.write(advanced);
     return c.json(answerResponseSchema.parse(result));
   });
 

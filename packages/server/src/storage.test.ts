@@ -1,12 +1,14 @@
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import type { Scheduler } from "@geo/engine";
 import { afterEach, describe, expect, it } from "vitest";
 import {
   type AnswerRecord,
   createAnswerStore,
   createFeedbackStore,
   createRatingStore,
+  createSchedulerStore,
   type FeedbackRecord,
   openDatabase,
 } from "./storage.js";
@@ -118,6 +120,41 @@ describe("createFeedbackStore (in-memory)", () => {
 
   it("starts empty", async () => {
     expect(await createFeedbackStore(openDatabase(":memory:")).all()).toEqual([]);
+  });
+});
+
+const scheduler: Scheduler = {
+  included: ["capital-cities"],
+  tiers: [
+    { name: "hard", min: 0, max: 0.2, marbles: 1 },
+    { name: "medium", min: 0.2, max: 0.8, marbles: 3 },
+    { name: "easy", min: 0.8, max: 1.01, marbles: 2 },
+  ],
+  packRatio: {},
+  difficultyBag: ["medium", "easy", "hard"],
+  packBag: ["capital-cities"],
+  drawn: ["cc:tokyo-japan:object"],
+  current: "cc:paris-france:object",
+};
+
+describe("createSchedulerStore (in-memory)", () => {
+  it("reads null before anything is written", async () => {
+    const store = createSchedulerStore(openDatabase(":memory:"));
+    expect(await store.read()).toBeNull();
+  });
+
+  it("round-trips the whole scheduler value", async () => {
+    const store = createSchedulerStore(openDatabase(":memory:"));
+    await store.write(scheduler);
+    expect(await store.read()).toEqual(scheduler);
+  });
+
+  it("overwrites the whole value on rewrite (single row)", async () => {
+    const store = createSchedulerStore(openDatabase(":memory:"));
+    await store.write(scheduler);
+    const next: Scheduler = { ...scheduler, drawn: [], current: null, included: ["core-geo"] };
+    await store.write(next);
+    expect(await store.read()).toEqual(next);
   });
 });
 

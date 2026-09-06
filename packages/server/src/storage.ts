@@ -1,5 +1,5 @@
 import type { FeedbackContext } from "@geo/contract";
-import { SEED_RATING } from "@geo/engine";
+import { SEED_RATING, type Scheduler } from "@geo/engine";
 import Database from "better-sqlite3";
 
 /**
@@ -100,6 +100,50 @@ export interface RatingStore {
 export interface SelectionStore {
   read(): Promise<string[] | null>;
   write(packIds: string[]): Promise<void>;
+}
+
+/**
+ * The learner's live scheduler state (the two marble bags, the `drawn` exclusion
+ * set, the held `current` card, and the ratio config). A disposable cache, never
+ * the source of truth: it can be dropped and rebuilt from the persisted selection
+ * — the value it holds is what spares a resuming learner a refill storm and a
+ * lost place. `read` returns `null` before anything is saved, which the caller
+ * turns into "build a fresh scheduler and persist it". The whole value is
+ * overwritten on every write (it is one small JSON document per learner).
+ */
+export interface SchedulerStore {
+  read(): Promise<Scheduler | null>;
+  write(state: Scheduler): Promise<void>;
+}
+
+/**
+ * Persists the scheduler state as a single JSON blob in a one-row table (id = 1,
+ * single-user locally). Whole-value overwrite on write — the state is small and a
+ * replace cannot half-apply. Mirrors {@link createSelectionStore}; the Supabase
+ * counterpart (`supabase-storage.ts`) keeps one row per learner under RLS.
+ */
+export function createSchedulerStore(db: Database.Database): SchedulerStore {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS scheduler_state (
+      id INTEGER PRIMARY KEY CHECK (id = 1),
+      state TEXT NOT NULL
+    )
+  `);
+
+  const select = db.prepare("SELECT state FROM scheduler_state WHERE id = 1");
+  const upsert = db.prepare(
+    "INSERT INTO scheduler_state (id, state) VALUES (1, ?) ON CONFLICT(id) DO UPDATE SET state = excluded.state",
+  );
+
+  return {
+    async read() {
+      const row = select.get() as { state: string } | undefined;
+      return row ? (JSON.parse(row.state) as Scheduler) : null;
+    },
+    async write(state: Scheduler) {
+      upsert.run(JSON.stringify(state));
+    },
+  };
 }
 
 /**

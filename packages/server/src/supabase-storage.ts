@@ -1,4 +1,4 @@
-import { SEED_RATING } from "@geo/engine";
+import { SEED_RATING, type Scheduler } from "@geo/engine";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
   AnswerRecord,
@@ -6,6 +6,7 @@ import type {
   FeedbackRecord,
   FeedbackStore,
   RatingStore,
+  SchedulerStore,
   SelectionStore,
 } from "./storage.js";
 
@@ -182,6 +183,30 @@ export function createSupabaseFeedbackStore(client: SupabaseClient): FeedbackSto
         created_at: feedback.createdAt,
       });
       if (error) throw new Error(`feedback.insert failed: ${error.message}`);
+    },
+  };
+}
+
+/**
+ * Supabase-backed scheduler state — one JSONB row per learner, keyed by
+ * `user_id` (defaults to `auth.uid()`, pinned by RLS). Unlike the pack selection
+ * there is no sentinel row: the whole state is a single value, so a single-row
+ * upsert on `user_id` is atomic on its own and needs no RPC. `read` is
+ * `null` before anything is saved, which the app turns into "build fresh".
+ */
+export function createSupabaseSchedulerStore(client: SupabaseClient): SchedulerStore {
+  return {
+    async read() {
+      const { data, error } = await client.from("scheduler_state").select("state").maybeSingle();
+      if (error) throw new Error(`scheduler_state.select failed: ${error.message}`);
+      return data ? (data.state as Scheduler) : null;
+    },
+
+    async write(state: Scheduler) {
+      // user_id omitted: defaults to auth.uid() and RLS pins it. Conflict on the
+      // user_id primary key overwrites this learner's row in place.
+      const { error } = await client.from("scheduler_state").upsert({ state }, { onConflict: "user_id" });
+      if (error) throw new Error(`scheduler_state.upsert failed: ${error.message}`);
     },
   };
 }
