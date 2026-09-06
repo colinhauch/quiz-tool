@@ -265,19 +265,34 @@ export function drawNext(
     if (difficultyBag.length === 0) difficultyBag.push(...fillDifficultyBag(tiers, rng));
     const band = difficultyBag.pop() as string;
     if (packBag.length === 0) packBag.push(...fillPackBag(included, packRatio, rng));
-    const pack = packBag.pop();
+    // Peek the pack marble rather than consuming it: the pack bag draws without
+    // replacement so a pass spreads across packs (spec: "questions across all my
+    // selected packs, not stuck on one"). If this pack simply has no card in the
+    // drawn band, that is a difficulty *mismatch* — keep the pack for the next
+    // difficulty marble instead of burning its turn (which would let another pack
+    // repeat before this one is seen). Only a pack that yields a card consumes its
+    // marble.
+    const pack = packBag[packBag.length - 1];
 
     const inSlice = (card: Card): boolean => card.statement.pack === pack && bandOf(card) === band;
-    let candidates = pool.filter((card) => inSlice(card) && !drawn.has(makeCardId(card.statement.id, card.hiddenSlot)));
-    if (candidates.length === 0) {
-      // Slice refill: un-exclude this slice's drawn cards and re-filter. Binned
-      // live, so a card that drifted out of the band since it was drawn is not
-      // re-admitted here — it belongs to whichever slice now owns it.
-      const sliceCards = pool.filter(inSlice);
-      for (const card of sliceCards) drawn.delete(makeCardId(card.statement.id, card.hiddenSlot));
-      candidates = sliceCards;
+    const slice = pool.filter(inSlice);
+    if (slice.length === 0) {
+      // No card in this band. If the pack has no eligible card at all it is dead
+      // — discard its marble so it stops blocking the peek; otherwise keep it and
+      // let the next difficulty marble find its cards.
+      if (!pool.some((card) => card.statement.pack === pack)) packBag.pop();
+      continue;
     }
-    if (candidates.length === 0) continue; // Slice has no cards at all — draw another pair.
+
+    packBag.pop(); // The pack yields — spend its marble.
+    let candidates = slice.filter((card) => !drawn.has(makeCardId(card.statement.id, card.hiddenSlot)));
+    if (candidates.length === 0) {
+      // Slice exhausted: un-exclude just this (band, pack) slice so its cards are
+      // eligible again (the "refill"). Binned live, so a card that drifted out of
+      // the band since it was drawn belongs to whichever slice now owns it, not here.
+      for (const card of slice) drawn.delete(makeCardId(card.statement.id, card.hiddenSlot));
+      candidates = slice;
+    }
 
     const card = candidates[Math.floor(rng() * candidates.length)] as Card;
     const cardId = makeCardId(card.statement.id, card.hiddenSlot);
