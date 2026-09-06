@@ -16,10 +16,12 @@ import { supabaseJwks } from "./auth.js";
 import { parseCatalog } from "./catalog.js";
 import { assembleLoaded } from "./pack-loader.js";
 import { loadedCatalog, loadedPacks } from "./packs.generated.js";
+import { resolveSchema } from "./schema-guard.js";
 import {
   createSupabaseAnswerStore,
   createSupabaseFeedbackStore,
   createSupabaseRatingStore,
+  createSupabaseSchedulerStore,
   createSupabaseSelectionStore,
 } from "./supabase-storage.js";
 
@@ -34,6 +36,12 @@ interface Env {
    * One project, one auth pool — only the data tables differ. See wrangler.toml.
    */
   DB_SCHEMA?: string;
+  /**
+   * Committed stage identifier (`prod` | `dev` | `test`), set per environment in
+   * wrangler.toml. Independent of DB_SCHEMA so the schema guard can catch a
+   * stray secret overriding DB_SCHEMA — see schema-guard.ts.
+   */
+  DEPLOY_ENV?: string;
 }
 
 // The pack graph is static per deploy, so assemble it once per isolate rather
@@ -54,12 +62,16 @@ function getApp(env: Env) {
         supabaseKey: env.SUPABASE_PUBLISHABLE_KEY,
         issuer: `${env.SUPABASE_URL}/auth/v1`,
         audience: "authenticated",
-        schema: env.DB_SCHEMA,
+        // Guarded: throws if a stray secret has pushed DB_SCHEMA off the schema
+        // this stage (DEPLOY_ENV) is allowed to touch, rather than silently
+        // reading/writing the wrong Supabase schema.
+        schema: resolveSchema(env),
       },
       storesForUser: (client) => ({
         store: createSupabaseAnswerStore(client),
         selection: createSupabaseSelectionStore(client),
         rating: createSupabaseRatingStore(client),
+        scheduler: createSupabaseSchedulerStore(client),
         feedback: createSupabaseFeedbackStore(client),
       }),
     });

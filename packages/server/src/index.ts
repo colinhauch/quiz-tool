@@ -6,6 +6,7 @@ import {
   createAnswerStore,
   createFeedbackStore,
   createRatingStore,
+  createSchedulerStore,
   createSelectionStore,
   openDatabase,
 } from "./storage.js";
@@ -21,10 +22,11 @@ const db = openDatabase(dbFile);
 const store = createAnswerStore(db);
 const selection = createSelectionStore(db);
 const rating = createRatingStore(db);
+const scheduler = createSchedulerStore(db);
 const feedback = createFeedbackStore(db);
 
 serve(
-  { fetch: createApp({ pack, store, selection, rating, feedback, catalog }).fetch, port },
+  { fetch: createApp({ pack, store, selection, rating, scheduler, feedback, catalog }).fetch, port },
   (info) => {
   console.log(`geo-quiz server listening on http://localhost:${info.port}`);
 });

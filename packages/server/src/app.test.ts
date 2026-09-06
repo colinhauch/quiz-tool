@@ -32,9 +32,11 @@ import {
   createAnswerStore,
   createFeedbackStore,
   createRatingStore,
+  createSchedulerStore,
   createSelectionStore,
   openDatabase,
   type RatingStore,
+  type SchedulerStore,
   type SelectionStore,
 } from "./storage.js";
 
@@ -494,15 +496,21 @@ describe("full loop over the real fixture pack and a temp-file database", () => 
     const store = createAnswerStore(db);
     const pack = await loadAllPacks();
 
-    // Draw until Tokyo comes up rather than aiming rng at it: the queue shuffles,
-    // so no seed reliably lands on one card. A pass is without replacement, so
-    // every card arrives within one lap of the queue — which this also proves.
+    // Draw until Tokyo comes up rather than aiming rng at it: the draw shuffles,
+    // so no seed reliably lands on one card. /question is now idempotent until the
+    // held card is answered, so advance by answering each drawn card; a pass is
+    // without replacement, so Tokyo arrives within one lap — which this also proves.
     const app = createApp({ pack, store });
     const cards = enumerateCards(pack);
 
     let question = questionResponseSchema.parse(await (await app.request("/question")).json());
     for (let draws = 1; question.cardId !== "cc:tokyo-japan:object"; draws++) {
       expect(draws).toBeLessThanOrEqual(cards.length);
+      await app.request("/answer", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ cardId: question.cardId, input: "skip" }),
+      });
       question = questionResponseSchema.parse(await (await app.request("/question")).json());
     }
 
@@ -540,22 +548,22 @@ describe("full loop over the real fixture pack and a temp-file database", () => 
     expect(revealMap?.localGeoJSON?.type).toBe("MultiPolygon");
     expect(revealMap?.localGeoJSON?.coordinates.length).toBeGreaterThan(0);
 
+    // The Tokyo answer is exactly one row, correct, and the most recent entry;
+    // the pre-Tokyo "skip" answers that advanced the draw are the earlier rows.
     const recorded = await store.all();
-    expect(recorded).toHaveLength(1);
-    expect(recorded[0]?.cardId).toBe(question.cardId);
-    expect(recorded[0]?.correct).toBe(true);
+    const tokyo = recorded.filter((r) => r.cardId === "cc:tokyo-japan:object");
+    expect(tokyo).toHaveLength(1);
+    expect(tokyo[0]?.correct).toBe(true);
 
     const log = answerLogSchema.parse(await (await app.request("/answers")).json());
-    expect(log).toEqual([
-      {
-        cardId: question.cardId,
-        question: question.prompt,
-        input: "Japan",
-        correct: true,
-        acceptedAnswer: "Japan",
-        askedAt: recorded[0]?.askedAt,
-      },
-    ]);
+    expect(log[0]).toEqual({
+      cardId: question.cardId,
+      question: question.prompt,
+      input: "Japan",
+      correct: true,
+      acceptedAnswer: "Japan",
+      askedAt: tokyo[0]?.askedAt,
+    });
     db.close();
   });
 });
@@ -724,13 +732,10 @@ describe("PUT /packs", () => {
     const store = memoryStore();
     const app = createApp({ pack: pickerGraph(), store });
 
-    // Answer the cities card, then deselect cities entirely.
-    let cardId = "";
-    for (let i = 0; i < 3 && !cardId; i++) {
-      const q = questionResponseSchema.parse(await (await app.request("/question")).json());
-      if (q.packId === "cities") cardId = q.cardId;
-    }
-    expect(cardId).toBe("cc:tokyo:object");
+    // Answer the cities card, then deselect cities entirely. The cities card id
+    // is known, so we answer it directly rather than pumping /question (now
+    // idempotent) to find it — the point here is history, not the draw order.
+    const cardId = "cc:tokyo:object";
     const answer = () =>
       app.request("/answer", {
         method: "POST",
@@ -748,6 +753,106 @@ describe("PUT /packs", () => {
     const log = answerLogSchema.parse(await (await app.request("/answers")).json());
     expect(log).toHaveLength(2);
     expect(log[0]?.question).toBe("What country is Tokyo in?");
+  });
+});
+
+function memoryScheduler(): SchedulerStore {
+  return createSchedulerStore(openDatabase(":memory:"));
+}
+
+async function draw(app: ReturnType<typeof createApp>) {
+  return questionResponseSchema.parse(await (await app.request("/question")).json());
+}
+
+function answerCard(app: ReturnType<typeof createApp>, cardId: string, input = "?") {
+  return app.request("/answer", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ cardId, input }),
+  });
+}
+
+describe("scheduler persistence (durable state)", () => {
+  it("re-serves the held question on repeat until it is answered, then advances", async () => {
+    // The refresh-can't-skip guarantee: two GET /question with no answer between
+    // them return the same card; answering releases it and the next differs.
+    const app = createApp({ pack: pickerGraph(), store: memoryStore(), rng: () => 0 });
+    const first = (await draw(app)).cardId;
+    expect((await draw(app)).cardId).toBe(first); // idempotent — a refresh cannot skip
+
+    await answerCard(app, first);
+    expect((await draw(app)).cardId).not.toBe(first); // answering advances the draw
+  });
+
+  it("resumes the held question across a fresh app instance with no refill storm", async () => {
+    // A shared scheduler store stands in for the durable per-learner row; a second
+    // app over it with a cold in-memory cache is what a reload/new isolate is.
+    const scheduler = memoryScheduler();
+    const build = () => createApp({ pack: pickerGraph(), store: memoryStore(), scheduler, rng: () => 0 });
+
+    const app1 = build();
+    // Draw and answer a few, then leave one drawn-but-unanswered (held as current).
+    for (let i = 0; i < 3; i++) {
+      const q = await draw(app1);
+      await answerCard(app1, q.cardId);
+    }
+    const held = (await draw(app1)).cardId;
+
+    const app2 = build(); // reload: cold cache, same durable store
+    expect((await draw(app2)).cardId).toBe(held); // the exact question resumes
+    // The eligible pool is unchanged — no refill storm reset the selection.
+    expect((await packList(app2)).queued).toBe(3);
+  });
+
+  it("writes scheduler state once per drawing /question, /answer, and PUT /packs — never on a re-serve", async () => {
+    // A counting spy over the in-memory store pins the per-draw write cost.
+    const inner = memoryScheduler();
+    let writes = 0;
+    const scheduler: SchedulerStore = {
+      read: () => inner.read(),
+      write: (s) => {
+        writes++;
+        return inner.write(s);
+      },
+    };
+    const app = createApp({
+      pack: pickerGraph(),
+      store: memoryStore(),
+      selection: memorySelection(),
+      scheduler,
+      rng: () => 0,
+    });
+
+    const q1 = await draw(app); // first draw: build-and-persist + the draw itself
+
+    const afterDraw = writes;
+    await draw(app); // current held: re-serves, draws nothing, writes nothing
+    expect(writes).toBe(afterDraw);
+
+    const beforeAnswer = writes;
+    await answerCard(app, q1.cardId);
+    expect(writes).toBe(beforeAnswer + 1); // markAnswered writes through once
+
+    const beforeNext = writes;
+    await draw(app); // current cleared: a real draw
+    expect(writes).toBe(beforeNext + 1);
+
+    const beforePut = writes;
+    await putPacks(app, ["continents"]);
+    expect(writes).toBe(beforePut + 1); // selection change writes through once
+  });
+
+  it("draws a newly selected pack within a few questions", async () => {
+    const app = createApp({ pack: pickerGraph(), store: memoryStore() });
+    await putPacks(app, ["continents"]); // narrow first
+    await putPacks(app, ["cities", "continents"]); // then add cities back
+    const seen = new Set<string>();
+    for (let i = 0; i < 6; i++) {
+      const q = await draw(app);
+      seen.add(q.packId);
+      await answerCard(app, q.cardId);
+    }
+    expect(seen.has("cities")).toBe(true); // the re-added pack surfaces promptly
   });
 });
 
@@ -1015,7 +1120,15 @@ describe("POST /answer — Elo ratings computed live (#119)", () => {
       const app = createApp({ pack: pickerGraph(), store: memoryStore(), rating, rng });
       const out: string[] = [];
       for (let n = 0; n < 20; n++) {
-        out.push(questionResponseSchema.parse(await (await app.request("/question")).json()).cardId);
+        // /question is idempotent until answered, so answer each drawn card to
+        // advance the sequence; the answers also feed the live ratings the draw reads.
+        const q = questionResponseSchema.parse(await (await app.request("/question")).json());
+        out.push(q.cardId);
+        await app.request("/answer", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ cardId: q.cardId, input: "?" }),
+        });
       }
       return out;
     };
