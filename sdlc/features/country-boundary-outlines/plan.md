@@ -77,7 +77,17 @@ _Spike was a throwaway Visvalingam preview grid in scratch; nothing to ship._
   one; sub-px ring dropped, supra-px kept; multipart kept; padded bbox correct;
   seam-cross flagged. All pass. Green.
 
-## Step 3 — Import script + run it  `[ ]`
+## Step 3 — Import script + run it  `[x]` (done 2026-09-07)
+
+**Result:** 188 written / 5 seam-crossers (US, Russia, NZ, Kiribati, Fiji) / 0
+no-match — better than the ~186 estimate, because the 2 QID overrides
+(Q29999→Q55, Q756617→Q35) close the NL/DK gap. Canada largest at 36.4 KB (under
+the 40 KB cap → valve never trips). NE pinned to
+`nvkelso/natural-earth-vector` v5.1.2 commit `f1890d9…`, cached under gitignored
+`packages/server/scripts/.ne-cache/`. `packs.generated.ts` regenerated (188
+`boundaryGeoJSON`). **Step-4 risk:** NE admin-0 France includes overseas
+departments (French Guiana etc.), so its framing bbox is wide — eyeball the
+France reveal in Step 4.
 
 - **Goal:** populate `boundaryGeoJSON` on the 186 eligible countries; report the
   rest.

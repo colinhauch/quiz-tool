@@ -11,6 +11,7 @@
     "bundle-packs": "tsx scripts/bundle-packs.ts",
     "packs:import-coordinates": "tsx scripts/import-wikidata-coordinates.ts",
     "packs:import-geometry": "tsx scripts/import-regional-geometry.ts",
+    "packs:import-boundaries": "tsx scripts/import-country-boundaries.ts",
     "pretest": "tsx scripts/bundle-packs.ts",
     "test": "vitest run",
     "deploy": "wrangler deploy",
