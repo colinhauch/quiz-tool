@@ -69,9 +69,9 @@ Keep the index in [specs/README.md](specs/README.md) current when you add a spec
 
 ## Agent skills
 
-### Issue tracker
+### Issue tracker and SDLC
 
-Issues and PRDs live in GitHub Issues. Skills use the `gh` CLI. See `docs/agents/issue-tracker.md`.
+Everything that outlives a branch — intent, spec, tickets — is a GitHub issue; plan and review findings die with the branch (PR body). Features flow `intent → spec → tickets` as one issue moving through labels: `/intent` captures, `/to-spec` grills it into a spec in the **same** issue (intent stays verbatim at top), `/to-tickets` cuts child issues. A ticket that needs its parent spec to be actionable is defective. Skills use the `gh` CLI. See `docs/agents/issue-tracker.md`. (`sdlc/` is frozen — the old file-based chain, kept for history.)
 
 ### Triage labels
 

@@ -1,3 +1,9 @@
+> **[FROZEN — superseded 2026-09-07]** The file-based artifact chain described
+> below is no longer used. The SDLC now lives in GitHub issues (`intent → spec →
+> tickets`); see `docs/agents/issue-tracker.md` and root `CLAUDE.md`. This folder
+> is kept read-only as historical record — don't scaffold `sdlc/features/` or
+> write new artifacts here.
+
 # The loop — this repo's AI-native SDLC
 
 How this repo takes a feature from idea to production. It adapts Anthropic's

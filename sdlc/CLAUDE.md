@@ -1,3 +1,7 @@
+> **[FROZEN — superseded 2026-09-07]** This file-based SDLC is retired. Features
+> now live in GitHub issues (`intent → spec → tickets`); see
+> `docs/agents/issue-tracker.md` and root `CLAUDE.md`. Kept read-only for history.
+
 # Working in `sdlc/`
 
 This folder is the repo's AI-native SDLC. `README.md` is the playbook (the
