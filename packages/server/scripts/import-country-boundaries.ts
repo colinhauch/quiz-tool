@@ -106,7 +106,11 @@ function simplifyUnderCap(raw: GeoMultiPolygon): { boundary: GeoMultiPolygon; ta
   return { boundary, targetPx };
 }
 
-type ReportRow = { entityId: string; label: string; reason: "no-match" | "antimeridian" };
+type ReportRow = {
+  entityId: string;
+  label: string;
+  reason: "no-match" | "antimeridian" | "all-sub-pixel";
+};
 
 async function main() {
   const byWikidata = await loadNaturalEarth();
@@ -146,6 +150,15 @@ async function main() {
     }
 
     const { boundary, targetPx } = simplifyUnderCap(raw);
+    // An all-atoll archipelago (Maldives, Marshall Islands) can lose every ring
+    // to the sub-pixel drop at its own framing, leaving an empty geometry with
+    // no usable bbox. Don't ship that — fall back to pin + coastline and report
+    // it (spec story 13). Framing story 4's fine atolls at whole-country zoom is
+    // a known limitation, tracked in the spec.
+    if (boundary.coordinates.length === 0) {
+      skipped.push({ entityId: entity.id, label: entity.labels.en, reason: "all-sub-pixel" });
+      return JSON.stringify(bare);
+    }
     const bytes = JSON.stringify(boundary).length;
     if (targetPx > TARGET_PX) capped.push(`${entity.labels.en} (px ${targetPx.toFixed(2)}, ${(bytes / 1024).toFixed(1)} KB)`);
     if (bytes > REVIEW_FLAG_BYTES) chunky.push({ label: entity.labels.en, bytes });
@@ -158,8 +171,10 @@ async function main() {
   // ── Review report (spec story 12) ──────────────────────────────────────────
   const noMatch = skipped.filter((r) => r.reason === "no-match");
   const seam = skipped.filter((r) => r.reason === "antimeridian");
+  const subPixel = skipped.filter((r) => r.reason === "all-sub-pixel");
   console.log(`\n✓ boundaries imported: ${written} written, ${skipped.length} skipped\n`);
   console.log(`  antimeridian seam-crossers (fallback, ${seam.length}): ${seam.map((r) => r.label).join(", ") || "—"}`);
+  console.log(`  all sub-pixel at framing (fallback, ${subPixel.length}): ${subPixel.map((r) => r.label).join(", ") || "—"}`);
   console.log(`  no NE match (fallback, ${noMatch.length}): ${noMatch.map((r) => `${r.label} [${r.entityId}]`).join(", ") || "—"}`);
   console.log(`  byte-cap valve raised tolerance (${capped.length}): ${capped.join(", ") || "—"}`);
   chunky.sort((a, b) => b.bytes - a.bytes);

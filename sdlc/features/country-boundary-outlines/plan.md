@@ -110,7 +110,18 @@ France reveal in Step 4.
 - **Done-when:** `entities.jsonl` + `packs.generated.ts` carry boundaries,
   report shows ~186 written / 5 seam / 2 fallback, `checks` green. Green.
 
-## Step 4 — Client render + framing  `[ ]`
+## Step 4 — Client render + framing  `[x]` (done 2026-09-07)
+
+**Result:** `bboxOf` in mapZoom (+ tests); `.map-aid__boundary` path (orange
+translucent fill + green-text stroke) above the coastline overlay, below the
+marks; framing prefers the boundary bbox (padded 8% → `fitAspect`) over
+`regionExtent`. Eyeballed via a throwaway SVG harness (Canada/Chile/Iceland/
+Japan crisp; France wide; Maldives/Russia fall back). **Two defects found &
+fixed:** (1) empty-boundary archipelagos (Maldives, Marshall Is.) produced a
+`NaN` viewBox — import now withholds an empty boundary (`all-sub-pixel`
+report reason, 186 written / 7 skipped) and the client treats empty as absent;
+(2) France frames wide via overseas French Guiana — accepted for v1. Both
+recorded in `spec.md` "Known limitations".
 
 - **Goal:** draw the boundary and zoom to it.
 - **Files:**

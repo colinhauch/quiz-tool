@@ -2,8 +2,10 @@ import type { VisualAid as VisualAidData } from "@geo/contract";
 import { useEffect, useRef, useState } from "react";
 import { WORLD_LAND_PATH } from "./world-map.generated.js";
 import {
+  type View,
   WORLD_ASPECT,
   WORLD_VIEW,
+  bboxOf,
   extentToView,
   fitAspect,
   interpolateView,
@@ -55,7 +57,7 @@ import {
 type MapProps = Omit<
   Pick<
     Extract<VisualAidData, { kind: "map" }>,
-    "lat" | "lon" | "label" | "localGeoJSON" | "regionExtent"
+    "lat" | "lon" | "label" | "localGeoJSON" | "regionExtent" | "boundaryGeoJSON"
   >,
   "lat" | "lon" | "label"
 > & {
@@ -77,8 +79,19 @@ const IDLE_MS = 500;
 const FLY_MS = 900;
 const HOLD_MS = 3000;
 
+/** Framing margin around the boundary bbox, as a fraction of each span (#203). */
+const BOUNDARY_PAD_FRAC = 0.08;
+
 function project(lat: number, lon: number) {
   return { x: lon + 180, y: 90 - lat };
+}
+
+/** Grow a projected view outward by `frac` of each side — breathing room so a
+ * framed boundary doesn't sit flush against the frame edge. */
+function padView(v: View, frac: number): View {
+  const dx = v.w * frac;
+  const dy = v.h * frac;
+  return { x: v.x - dx, y: v.y - dy, w: v.w + 2 * dx, h: v.h + 2 * dy };
 }
 
 /** Guarded — jsdom and old browsers lack `matchMedia`; then assume motion is ok. */
@@ -111,19 +124,31 @@ export function MapAid({
   label,
   localGeoJSON,
   regionExtent,
+  boundaryGeoJSON,
   autoZoom = false,
   idleMs = IDLE_MS,
   flyMs = FLY_MS,
   holdMs = HOLD_MS,
 }: MapProps) {
   const hasCoords = lat !== undefined && lon !== undefined;
+  // A boundary with no polygons (every ring was sub-pixel at its framing — e.g.
+  // an all-atoll archipelago) carries no shape and no usable bbox, so treat it
+  // as absent: draw nothing and frame by `regionExtent`. The import already
+  // withholds such boundaries; this guards against one slipping through.
+  const hasBoundary = !!boundaryGeoJSON && boundaryGeoJSON.coordinates.length > 0;
 
-  // The zoom target: the regional extent grown to the world's aspect ratio, so
-  // the frame's shape (and on-screen height) never changes as it zooms. There
-  // is nothing to zoom toward without a pinned coordinate.
-  const regionView = hasCoords && regionExtent
-    ? fitAspect(extentToView(regionExtent), WORLD_ASPECT)
-    : null;
+  // The zoom target: a rectangle grown to the world's aspect ratio, so the
+  // frame's shape (and on-screen height) never changes as it zooms. When a
+  // country boundary is present (spec #203) we frame its real extent — padded
+  // bbox — so the outline fills the card; otherwise the coarse type-based
+  // `regionExtent`. Nothing to zoom toward without a pinned coordinate.
+  const regionView = !hasCoords
+    ? null
+    : hasBoundary
+      ? fitAspect(padView(bboxOf(boundaryGeoJSON!), BOUNDARY_PAD_FRAC), WORLD_ASPECT)
+      : regionExtent
+        ? fitAspect(extentToView(regionExtent), WORLD_ASPECT)
+        : null;
   const canZoom = regionView !== null;
 
   // Zoom position on the 1-D track: 0 = global, 1 = regional. With reduced
@@ -186,6 +211,15 @@ export function MapAid({
           <path
             className="map-aid__local"
             d={geoToPath(localGeoJSON)}
+            vectorEffect="non-scaling-stroke"
+          />
+        )}
+        {/* The country's real outline (#203): translucent highlight + solid
+            stroke, above the coarse coastline overlay, below the pin/label. */}
+        {hasCoords && hasBoundary && (
+          <path
+            className="map-aid__boundary"
+            d={geoToPath(boundaryGeoJSON!)}
             vectorEffect="non-scaling-stroke"
           />
         )}

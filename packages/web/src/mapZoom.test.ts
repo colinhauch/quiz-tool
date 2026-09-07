@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   WORLD_ASPECT,
   WORLD_VIEW,
+  bboxOf,
   easeInOutCubic,
   extentToView,
   fitAspect,
@@ -36,6 +37,28 @@ describe("mapZoom", () => {
     for (let t = 0.1; t <= 1; t += 0.1) {
       expect(easeInOutCubic(t)).toBeGreaterThan(easeInOutCubic(t - 0.1));
     }
+  });
+});
+
+describe("bboxOf", () => {
+  it("projects a MultiPolygon's lon/lat bbox to a viewBox (x=minLon+180, y=90-maxLat)", () => {
+    const geo = {
+      type: "MultiPolygon" as const,
+      coordinates: [[[[139, 35], [141, 35], [141, 37], [139, 37], [139, 35]]]],
+    };
+    expect(bboxOf(geo)).toEqual({ x: 319, y: 53, w: 2, h: 2 });
+  });
+
+  it("spans every part of a multipart geometry", () => {
+    const geo = {
+      type: "MultiPolygon" as const,
+      coordinates: [
+        [[[0, 0], [1, 0], [1, 1], [0, 0]]],
+        [[[10, 10], [11, 10], [11, 11], [10, 10]]],
+      ],
+    };
+    // Union bbox is lon [0,11], lat [0,11].
+    expect(bboxOf(geo)).toEqual({ x: 180, y: 79, w: 11, h: 11 });
   });
 });
 

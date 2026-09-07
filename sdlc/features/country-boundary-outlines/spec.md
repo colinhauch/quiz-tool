@@ -98,6 +98,26 @@ Good tests here assert **external behavior of pure functions against tiny synthe
 
 Import script and NE matching are not unit-tested (consistent with the existing import scripts); correctness there is caught by the review report + author spot-check.
 
+## Known limitations (found during Step 4 build, 2026-09-07)
+
+Faithful to the "match `WIKIDATAID`, ship whatever Natural Earth ships"
+decision, two v1 outcomes are imperfect but deliberately not fixed here:
+
+- **Overseas-territory framing (France).** NE admin-0 France includes French
+  Guiana (and other overseas departments), so the boundary bbox spans lon
+  `[-54.5, 9.6]` and the reveal frames the whole North Atlantic with metropolitan
+  France small and off-centre. It renders and zooms correctly — just wide. A
+  future pass could frame to the largest contiguous part, or split territories.
+  Same latent risk for any country with far-flung dependencies.
+- **All-sub-pixel archipelagos (Maldives, Marshall Islands).** At a framing that
+  fits the whole archipelago, every atoll ring is < 1 px and the adaptive drop
+  removes them all, leaving an empty geometry. The import now **withholds** an
+  empty boundary (reason `all-sub-pixel`) so these fall back to pin + coastline
+  (story 13), and the client treats an empty boundary as absent so a stray one
+  can never frame to `NaN`. This trades story 4 (fine atolls) for correctness;
+  honouring both would need per-archipelago framing tighter than the whole
+  country, which is out of scope for v1.
+
 ## Out of Scope
 
 - Non-country entities (cities, continents) — pins/coastline as today.
