@@ -35,8 +35,10 @@ branch** — plan, review findings — lives in the branch or the PR body, never
 here. There are no `sdlc/features/<slug>/*.md` artifacts anymore; `sdlc/` is
 frozen historical record (see its README).
 
-Three stages, distinguished by label, in the same tracker:
+Three main stages (one proto-stage), distinguished by label, in the same tracker:
 
+- **`ideas`** - [the proto-stage] Single, brief concepts that can be turned into 
+more developed intents later. Currently stored at `sdlc/ideas.md`.
 - **`intent`** — cheap capture: what's wanted, why, roughly. Created in seconds
   (`/intent`). Accumulates as a queue.
 - **`spec`** — a working session takes one intent, grills it (`/grill-me`,

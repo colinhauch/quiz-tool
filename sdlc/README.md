@@ -1,10 +1,7 @@
 # The loop — this repo's AI-native SDLC
 
-How this repo takes a feature from idea to production. It adapts Anthropic's
-AI-native SDLC playbook (`docs/articles/AI_SDLC_Article.md`) to a **single developer**.
-The reasoning behind the adaptation lives in `sdlc/CLAUDE.md`; this file is the
-operational how-to. Tracker mechanics (the `gh` commands) live in
-`docs/agents/issue-tracker.md`.
+How this repo takes a feature from idea to production. Tracker mechanics (the 
+`gh` commands) live in `docs/agents/issue-tracker.md`.
 
 ## The idea in one line
 
@@ -24,9 +21,9 @@ Two things earn the ceremony for a solo dev:
 |---|---|---|
 | Intent, spec, tickets | GitHub issue | outlive any branch |
 | Plan, review findings | branch / PR body | die with the branch |
-| CLAUDE.md, skills, hooks | `prod` | steer every session |
+| CLAUDE.md, skills, hooks | main branches | steer every session |
 
-**Issues are canonical.** There are no `sdlc/features/<slug>/*.md` artifacts.
+**Issues are canonical.** There are no `sdlc/features/<slug>/*.md` artifacts. There are some old ones that exist for posterity.
 
 ## Right-size the chain
 
