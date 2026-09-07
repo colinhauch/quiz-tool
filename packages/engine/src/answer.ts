@@ -51,30 +51,49 @@ export interface AnswerResult {
    */
   acceptedAnswers: string[];
   /**
-   * A map of the card's most locatable entity, when one carries a coordinate.
-   * Its `label` names the *mapped* place, which is not always `acceptedAnswer`:
-   * for "What continent is Andorra in?" the map pins Andorra, not Europe.
+   * A map of the card's place, when an entity carries a coordinate. Its `label`
+   * names the *pinned* place, which is not always `acceptedAnswer`: for "What
+   * continent is Andorra in?" the map pins Andorra, not Europe. The pin and the
+   * outlined country can differ — "What is the capital of Germany?" pins Berlin
+   * yet outlines Germany (spec #203, see `revealVisualFor`).
    */
   revealVisual?: VisualAid;
 }
 
-/** A map descriptor for `entity` when it has a coordinate, omitted otherwise. */
-function revealVisualFor(entity: Entity | undefined): VisualAid | undefined {
-  if (!entity?.coordinate) return undefined;
+/**
+ * The reveal map for a card: a pin (point + label) at the most point-like
+ * entity, plus — independently — the country's real outline drawn around it
+ * when the statement names a country with a precomputed boundary (spec #203).
+ * So "What is the capital of Germany?" pins Berlin *and* outlines Germany; the
+ * pin marks the specific place, the boundary teaches the country's shape.
+ *
+ * The pin and the geographic context can be different entities. The point,
+ * label, and `entityId` are always the pin's. The geometry — `boundaryGeoJSON`
+ * and the coastline pair `localGeoJSON`/`regionExtent` — comes from the boundary
+ * country when there is one (so the coastline overlay and the client's framing
+ * match the outline), otherwise from the pin entity itself (a city with its own
+ * clipped neighbourhood, or a country whose boundary is a seam-crosser fallback).
+ */
+function revealVisualFor(statement: Statement, graph: GraphQuery): VisualAid | undefined {
+  const pin = mapEntityFor(statement, graph);
+  if (!pin?.coordinate) return undefined;
+  // Prefer the boundary country as the source of map geometry; fall back to the
+  // pin's own so behaviour is unchanged for cards with no country boundary.
+  const geoSource = boundaryCountryFor(statement, graph) ?? pin;
   const visual: VisualAid = {
     kind: "map",
-    entityId: entity.id,
-    lat: entity.coordinate.lat,
-    lon: entity.coordinate.lon,
-    label: entity.labels.en,
+    entityId: pin.id,
+    lat: pin.coordinate.lat,
+    lon: pin.coordinate.lon,
+    label: pin.labels.en,
   };
-  // Regional geometry rides along when the entity was clipped at import (#154);
-  // an entity with a coordinate but no stored geometry still maps, just at the
-  // world silhouette — the client falls back to full-world framing.
-  if (entity.localGeoJSON) visual.localGeoJSON = entity.localGeoJSON;
-  if (entity.regionExtent) visual.regionExtent = entity.regionExtent;
-  // The country outline (#203) rides along the same way, when precomputed.
-  if (entity.boundaryGeoJSON) visual.boundaryGeoJSON = entity.boundaryGeoJSON;
+  // Regional geometry rides along when the source was clipped at import (#154);
+  // a source with no stored geometry still maps, just at the world silhouette —
+  // the client falls back to full-world framing.
+  if (geoSource.localGeoJSON) visual.localGeoJSON = geoSource.localGeoJSON;
+  if (geoSource.regionExtent) visual.regionExtent = geoSource.regionExtent;
+  // The country outline (#203); present only when a boundary country was found.
+  if (geoSource.boundaryGeoJSON) visual.boundaryGeoJSON = geoSource.boundaryGeoJSON;
   return visual;
 }
 
@@ -101,21 +120,37 @@ function locatabilityRank(entity: Entity): number {
  * country?" pins Moscow (not Russia's centroid). Undefined when neither end has
  * a coordinate (e.g. a currency or language object).
  */
-function mapEntityFor(statement: Statement, graph: GraphQuery): Entity | undefined {
+/** The statement's subject and (entity) object that the graph actually holds —
+ * an id it can't resolve simply drops out rather than failing the answer. */
+function statementEntities(statement: Statement, graph: GraphQuery): Entity[] {
   const ids = [statement.subject];
   if (statement.object.kind === "entity") ids.push(statement.object.id);
-  const located: Entity[] = [];
+  const out: Entity[] = [];
   for (const id of ids) {
-    // Map only entities the graph actually holds; an id we can't resolve simply
-    // can't be plotted, so it drops out rather than failing the answer.
-    let entity: Entity;
     try {
-      entity = graph.getEntity(id);
+      out.push(graph.getEntity(id));
     } catch {
-      continue;
+      // unresolved id — not plottable, skip
     }
-    if (entity.coordinate) located.push(entity);
   }
+  return out;
+}
+
+/**
+ * A country in the statement that carries a precomputed boundary (spec #203),
+ * so its outline can be drawn around the pin whichever entity the pin marks.
+ * At most one country appears in the current relations, so the first match
+ * wins. Undefined when no country in the statement has a boundary (the pin's
+ * own geometry is then used, unchanged).
+ */
+function boundaryCountryFor(statement: Statement, graph: GraphQuery): Entity | undefined {
+  return statementEntities(statement, graph).find(
+    (e) => e.types.includes("country") && e.boundaryGeoJSON !== undefined,
+  );
+}
+
+function mapEntityFor(statement: Statement, graph: GraphQuery): Entity | undefined {
+  const located = statementEntities(statement, graph).filter((e) => e.coordinate);
   if (located.length === 0) return undefined;
   return located.reduce((best, e) => (locatabilityRank(e) < locatabilityRank(best) ? e : best));
 }
@@ -142,7 +177,7 @@ export function checkAnswer(pack: Pack, cardId: string, input: string): AnswerRe
   const graph = createGraph(pack.entities);
 
   // The map depicts the card's place, independent of which slot is graded.
-  const revealVisual = revealVisualFor(mapEntityFor(statement, graph));
+  const revealVisual = revealVisualFor(statement, graph);
   const finish = (correct: boolean, acceptedAnswer: string, acceptedAnswers: string[]): AnswerResult => {
     const result: AnswerResult = { correct, acceptedAnswer, acceptedAnswers };
     if (revealVisual) result.revealVisual = revealVisual;

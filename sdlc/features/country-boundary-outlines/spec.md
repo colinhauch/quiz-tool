@@ -98,6 +98,24 @@ Good tests here assert **external behavior of pure functions against tiny synthe
 
 Import script and NE matching are not unit-tested (consistent with the existing import scripts); correctness there is caught by the review report + author spot-check.
 
+## Follow-up: pin and outline are independent (2026-09-07)
+
+Originally the reveal map drew geometry (coastline + boundary) from the single
+*most point-like* entity, so a card whose place is a city — capital cards
+("capital of Germany" pins Berlin), city→country cards ("what country is Tokyo
+in?" pins Tokyo) — showed **no** boundary, because a city has none. Reviewed with
+the originator: the pin and the outline should be **decoupled**. The map now
+carries a point + label from the most point-like entity *and*, independently, the
+real outline of any country named in the statement that has a boundary. So
+"capital of Germany" pins Berlin **and** outlines Germany, framed to Germany.
+
+Implementation is entirely in `packages/engine/src/answer.ts` (`revealVisualFor`
++ new `boundaryCountryFor`); the `MapVisualAid` contract already carried a point
+and an optional boundary as separate fields, so no contract or client change. Map
+geometry (`boundaryGeoJSON` + the `localGeoJSON`/`regionExtent` coastline pair) is
+sourced from the boundary country when the statement has one, else from the pin
+entity (unchanged for boundary-less cards — seam-crossers, city-only cards).
+
 ## Known limitations (found during Step 4 build, 2026-09-07)
 
 Faithful to the "match `WIKIDATAID`, ship whatever Natural Earth ships"
