@@ -1,6 +1,6 @@
 # Intent: Always-on environment indicator for non-prod
 
-Status: draft
+Status: accepted
 
 ## Problem
 As a developer I keep losing track of which deployed environment a given tab is
@@ -30,7 +30,7 @@ to the page sees it; it's not gated to logged-in developers.
   questions).
 
 ## Constraints
-- The indicator must NEVER appear on prod. Prod is the one environment
+- The indicator should not appear on prod. Prod is the one environment
   explicitly hidden.
 - Fail-safe toward showing: if the environment is unknown or misconfigured,
   show the indicator anyway. A false "non-prod" badge is acceptable; a silent
