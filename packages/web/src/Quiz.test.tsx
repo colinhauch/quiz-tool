@@ -549,6 +549,33 @@ describe("Quiz", () => {
       expect(map).toHaveAttribute("aria-label", "World map");
     });
 
+    it("draws the country boundary in the desktop map slot when the reveal carries one (#203)", async () => {
+      // Regression: the wide layout hand-spreads reveal fields into MapAid and
+      // must forward boundaryGeoJSON, or desktop shows the pin with no outline.
+      stubFetch([tokyo], {
+        correct: true,
+        acceptedAnswer: "Japan",
+        revealVisual: {
+          kind: "map",
+          entityId: "Q17",
+          lat: 35.6895,
+          lon: 139.6917,
+          label: "Tokyo",
+          boundaryGeoJSON: {
+            type: "MultiPolygon",
+            coordinates: [[[[130, 30], [146, 30], [146, 46], [130, 46], [130, 30]]]],
+          },
+        },
+      });
+      const { container } = render(<Quiz />);
+
+      fireEvent.change(await screen.findByLabelText(/your answer/i), { target: { value: "Japan" } });
+      fireEvent.click(screen.getByRole("button", { name: /^submit$/i }));
+
+      await screen.findByRole("status");
+      expect(container.querySelector(".mpanel__map .map-aid__boundary")).toBeInTheDocument();
+    });
+
     it("keeps the disabled answer and shows the verdict above it after answering", async () => {
       stubFetch([tokyo], { correct: true, acceptedAnswer: "Japan" });
       render(<Quiz />);

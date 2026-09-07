@@ -297,6 +297,7 @@ export function Quiz() {
                       label: view.result.revealVisual.label,
                       localGeoJSON: view.result.revealVisual.localGeoJSON,
                       regionExtent: view.result.revealVisual.regionExtent,
+                      boundaryGeoJSON: view.result.revealVisual.boundaryGeoJSON,
                     }
                   : {})}
                 autoZoom={autoZoomEnabled}
