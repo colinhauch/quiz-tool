@@ -29,7 +29,7 @@ memory — only its commits.
 Commit subject convention (so the log is greppable):
 `feat(env-indicator): <checkpoint N — short name>`.
 
-- [ ] **C1** — Contract: `environment`/`config` schema + `normalizeEnvironment`
+- [x] **C1** — Contract: `environment`/`config` schema + `normalizeEnvironment`
 - [ ] **C2** — Server: `GET /api/config` wired from `DEPLOY_ENV`
 - [ ] **C3** — Client: badge component mounted on the app shell
 - [ ] **C4** — End-to-end verification + PR into `dev`
@@ -43,14 +43,21 @@ contract here so server and (future) admin share one definition.
 
 **Files:** `packages/contract/src/index.ts`, `packages/contract/src/index.test.ts`.
 
-- Add `environmentSchema = z.enum(["prod", "dev", "test", "local", "unknown"])`
-  and `export type Environment = z.infer<typeof environmentSchema>`.
-- Add `configSchema = z.object({ environment: environmentSchema })` and
+- Add `configEnvironmentSchema = z.enum(["prod", "dev", "test", "local", "unknown"])`
+  and `export type ConfigEnvironment = z.infer<typeof configEnvironmentSchema>`.
+  **Name deviation (decided in C1):** the plan originally called these
+  `environmentSchema`/`Environment`, but `./admin-store.ts` already exports
+  `environmentSchema`/`Environment` = `z.enum(["prod","test","dev"])` (the admin
+  `?env=` selector), re-exported flat via `export *`. A second `Environment`
+  would shadow it and widen admin's exhaustive records to 5 members (typecheck
+  break). Spec also says `local`/`unknown` are "not a fourth Environment", so the
+  badge's superset gets its own name rather than reusing `Environment`.
+- Add `configSchema = z.object({ environment: configEnvironmentSchema })` and
   `export type Config = z.infer<typeof configSchema>` (mirrors `healthSchema` /
   `Health` exactly — reuse that shape).
-- Add a pure `normalizeEnvironment(raw?: string): Environment` — exact match on
-  the enum, everything else (including `undefined`) → `"unknown"`. This is the
-  fail-safe rule in one testable place.
+- Add a pure `normalizeEnvironment(raw?: string): ConfigEnvironment` — exact
+  match on the enum, everything else (including `undefined`) → `"unknown"`. This
+  is the fail-safe rule in one testable place.
 
 **Tests (prior art: `index.test.ts` health cases):**
 - `normalizeEnvironment("dev") === "dev"`, same for test/prod/local.
@@ -100,7 +107,8 @@ Fetch the config and render a badge unless prod. Mount above every `App` branch.
 - `apiClient.ts`: add `getConfig(): Promise<Config>` calling `/api/config` via
   the existing `apiFetch` choke point (attaches a Bearer if present, harmless on
   a public route). Import `Config` from `@geo/contract`.
-- `environmentBadge.ts`: pure `badgeFor(env: Environment): { label: string; variant: string } | null`
+- `environmentBadge.ts`: pure `badgeFor(env: ConfigEnvironment): { label: string; variant: string } | null`
+  (`ConfigEnvironment` from `@geo/contract` — see the C1 name-deviation note)
   — returns `null` **only** for `"prod"`; each of dev/test/local/unknown gets a
   distinct `variant` (→ color) and a readable text `label` (name shown as text,
   never color-only — requirement 3/7).

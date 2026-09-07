@@ -3,8 +3,10 @@ import {
   answerLogSchema,
   answerRequestSchema,
   answerResponseSchema,
+  configSchema,
   feedbackRequestSchema,
   healthSchema,
+  normalizeEnvironment,
   questionResponseSchema,
   visualAidSchema,
 } from "./index.js";
@@ -16,6 +18,31 @@ describe("contract", () => {
 
   it("rejects a malformed health payload", () => {
     expect(healthSchema.safeParse({ status: "down" }).success).toBe(false);
+  });
+});
+
+describe("normalizeEnvironment", () => {
+  it("passes each recognized Environment through unchanged", () => {
+    expect(normalizeEnvironment("prod")).toBe("prod");
+    expect(normalizeEnvironment("dev")).toBe("dev");
+    expect(normalizeEnvironment("test")).toBe("test");
+    expect(normalizeEnvironment("local")).toBe("local");
+  });
+
+  it("maps anything unrecognized to unknown (fail-safe)", () => {
+    expect(normalizeEnvironment("staging")).toBe("unknown");
+    expect(normalizeEnvironment(undefined)).toBe("unknown");
+    expect(normalizeEnvironment("")).toBe("unknown");
+  });
+});
+
+describe("configSchema", () => {
+  it("round-trips a well-formed config", () => {
+    expect(configSchema.parse({ environment: "dev" })).toEqual({ environment: "dev" });
+  });
+
+  it("rejects an unrecognized environment", () => {
+    expect(configSchema.safeParse({ environment: "staging" }).success).toBe(false);
   });
 });
 
