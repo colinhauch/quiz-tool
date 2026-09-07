@@ -134,8 +134,22 @@ Fetch the config and render a badge unless prod. Mount above every `App` branch.
 - `main.tsx`: render `<EnvironmentBadge />` as a sibling **before** `<App />`, so
   it shows in the signed-out gate, the auth callback, and the signed-in app
   alike (App.tsx returns early for the first two).
-- `index.css`: badge + per-variant color styles (colors chosen here; dev vs test
-  clearly distinct). Fixed corner placement, high contrast, non-blocking.
+- `index.css`: badge + per-variant color styles. Fixed corner placement, high
+  contrast, non-blocking.
+
+**Visual decisions (locked with the originator — implement exactly):**
+- **Placement:** a small rounded **pill, fixed to the top-left of the viewport**
+  (`position: fixed`, near the "Geography Quiz" logo). Viewport-fixed on purpose,
+  not inside the header — the header only renders in the signed-in branch, but
+  the badge must also show in the signed-out gate and the auth callback, so it
+  can't depend on the header existing. Keep it clear of the logo text; it never
+  overlaps interactive UI (the top-left is dead space).
+- **Colors (variant → color):** `dev` = green, `test` = orange, `local` = grey,
+  `unknown` = red (alarm — a misconfigured non-prod origin). `prod` renders
+  nothing. Ensure legible text contrast on each; the Environment name is always
+  shown as text, never conveyed by color alone.
+- **Label text:** the uppercased Environment name (`DEV` / `TEST` / `LOCAL` /
+  `UNKNOWN`).
 
 **Tests (prior art: `Feedback.test.tsx` / `AuthWidget.test.tsx`, RTL + jsdom):**
 - `environmentBadge.test.ts`: `badgeFor("prod") === null`; dev/test/local/unknown each return a descriptor with the expected label; dev and test variants differ.
