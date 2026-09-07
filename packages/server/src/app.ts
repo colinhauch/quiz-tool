@@ -3,9 +3,11 @@ import {
   answerRequestSchema,
   answerResponseSchema,
   type CardStats,
+  configSchema,
   entityListSchema,
   feedbackRequestSchema,
   healthSchema,
+  normalizeEnvironment,
   packListSchema,
   packSelectionRequestSchema,
   questionResponseSchema,
@@ -95,6 +97,13 @@ export interface AppOptions {
   now?: () => Date;
   /** Per-pack visibility/tier policy. Omit to offer every selectable pack (the default catalog). */
   catalog?: Catalog;
+  /**
+   * The committed stage identifier (`DEPLOY_ENV`) this instance runs as, surfaced
+   * over the public `GET /config` for the environment badge. Normalized fail-safe:
+   * anything but `prod`/`dev`/`test`/`local` (including unset) reports `unknown`,
+   * so a non-prod tab is never mistaken for prod.
+   */
+  deployEnv?: string;
 }
 
 /**
@@ -156,6 +165,7 @@ export function createApp({
   rng,
   now = () => new Date(),
   catalog,
+  deployEnv,
 }: AppOptions) {
   const multiUser = Boolean(auth && storesForUser);
   if (!multiUser && !store) {
@@ -277,6 +287,10 @@ export function createApp({
   // Registered before the auth middleware so it stays public; every route below
   // the `app.use` is guarded in multi-user mode.
   app.get("/health", (c) => c.json(healthSchema.parse({ status: "ok" })));
+  // The deploy environment for the badge — public like /health, so a signed-out
+  // non-prod tab still names itself. Fail-safe: an unset/unrecognized DEPLOY_ENV
+  // reports `unknown`, never silently prod.
+  app.get("/config", (c) => c.json(configSchema.parse({ environment: normalizeEnvironment(deployEnv) })));
   if (multiUser && auth) {
     app.use("*", createAuthMiddleware(auth));
   }

@@ -1,6 +1,7 @@
 import type {
   AnswerLog as AnswerLogData,
   AnswerResponse,
+  Config,
   EntityList,
   FeedbackRequest,
   PackList,
@@ -60,6 +61,15 @@ function jsonInit(method: "POST" | "PUT", body: unknown): RequestInit {
     headers: { "content-type": "application/json" },
     body: JSON.stringify(body),
   };
+}
+
+/**
+ * Fetches the running instance's environment for the badge. Public and
+ * unauthenticated (the Bearer, if any, rides along harmlessly via `apiFetch`).
+ */
+export async function getConfig(): Promise<Config> {
+  const res = await apiFetch("/api/config");
+  return (await res.json()) as Config;
 }
 
 /** Fetches the next question to ask. */

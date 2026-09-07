@@ -1346,3 +1346,44 @@ body {
   font-size: 0.9rem;
   white-space: nowrap;
 }
+
+/*
+ * Environment badge — a persistent pill fixed to the top-left of the viewport
+ * naming a non-prod environment (prod renders nothing; see EnvironmentBadge).
+ * Viewport-fixed, not in the header, so it also shows in the signed-out gate and
+ * the auth callback. Sits in the top-left dead space, clear of the logo and any
+ * interactive control (requirement 8). Colors: dev=green, test=orange,
+ * local=grey, unknown=red; the environment name is always shown as text.
+ */
+.env-badge {
+  position: fixed;
+  top: 0.5rem;
+  left: 0.5rem;
+  z-index: 1000;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-family: var(--sans);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  color: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+}
+
+.env-badge--dev {
+  background: #2e7d4f;
+}
+
+.env-badge--test {
+  background: #d97706;
+}
+
+.env-badge--local {
+  background: #6b7280;
+}
+
+.env-badge--unknown {
+  background: #c0392b;
+}

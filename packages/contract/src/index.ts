@@ -23,6 +23,43 @@ export const healthSchema = z.object({
 export type Health = z.infer<typeof healthSchema>;
 
 /**
+ * What a running instance reports itself as for the environment badge.
+ *
+ * A deliberate superset of the canonical `Environment` (`prod`/`test`/`dev`,
+ * defined in `./admin-store.ts`): `local` labels a Node dev process, and
+ * `unknown` is the fail-safe fallback when `DEPLOY_ENV` is unset or
+ * unrecognized. Per CONTEXT.md and the spec, `local`/`unknown` are NOT a fourth
+ * Environment — they're the badge's fallbacks — so this carries its own name
+ * (`ConfigEnvironment`) rather than colliding with the 3-value `Environment`.
+ * Only `prod` suppresses the client badge; everything else is non-prod and shown.
+ */
+export const configEnvironmentSchema = z.enum(["prod", "dev", "test", "local", "unknown"]);
+
+export type ConfigEnvironment = z.infer<typeof configEnvironmentSchema>;
+
+/**
+ * Maps a raw `DEPLOY_ENV` string to a {@link ConfigEnvironment}: an exact enum
+ * match passes through, everything else (including `undefined`) collapses to
+ * `unknown`. The one place the fail-safe rule lives, so server and client can't
+ * disagree on what an unrecognized value means.
+ */
+export function normalizeEnvironment(raw?: string): ConfigEnvironment {
+  const parsed = configEnvironmentSchema.safeParse(raw);
+  return parsed.success ? parsed.data : "unknown";
+}
+
+/**
+ * `GET /config` — the Environment surfaced to the SPA over an unauthenticated
+ * route, so a non-prod tab can name itself. Mirrors {@link healthSchema}: a tiny
+ * public payload with a single field.
+ */
+export const configSchema = z.object({
+  environment: configEnvironmentSchema,
+});
+
+export type Config = z.infer<typeof configSchema>;
+
+/**
  * `GET /question` — a rendered question ready to display. It carries a stable
  * `cardId` for the card being asked, the prompt, the input mode, and which pack
  * the question came from. It deliberately does NOT carry the answer: the seam
