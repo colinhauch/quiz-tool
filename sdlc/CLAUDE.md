@@ -1,80 +1,58 @@
-> **[FROZEN — superseded 2026-09-07]** This file-based SDLC is retired. Features
-> now live in GitHub issues (`intent → spec → tickets`); see
-> `docs/agents/issue-tracker.md` and root `CLAUDE.md`. Kept read-only for history.
-
 # Working in `sdlc/`
 
-This folder is the repo's AI-native SDLC. `README.md` is the playbook (the
-operational how-to); this file is the working notes — the *why*, the source-of-
-truth rules, and the roadmap. Read the playbook first.
+This folder is the home of the repo's AI-native SDLC: the process docs and the
+skills that drive it. `README.md` is the playbook (the operational how-to); this
+file is the working notes — the *why* and the rules. Read the playbook for detail.
 
-## Source of truth
+## The SDLC in a few lines
 
-**The files in `sdlc/features/<slug>/` are canonical.** `intent.md`, `spec.md`,
-`plan.md`, `review.md` are the record of what was asked, decided, planned, and
-found. If a fact matters, it lives in a file, not only in an issue or a PR.
+A feature moves `intent → spec → tickets → code+tests → review`. It lives in
+**GitHub issues**: one issue carried through labels (`intent` → `spec`), then cut
+into child ticket issues. `/intent` captures, `/to-spec` grills an intent into a
+spec written back into the **same** issue, `/to-tickets` cuts `ready-for-agent`
+child issues, then `/implement` or `/tdd` builds. Full stage-by-stage detail,
+right-sizing, and the review policy are in `README.md`.
 
-We chose files over GitHub issues (reversing the earlier issues-first
-convention) for two reasons: the artifact chain sits next to the code it
-produced, and the whole `sdlc/` tree is copyable to another repo. This is the
-article's "repo as source of truth" configuration.
+## Source of truth: GitHub issues
 
-## GitHub issues run in parallel (supplementary)
+**Issues are canonical**, not files. The intent, the spec, and each ticket are
+issues; the spec's originating intent stays verbatim at the top of its issue (the
+drift guard). The tracker mechanics — how to create/label/query, and how each
+stage maps to `gh` — live in `docs/agents/issue-tracker.md`, the single place
+that resolves "publish to the issue tracker." Skills read that indirection.
 
-Issues stay useful for what files do badly: **status, assignment, and blocking
-relationships** (GitHub native dependencies — real, UI-visible edges, already
-wired for `/wayfinder`). The rule:
+An artifact's home is its lifetime:
 
-- An issue is a **mirror + tracker**, never the record. Its body links to the
-  feature folder; it does not hold the canonical spec/plan text.
-- The tracker is configured in `docs/agents/issue-tracker.md` — the single place
-  that resolves "publish to the issue tracker." Skills read that indirection, so
-  the file-vs-issue decision lives in one spot.
+| Artifact | Home |
+|---|---|
+| Intent, spec, tickets (outlive the branch) | GitHub issue |
+| Plan, review findings (die with the branch) | Branch / PR body |
+| CLAUDE.md, skills, hooks (steer every session) | `prod` |
 
-## Measurement comes free from git
-
-Because artifacts are committed files, cycle-time needs no separate store: the
-git timestamps of `intent.md → spec.md → plan.md → merge` for a feature folder
-give every interval the article measures. A future dashboard is just a script
-over `git log -- sdlc/features/<slug>/`. Don't build a metrics store; query git.
+**Ticket self-sufficiency:** a ticket that needs its parent spec to be actionable
+is defective. Each stage is a lossy compression of the one before — that caps
+re-read spend on a cold start.
 
 ## The skills
 
 Skill sources live under `sdlc/skills/<name>/`, each symlinked into
-`.claude/skills/<name>`, so the whole concern stays one portable tree. Folder
-name = skill name; add a new skill by adding a folder and a symlink. Editing here
-updates the live skill.
+`.claude/skills/<name>`, so the concern stays one portable tree. Folder name =
+skill name; add a skill by adding a folder and a symlink. Editing here updates the
+live skill.
 
-- `sdlc/skills/sdlc/` → `sdlc` — scaffolds a feature folder and navigates the chain.
+- `sdlc/skills/sdlc/` → `sdlc` — navigates the issue lifecycle (resume cold).
 - `sdlc/skills/intent/` → `intent` — Stage 1 front door: `/intent` interviews a
-  raw idea and writes `intent.md`.
+  raw idea and opens an `intent`-labeled issue.
 
-## Ideas inbox (pre-intent)
+## Retired
 
-`sdlc/ideas.md` is a scratch list for half-formed concepts — cheaper than a
-feature folder for something that isn't a commitment yet. `/intent` promotes an
-entry into `sdlc/features/<slug>/intent.md` when it's ripe. We kept intent in the
-feature folder (not a dedicated top-level `intent/`, as the article suggests):
-the article's separate intent home serves many non-engineer contributors across
-repos; for a solo dev the chain-together, copyable layout wins. `ideas.md` is the
-low-ceremony capture the article's separate home would otherwise provide.
-
-## Roadmap (not built)
-
-Live checklist: `sdlc/TODO.md`. Ordered by ROI; each ~one session, independently
-useful.
-
-1. **Wire the chain end to end** — `sdlc` skill scaffolds; `to-spec` writes
-   `spec.md`; plan mode commits `plan.md`; `code-review` writes `review.md`.
-2. **Self-verify + guardrail hooks** — a `verifier` subagent
-   (`.claude/agents/verifier.md`) that runs tests/app in fresh context vs
-   `plan.md`; a hook blocking test-file edits during a fix (protects TDD).
-3. **Close the loop (Maintain)** — a deterministic watcher on one metric (CI
-   failure rate / post-deploy 5xx / grading-error rate) that, on breach, invokes
-   Claude read-only to diagnose and writes a fresh `intent.md` into the queue.
+The old file-based artifact chain — `sdlc/features/<slug>/*.md`, `sdlc/templates/`,
+`sdlc/ideas.md` — is gone; issues replaced it. Those paths are kept only as
+historical record. Don't scaffold `sdlc/features/` or write artifacts there.
 
 ## Deliberately skipped
 
-The enterprise controls in the article govern *many humans* and are overhead for
-one dev: PRDs, committees, sign-offs, separation-of-duties hooks, MDM/managed
-settings, OpenTelemetry export, DORA dashboards.
+The enterprise controls in the article (`docs/AI_SDLC_Article.md`) govern *many
+humans* and are overhead for one dev: PRDs-as-committees, sign-offs,
+separation-of-duties hooks, MDM/managed settings, OpenTelemetry export, DORA
+dashboards.

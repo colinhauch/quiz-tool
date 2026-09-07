@@ -71,7 +71,7 @@ Keep the index in [specs/README.md](specs/README.md) current when you add a spec
 
 ### Issue tracker and SDLC
 
-Everything that outlives a branch — intent, spec, tickets — is a GitHub issue; plan and review findings die with the branch (PR body). Features flow `intent → spec → tickets` as one issue moving through labels: `/intent` captures, `/to-spec` grills it into a spec in the **same** issue (intent stays verbatim at top), `/to-tickets` cuts child issues. A ticket that needs its parent spec to be actionable is defective. Skills use the `gh` CLI. See `docs/agents/issue-tracker.md`. (`sdlc/` is frozen — the old file-based chain, kept for history.)
+Everything that outlives a branch — intent, spec, tickets — is a GitHub issue; plan and review findings die with the branch (PR body). Features flow `intent → spec → tickets` as one issue moving through labels: `/intent` captures, `/to-spec` grills it into a spec in the **same** issue (intent stays verbatim at top), `/to-tickets` cuts child issues. A ticket that needs its parent spec to be actionable is defective. Skills use the `gh` CLI. Playbook and rules: `sdlc/` (`README.md` + `CLAUDE.md`); tracker mechanics: `docs/agents/issue-tracker.md`. (The old file-based `sdlc/features/` artifacts are retired — issues replaced them.)
 
 ### Triage labels
 

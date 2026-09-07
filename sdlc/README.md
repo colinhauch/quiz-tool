@@ -1,103 +1,93 @@
-> **[FROZEN — superseded 2026-09-07]** The file-based artifact chain described
-> below is no longer used. The SDLC now lives in GitHub issues (`intent → spec →
-> tickets`); see `docs/agents/issue-tracker.md` and root `CLAUDE.md`. This folder
-> is kept read-only as historical record — don't scaffold `sdlc/features/` or
-> write new artifacts here.
-
 # The loop — this repo's AI-native SDLC
 
 How this repo takes a feature from idea to production. It adapts Anthropic's
 AI-native SDLC playbook (`docs/AI_SDLC_Article.md`) to a **single developer**.
-The reasoning behind the adaptation lives in `sdlc/CLAUDE.md`; this file is
-the operational how-to.
+The reasoning behind the adaptation lives in `sdlc/CLAUDE.md`; this file is the
+operational how-to. Tracker mechanics (the `gh` commands) live in
+`docs/agents/issue-tracker.md`.
 
 ## The idea in one line
 
-Every stage ends by **committing a markdown artifact**; the next stage begins by
-**reading it**. The chain is `intent → spec → plan → code+tests → review`.
+A feature is **one GitHub issue carried through labels**, `intent → spec`, then
+cut into ticket issues. Each stage is a lossy compression of the last, so a cold
+session reads the current issue instead of re-exploring.
 
-For a solo dev the chain isn't about role handoffs (there are none). It earns its
-place two ways:
-1. **Resume across sessions.** Under a ~5-hour token budget, a fresh session
-   reads the last artifact cold instead of re-exploring. Work survives the
-   boundary.
-2. **Audit trail.** Git history records what was asked, what got built, and why.
+Two things earn the ceremony for a solo dev:
+1. **Resume across sessions.** A fresh session reads the issue cold under a token
+   budget instead of re-deriving context.
+2. **Audit trail.** The issue and its edit history record what was asked, what got
+   built, and why — the original intent stays verbatim at the top of the spec.
 
-## Where artifacts live
+## Where the SDLC lives
 
-```
-sdlc/features/<slug>/
-  intent.md   spec.md   plan.md   review.md
-```
+| Artifact | Home | Lifetime |
+|---|---|---|
+| Intent, spec, tickets | GitHub issue | outlive any branch |
+| Plan, review findings | branch / PR body | die with the branch |
+| CLAUDE.md, skills, hooks | `prod` | steer every session |
 
-- One folder per feature. `<slug>` is a short kebab-case name (e.g.
-  `flag-hints`, `scheduler-elo`).
-- **The file is the source of truth.** A GitHub issue or PR may link to it, but
-  the committed markdown is canonical. (This reverses the earlier issues-first
-  convention; see `sdlc/CLAUDE.md`.)
-- Templates in `sdlc/templates/`. Copy what you need.
+**Issues are canonical.** There are no `sdlc/features/<slug>/*.md` artifacts.
 
 ## Right-size the chain
 
-Not every change needs four files. The chain is a tool, not a tax.
+The chain is a tool, not a tax.
 
-| Change | Make |
+| Change | Do |
 |---|---|
 | Typo, dep bump, one-line fix | nothing — just commit |
-| Small, well-understood fix | `plan.md` only (or nothing) |
-| A real feature | full chain |
-| Bug fix | `intent.md` (the repro) → failing test → fix |
-
-When in doubt, write the artifact — a cheap read later beats a re-exploration.
+| Small, well-understood fix | a ticket issue (or nothing) |
+| A real feature | full chain: intent → spec → tickets |
+| Bug fix | an issue with the repro → failing test → fix |
 
 ## The stages
 
-Each stage: what you produce, and what drives it. A stage's committed artifact is
-the gate — you review it, then fire the next stage.
+Each stage's issue (at its current label) is the gate — review it, then fire the
+next stage.
 
-### 1. Plan → `intent.md`
-Run `/intent` — it brainstorms the raw idea with you, then writes it up: problem,
-why, outcome, constraints, out-of-scope, open questions. Half-formed ideas can
-wait in `sdlc/ideas.md` (a scratch inbox); `/intent` promotes one when it's ripe.
-Commit before synthesizing anything. Set `Status: accepted` when you're ready to
-build.
+### 1. Capture → `intent` issue
+Run `/intent`. It brainstorms the raw idea with you, then opens a GitHub issue
+labeled `intent`: problem, why, roughly-better, out-of-scope, open questions. No
+design. Intents accumulate as a queue (`gh issue list --label intent`) and can be
+worked in any order.
 
-### 2. Design → `spec.md`
-Turn the accepted intent into requirements + design in one pass, constrained by
-`CONTEXT.md` and the `domain-modeling` / `codebase-design` skills. Use `to-spec`.
-Review it against the intent: does it solve the stated problem, are the open
-questions answered? Resolve **flagged concerns** before building.
+### 2. Spec → relabel the same issue `spec`
+A working session takes one intent, grills it (`/grill-me`, `/grill-with-docs`,
+constrained by `CONTEXT.md` and the `domain-modeling` / `codebase-design` skills),
+then `/to-spec` writes the spec **back into the same issue** and relabels it
+`intent` → `spec`. The original intent stays verbatim at the top — the drift
+guard. Resolve flagged concerns before building.
 
-### 3. Build → `plan.md` + code
-Start in **plan mode**, hand Claude the spec, iterate until an unseen session could build from the plan alone. **Commit `plan.md`**, then `implement` (using test driven development). This is the highest-value resume point. If implementation departs from the plan, update `plan.md` in the same commit. Use worktrees for parallel features.
+### 3. Tickets → child issues
+`/to-tickets` cuts the spec issue into child issues, each sized to one session,
+with native blocking edges, labeled `ready-for-agent`. **Each ticket must be
+self-sufficient** — a ticket that needs its parent spec to be actionable is
+defective.
 
-### 4. Test → tests + CI
+### 4. Build → plan + code
+Start in **plan mode**, hand Claude the ticket, iterate until an unseen session
+could build from the plan alone. The plan lives in the branch/PR, not an issue.
+Then `/implement` (test-driven). If implementation departs from the plan, keep the
+plan honest in the same commit. Use worktrees for parallel features.
+
+### 5. Test → tests + CI
 Every session verifies its own work before you see it. Bug fixes are **test-first**
-(`tdd`): write the failing test, commit it, then make it pass without editing the
-test. The `checks` CI job (typecheck, tests, pack validation) is the gate on every
-promotion. "Done" means the proof in `plan.md` is green.
+(`/tdd`): write the failing test, commit it, then make it pass without editing the
+test. The `checks` CI job (typecheck, tests, pack validation) gates every
+promotion. "Done" means the tests are green.
 
-### 5. Deploy → `review.md` + PR
-Run `code-review` (and/or `@claude` on the PR) against the **Review policy** below;
-record findings in `review.md`. Open a PR into `dev`. Promotion `dev → test → prod`
-is by PR, gated by `checks`. You are the human at the gate — findings inform, they
-don't auto-merge.
-
-### 6. Maintain → new `intent.md`
-Not built yet. The eventual close: a signal (CI failure rate, post-deploy 5xx,
-grading-error rate) trips a deterministic watcher, which invokes Claude to
-diagnose and write a fresh `intent.md` back into the queue. See the roadmap in
-`sdlc/CLAUDE.md`.
+### 6. Review → PR
+Run `/code-review` (and/or `@claude` on the PR) against the **Review policy**
+below; findings go in the PR, not a file. Open a PR into `dev`. Promotion
+`dev → test → prod` is by PR, gated by `checks`. You are the human at the gate.
 
 ## Review policy
 
-What the review passes cover (the `code-review` skill and any `@claude` pass run
-these). Findings go in the feature's `review.md`.
+One pass covering bugs plus spec compliance (the `code-review` skill and any
+`@claude` pass run these):
 
 - **Bugs** — logic errors, broken edge cases, regressions.
 - **Security** — injection, auth gaps, PII in logs, RLS holes.
-- **Spec / plan compliance** — does the diff do what `spec.md` required and
-  `plan.md` described?
+- **Spec compliance** — does the diff do what the spec issue required?
 - **Standards** — repo conventions (`CLAUDE.md`, `CONTEXT.md`).
 
 **Important vs Nit:** reserve *Important* for anything that breaks behavior, leaks
@@ -107,6 +97,6 @@ enforces.
 
 ## What we deliberately skip
 
-The enterprise column of the article controls *many humans* and is pure overhead
-for one dev: PRDs, committees, sign-offs, separation-of-duties approval hooks,
+The enterprise column of the article controls *many humans* and is overhead for
+one dev: PRD committees, sign-offs, separation-of-duties approval hooks,
 MDM/managed settings, OpenTelemetry export, DORA dashboards. Ignored on purpose.
