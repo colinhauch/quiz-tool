@@ -105,9 +105,16 @@ Real data, so the "deferred" items are mostly closed already:
 
 _Spike was a throwaway measurement in scratch (no repo changes). Reproduce: download `ne_10m_admin_0_countries.geojson`, join our 193 country QIDs, apply the Q1 formula._
 
-### Still open for the execution spike (narrow)
-- Final `TARGET_PX` / `DROP_PX` by visual inspection of rendered Visvalingam output; confirm the reference width (416 px vs a retina-doubled value).
-- Add the 2 curated QID overrides (`Q29999→Q55`, `Q756617→Q35`) or accept their fallback.
+### Execution-spike constants — LOCKED (2026-09-07, Visvalingam preview at real framing)
+
+- **`TARGET_PX = 0.75`** — chosen against a rendered grid (Canada/Maldives/Chile/France/Iceland/Japan/Italy) at each country's real auto-zoom framing. Crisp enough on complex coasts, leaner tail than 0.5.
+- **`DROP_PX = 1`** — drop any ring whose projected bbox is < 1 px in both dims at that framing.
+- **`CARD_PX = 416`** (26 rem), **not retina-doubled** — SVG is vector, so crispness at a CSS px is resolution-independent; doubling only bloats.
+- **Byte-cap safety valve:** if a country's simplified `boundaryGeoJSON` exceeds **~40 KB** (pre-gzip), raise its tolerance (e.g. ×1.25 steps, `TARGET_PX` cap ~2.0) until under. At 0.75 only Canada (48 KB) trips it → settles ~38 KB (~px 1.0). Everyone else is already under.
+- **Simplification weight:** Visvalingam min-area ≈ `(TARGET_PX × view.w / CARD_PX)²` deg², where `view.w` is the aspect-fitted (2:1) framing width. (Spike used this; production calibrates against `topojson-simplify` weights, which may differ by a constant factor — Step 2 confirms.)
+- **QID overrides confirmed:** add `Q29999→Q55` (Netherlands) and `Q756617→Q35` (Denmark); the rest of the 191 join cleanly. Seam-crossers (US/Russia/NZ/Kiribati/Fiji) fall back.
+
+Observed sizes at 0.75 (pre-gzip): Canada 48→~38 KB (capped), Chile 13.6, Iceland 14.7, Japan 8.7, Italy 7.8, France 1.2, Maldives 0.3.
 
 ---
 _Drafted by agent from a grilling session; Open Questions reviewed and resolved with the originator on 2026-09-07._

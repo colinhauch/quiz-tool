@@ -27,20 +27,15 @@ Status: `[ ]` todo · `[~]` in-progress · `[x]` done (commit SHA)
 
 ---
 
-## Step 0 — Execution spike: lock the visual constants  `[ ]`
+## Step 0 — Execution spike: lock the visual constants  `[x]` (done 2026-09-07)
 
-The only thing real data hasn't settled: the *visual* crispness knobs.
+**LOCKED** (see `spec.md` "Execution-spike constants — LOCKED"):
+`TARGET_PX = 0.75`, `DROP_PX = 1`, `CARD_PX = 416` (not retina-doubled),
+byte-cap valve at ~40 KB (raise tolerance ×1.25 until under; only Canada trips
+it, settles ~38 KB). Visvalingam min-area ≈ `(TARGET_PX × view.w / CARD_PX)²`.
+QID overrides: `Q29999→Q55`, `Q756617→Q35`. Downstream steps read these.
 
-- **Goal:** stand up a throwaway importer against NE 10m admin-0, render
-  Canada / Maldives / Chile / France / Russia(fallback) in the actual 416px
-  card, eyeball, and lock: `TARGET_PX` (~0.5), `DROP_PX` (~1), reference width
-  (416 vs retina-doubled), and whether Canada (~60 KB) needs extra coarsening.
-- **Reuse:** the scratch spike scripts already written (`/tmp/.../spike`);
-  `MapAid.tsx` `geoToPath` + CSS to preview.
-- **Done-when:** chosen constants + the 2 QID overrides
-  (`Q29999→Q55`, `Q756617→Q35`) written into `spec.md` "Still open" section and
-  this step checked. No production code need ship (throwaway).
-- **Commit:** docs-only (spec constants) — or none; boundary = constants recorded.
+_Spike was a throwaway Visvalingam preview grid in scratch; nothing to ship._
 
 ## Step 1 — Data seam: `boundaryGeoJSON` through the stack (no data yet)  `[ ]`
 
