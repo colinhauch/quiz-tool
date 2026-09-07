@@ -119,3 +119,9 @@ _Avoid_: Report, comment, ticket, bug
 **Status**:
 Where a piece of feedback stands with the operator: `unresolved` or `resolved`. New feedback is always unresolved; flipping it is out-of-band SQL in v1, never an app write.
 _Avoid_: State, triage state, done flag
+
+### Reveal map
+
+**Boundary**:
+A country's real administrative outline (`boundaryGeoJSON`), precomputed from Natural Earth and drawn on the reveal map as a translucent highlight the answer country fills, so the learner learns its shape. Distinct from the **Region window** (`regionExtent`) — the coarse type-sized rectangle the coastline is clipped to and the pin is framed in: the boundary *is* the country, the window is just the neighbourhood around the pin. Countries with no confident boundary (seam-crossers, all-sub-pixel archipelagos) carry none and fall back to pin + coastline.
+_Avoid_: Outline, border, shape, region, extent

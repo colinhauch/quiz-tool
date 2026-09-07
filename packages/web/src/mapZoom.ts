@@ -16,6 +16,7 @@ import type { VisualAid as VisualAidData } from "@geo/contract";
 export type View = { x: number; y: number; w: number; h: number };
 
 type RegionExtent = NonNullable<Extract<VisualAidData, { kind: "map" }>["regionExtent"]>;
+type GeoMultiPolygon = NonNullable<Extract<VisualAidData, { kind: "map" }>["boundaryGeoJSON"]>;
 
 /** Projected size of the full-world frame (`x = lon + 180`, `y = 90 - lat`). */
 export const WORLD_VIEW: View = { x: 0, y: 0, w: 360, h: 180 };
@@ -48,6 +49,33 @@ export function extentToView(extent: RegionExtent): View {
     w: extent.maxLon - extent.minLon,
     h: extent.maxLat - extent.minLat,
   };
+}
+
+/**
+ * A MultiPolygon's lon/lat bounding box as a projected `viewBox` (spec #203,
+ * Q5). Used to frame the reveal map to a country's real outline instead of the
+ * coarse type-based `regionExtent`: the client derives the zoom target from the
+ * boundary geometry it was already sent, so nothing new is persisted. Raw bbox,
+ * no padding — the caller pads and `fitAspect`s it into the final frame.
+ */
+export function bboxOf(geo: GeoMultiPolygon): View {
+  let minLon = Infinity;
+  let minLat = Infinity;
+  let maxLon = -Infinity;
+  let maxLat = -Infinity;
+  for (const polygon of geo.coordinates) {
+    for (const ring of polygon) {
+      for (const vertex of ring) {
+        const lon = vertex[0] ?? 0;
+        const lat = vertex[1] ?? 0;
+        if (lon < minLon) minLon = lon;
+        if (lon > maxLon) maxLon = lon;
+        if (lat < minLat) minLat = lat;
+        if (lat > maxLat) maxLat = lat;
+      }
+    }
+  }
+  return { x: minLon + 180, y: 90 - maxLat, w: maxLon - minLon, h: maxLat - minLat };
 }
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;

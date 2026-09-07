@@ -25,6 +25,23 @@ const enriched: VisualAidData = {
 const REGION_VIEWBOX = "317.69 53.31 4 2";
 const WORLD_VIEWBOX = "0 0 360 180";
 
+// A country boundary far from Tokyo's coordinate/regionExtent, so a frame aimed
+// at the boundary is unmistakably distinct from one aimed at `regionExtent`.
+// Boundary lon [100,120], lat [0,20] → center (110, 10) → projected (290, 80).
+const withBoundary: VisualAidData = {
+  ...enriched,
+  boundaryGeoJSON: {
+    type: "MultiPolygon",
+    coordinates: [[[[100, 0], [120, 0], [120, 20], [100, 20], [100, 0]]]],
+  },
+};
+
+/** Parse an `x y w h` viewBox string into numbers. */
+function parseViewBox(el: Element | null): { x: number; y: number; w: number; h: number } {
+  const [x, y, w, h] = (el?.getAttribute("viewBox") ?? "").split(" ").map(Number);
+  return { x: x!, y: y!, w: w!, h: h! };
+}
+
 /** Force `prefers-reduced-motion` on/off (jsdom has no matchMedia by default). */
 function stubReducedMotion(reduce: boolean) {
   vi.stubGlobal(
@@ -83,6 +100,41 @@ describe("VisualAid", () => {
     expect(container.querySelector("svg")).toHaveAttribute("viewBox", WORLD_VIEWBOX);
     expect(container.querySelector(".map-aid__local")).not.toBeInTheDocument();
     expect(queryByRole("slider")).not.toBeInTheDocument();
+  });
+
+  it("draws the country boundary path when a boundary is present (#203)", () => {
+    const { container } = render(<VisualAid visual={withBoundary} />);
+    expect(container.querySelector(".map-aid__boundary")).toBeInTheDocument();
+  });
+
+  it("has no boundary path for a plain map descriptor (seam-crosser / no-match fallback)", () => {
+    const { container } = render(<VisualAid visual={enriched} />);
+    expect(container.querySelector(".map-aid__boundary")).not.toBeInTheDocument();
+  });
+
+  it("frames the boundary's own extent, not the coarse regionExtent, when zoomed in (#203)", () => {
+    const { container, getByRole } = render(<VisualAid visual={withBoundary} />);
+    fireEvent.change(getByRole("slider"), { target: { value: "1" } });
+    const v = parseViewBox(container.querySelector("svg"));
+    // Centered on the boundary's projected center (290, 80) — nowhere near the
+    // regionExtent-derived frame (center ~319.69, 54.31).
+    expect(v.x + v.w / 2).toBeCloseTo(290);
+    expect(v.y + v.h / 2).toBeCloseTo(80);
+    // Padded (8%) then aspect-fitted to 2:1 → wider than the raw 20° span.
+    expect(v.w / v.h).toBeCloseTo(2); // WORLD_ASPECT
+    expect(v.w).toBeGreaterThan(20);
+  });
+
+  it("treats an empty boundary (all-sub-pixel archipelago) as absent: no path, frames by regionExtent", () => {
+    const emptyBoundary: VisualAidData = {
+      ...enriched,
+      boundaryGeoJSON: { type: "MultiPolygon", coordinates: [] },
+    };
+    const { container, getByRole } = render(<VisualAid visual={emptyBoundary} />);
+    expect(container.querySelector(".map-aid__boundary")).not.toBeInTheDocument();
+    fireEvent.change(getByRole("slider"), { target: { value: "1" } });
+    // Falls back to the coarse regionExtent frame, never a NaN viewBox.
+    expect(container.querySelector("svg")).toHaveAttribute("viewBox", REGION_VIEWBOX);
   });
 
   it("renders nothing when there is no visual", () => {

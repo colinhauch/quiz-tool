@@ -37,6 +37,7 @@ export function VisualAid({
             label={visual.label}
             localGeoJSON={visual.localGeoJSON}
             regionExtent={visual.regionExtent}
+            boundaryGeoJSON={visual.boundaryGeoJSON}
             autoZoom={autoZoom}
           />
         );

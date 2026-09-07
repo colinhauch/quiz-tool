@@ -118,6 +118,10 @@ export const mapVisualAidSchema = z
     // clip still maps, at world scale.
     localGeoJSON: geoMultiPolygonSchema.optional(),
     regionExtent: regionExtentSchema.optional(),
+    // The country's real outline (#203), precomputed at author time and carried
+    // here fully hydrated. Optional: only matched country entities carry one;
+    // seam-crossers and unmatched countries fall back to pin + coastline.
+    boundaryGeoJSON: geoMultiPolygonSchema.optional(),
   })
   .strict();
 

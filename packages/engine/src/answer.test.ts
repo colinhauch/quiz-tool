@@ -253,6 +253,72 @@ describe("checkAnswer, revealVisual", () => {
     expect(result.revealVisual).not.toHaveProperty("localGeoJSON");
     expect(result.revealVisual).not.toHaveProperty("regionExtent");
   });
+
+  // A country carrying a precomputed boundary + its coastline clip (spec #203).
+  const germanyBoundary = {
+    type: "MultiPolygon" as const,
+    coordinates: [[[[6, 47], [15, 47], [15, 55], [6, 55], [6, 47]]]],
+  };
+  const germanyLocal = {
+    type: "MultiPolygon" as const,
+    coordinates: [[[[6, 47], [15, 47], [15, 55], [6, 55], [6, 47]]]],
+  };
+  const germanyExtent = { minLon: 5.5, minLat: 47, maxLon: 15.5, maxLat: 55 };
+  const germany: Entity = {
+    id: "Q183",
+    labels: { en: "Germany" },
+    types: ["country"],
+    coordinate: { lat: 51, lon: 10 },
+    boundaryGeoJSON: germanyBoundary,
+    localGeoJSON: germanyLocal,
+    regionExtent: germanyExtent,
+  };
+  const berlin: Entity = { id: "Q64", labels: { en: "Berlin" }, types: ["city"], coordinate: { lat: 52.52, lon: 13.4 } };
+
+  function makeCapitalPack(country: Entity, city: Entity): Pack {
+    return {
+      entities: new Map([country, city].map((e) => [e.id, e])),
+      statements: [
+        { id: "cap:de", subject: country.id, relation: "capital", object: { kind: "entity", id: city.id }, pack: "test-pack" },
+      ],
+      generators: {},
+      hiddenSlots: { capital: ["object", "subject"] },
+      packs,
+    };
+  }
+
+  it("pins the city but outlines the country when the country has a boundary (capital, #203)", () => {
+    // "What is the capital of Germany?" → pin Berlin (the point), outline Germany
+    // (the shape). The two come from different entities.
+    const result = checkAnswer(makeCapitalPack(germany, berlin), "cap:de:object", "Berlin");
+    expect(result.revealVisual).toEqual({
+      kind: "map",
+      entityId: "Q64",
+      lat: 52.52,
+      lon: 13.4,
+      label: "Berlin",
+      localGeoJSON: germanyLocal,
+      regionExtent: germanyExtent,
+      boundaryGeoJSON: germanyBoundary,
+    });
+  });
+
+  it("outlines the country while pinning the city for a city→country card (#203)", () => {
+    // "What country is Tokyo in?" → pin Tokyo, outline Japan.
+    const japanWithBoundary: Entity = {
+      ...japanWithCoordinate,
+      boundaryGeoJSON: germanyBoundary, // synthetic shape; identity is what matters
+    };
+    const result = checkAnswer(makeCityCountryPack(tokyo, japanWithBoundary), "cc:tokyo-japan:object", "Japan");
+    expect(result.revealVisual).toMatchObject({ entityId: "Q1490", label: "Tokyo", boundaryGeoJSON: germanyBoundary });
+  });
+
+  it("uses the pin's own geometry, no boundary, when no country in the statement has one", () => {
+    // Country present but boundary-less (e.g. a seam-crosser fallback): behaviour
+    // is unchanged — the pinned city's own clip is used, and no boundary is sent.
+    const result = checkAnswer(makeCapitalPack(japanWithCoordinate, tokyo), "cap:de:object", "Tokyo");
+    expect(result.revealVisual).toEqual(tokyoMap); // pin Tokyo, no geometry, no boundary
+  });
 });
 
 // A `capital` statement quizzable both ways; the pack declares both slots so

@@ -873,6 +873,19 @@ body {
   fill-opacity: 0.9;
 }
 
+/* The country's real administrative outline (spec #203): a translucent orange
+   highlight so the answer country reads apart from its neighbours at a glance
+   (story 2), plus a solid coastline-coloured stroke tracing the shape (story 1)
+   — unlike `.map-aid__local`, which is fill-only. `non-scaling-stroke` keeps the
+   outline a constant pixel width at any zoom. Tuned by feel, so easy to adjust. */
+.map-aid__boundary {
+  fill: var(--orange);
+  fill-opacity: 0.16;
+  stroke: var(--green-text);
+  stroke-width: 1;
+  stroke-linejoin: round;
+}
+
 .map-aid__frame {
   fill: none;
   stroke: var(--indigo);
