@@ -1,6 +1,6 @@
 # Spec: Always-on environment indicator for non-prod  (from intent)
 
-Status: draft
+Status: accepted
 
 ## Summary
 Every non-prod Environment (dev, test — and, fail-safe, any unrecognized one)
