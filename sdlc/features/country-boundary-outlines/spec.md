@@ -61,6 +61,31 @@ For country entities, precompute and store the country's actual administrative *
 
 **Payload (Q2).** The pack is baked into the server bundle (`packs.generated.ts`) and only the answered entity's visual aid is sent per reveal — so story 8's "modest size" is *one* country's boundary per reveal (single-digit KB once simplified), not the whole file. The 6.2 MB `entities.jsonl` / bundle total is a build-size concern, capped per-entity (~10 KB soft) and reported by the import.
 
+## Delivery & performance (why not lazy-load)
+
+The boundary rides the **answer/reveal response** inline, exactly as `localGeoJSON`
+does today (`revealVisualFor` in `packages/engine/src/answer.ts` — a field on
+`AnswerResult.revealVisual`). This is already the snappy path, and network
+lazy-loading is deliberately **rejected**:
+
+- **No pre-reveal prefetch.** The reveal visual *is* the answer. Sending
+  `boundaryGeoJSON` to the client before the learner submits would leak the
+  correct answer. So it cannot be fetched early no matter what — it can only
+  arrive at reveal.
+- **No separate post-reveal fetch.** A dedicated `/boundary?entityId=…` call
+  would add a round trip where there is currently none, making the reveal
+  *slower*, not snappier.
+- **Inline is bounded.** Worst case is the ~40 KB byte-cap (Canada), gzipping to
+  ~10–15 KB over the wire — a non-issue on top of the existing `localGeoJSON`
+  the same response already carries.
+
+The only genuine snappiness lever is **client-side, optional**: if a large path
+janks the reveal paint, defer the boundary `<path>` by one frame
+(`requestAnimationFrame`) so the pin/label/base/coastline render instantly and
+the outline fills in a beat later. Not required for v1 — add it only if a heavy
+country visibly stutters. Recorded so this isn't re-litigated as a network
+concern.
+
 ## Testing Decisions
 
 Good tests here assert **external behavior of pure functions against tiny synthetic geometry**, never rendering internals — exactly the style of `regional-geometry.test.ts` and `mapZoom.test.ts` today.

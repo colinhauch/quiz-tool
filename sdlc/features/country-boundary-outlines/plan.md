@@ -116,6 +116,11 @@ _Spike was a throwaway Visvalingam preview grid in scratch; nothing to ship._
     `.map-aid__land` stroke.
 - **Reuse:** existing `geoToPath`, `extentToView`/`fitAspect`/`interpolateView`,
   `non-scaling-stroke` convention.
+- **Delivery:** boundary is already inline on the reveal response (no fetch, no
+  lazy-load — see spec "Delivery & performance"). *Optional* snappiness: if a
+  heavy country (Canada) janks the paint, defer the boundary `<path>` one
+  `requestAnimationFrame` so pin/label/base render instantly. Add only if it
+  visibly stutters.
 - **Done-when:** boundary renders + auto-zoom frames it; existing MapAid tests
   pass; reduced-motion still snaps. Green — feature visible end to end.
 
