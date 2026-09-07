@@ -54,7 +54,7 @@ _Spike was a throwaway Visvalingam preview grid in scratch; nothing to ship._
 - **Done-when:** `pnpm -w typecheck` + contract tests pass. Field is optional so
   nothing else changes. Green, mergeable.
 
-## Step 2 — Pure module `country-boundary.ts` + unit tests  `[ ]`
+## Step 2 — Pure module `country-boundary.ts` + unit tests  `[x]` (done 2026-09-07)
 
 - **Goal:** the testable heart — raw boundary + framing → simplified,
   island-dropped MultiPolygon; plus seam-cross detection (→ caller falls back).
