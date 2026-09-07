@@ -31,7 +31,7 @@ Commit subject convention (so the log is greppable):
 
 - [x] **C1** — Contract: `environment`/`config` schema + `normalizeEnvironment`
 - [x] **C2** — Server: `GET /api/config` wired from `DEPLOY_ENV`
-- [ ] **C3** — Client: badge component mounted on the app shell
+- [x] **C3** — Client: badge component mounted on the app shell
 - [ ] **C4** — End-to-end verification + PR into `dev`
 
 ---
@@ -115,7 +115,8 @@ Fetch the config and render a badge unless prod. Mount above every `App` branch.
 
 **Files:** `packages/web/src/apiClient.ts`, new
 `packages/web/src/EnvironmentBadge.tsx` + `.test.tsx`, new
-`packages/web/src/environmentBadge.ts` (pure map) + `.test.ts`,
+`packages/web/src/badgeFor.ts` (pure map) + `.test.ts` (renamed from
+`environmentBadge.ts` — see the C3 deviation note),
 `packages/web/src/main.tsx`, `packages/web/src/index.css`.
 
 - `apiClient.ts`: add `getConfig(): Promise<Config>` calling `/api/config` via
@@ -156,6 +157,21 @@ Fetch the config and render a badge unless prod. Mount above every `App` branch.
 - `EnvironmentBadge.test.tsx`: mock `getConfig`→`dev` renders the dev label; →`prod` renders nothing; a rejected `getConfig` renders the `unknown` badge.
 
 **Green:** `pnpm --filter @geo/web test` + `pnpm -w typecheck`.
+
+**Done (C3):** implemented per plan and the locked visual decisions. `getConfig()`
+added to `apiClient.ts` (through `apiFetch`); pure `badgeFor` returns `null` only
+for `prod`, else `{ label: env.toUpperCase(), variant: env }`; `EnvironmentBadge`
+starts `unknown`, fetches on mount, keeps `unknown` on reject, renders nothing on
+prod; mounted as a sibling before `<App/>` in `main.tsx`. CSS: top-left
+viewport-fixed pill, dev=green / test=orange / local=grey / unknown=red,
+uppercased text label, `pointer-events:none` so it never blocks controls. Green:
+`pnpm --filter @geo/web test` = 151 passed (16 files); `pnpm -w typecheck` clean.
+**Deviation (naming):** the pure-map file is `badgeFor.ts` (+`badgeFor.test.ts`),
+not the plan's `environmentBadge.ts`. On macOS's case-insensitive filesystem,
+`environmentBadge.ts` and the component `EnvironmentBadge.tsx` differ only by
+case, so `import "./EnvironmentBadge.js"` resolved to the pure map and the
+component came back `undefined` at render. Renaming the map sidesteps the
+collision; exported symbol is still `badgeFor`.
 
 ## C4 — End-to-end verification + PR
 
