@@ -170,6 +170,22 @@ describe("visualAidSchema", () => {
     expect(visualAidSchema.safeParse(bad).success).toBe(false);
   });
 
+  it("validates a map descriptor carrying a boundaryGeoJSON (#203)", () => {
+    const enriched = {
+      ...map,
+      boundaryGeoJSON: {
+        type: "MultiPolygon",
+        coordinates: [[[[139, 35], [140, 35], [140, 36], [139, 35]]]],
+      },
+    };
+    expect(visualAidSchema.parse(enriched)).toEqual(enriched);
+  });
+
+  it("rejects a boundaryGeoJSON with the wrong geometry tag", () => {
+    const bad = { ...map, boundaryGeoJSON: { type: "Polygon", coordinates: [] } };
+    expect(visualAidSchema.safeParse(bad).success).toBe(false);
+  });
+
   const image = { kind: "image", src: "/flags/jp.svg", alt: "Flag of a country" };
 
   it("validates a well-formed image descriptor (#180)", () => {

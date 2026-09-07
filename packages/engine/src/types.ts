@@ -45,6 +45,17 @@ export interface Entity {
   localGeoJSON?: GeoMultiPolygon;
   /** The lon/lat window `localGeoJSON` was clipped to (spec #152, #154). */
   regionExtent?: RegionExtent;
+  /**
+   * The country's real administrative outline, in raw lon/lat (WGS84).
+   * Precomputed once at author time from Natural Earth 10m admin-0 (spec #203),
+   * adaptively simplified to its own reveal framing and stored beside
+   * `coordinate` — never computed per request. Distinct from `localGeoJSON`'s
+   * coastline clip: this traces the country itself, so the reveal map can teach
+   * shape recognition. Country entities only, and only those with a confident
+   * boundary match (antimeridian seam-crossers and unmatched countries carry
+   * none and fall back to pin + coastline).
+   */
+  boundaryGeoJSON?: GeoMultiPolygon;
 }
 
 /**
@@ -245,6 +256,13 @@ export interface MapVisualAid {
    * `regionExtent`; present only when the entity carries one.
    */
   regionExtent?: RegionExtent;
+  /**
+   * The country's real administrative outline for the reveal map (spec #203),
+   * drawn as a translucent fill + solid stroke and auto-zoomed to frame itself.
+   * Copied straight from the entity's stored `boundaryGeoJSON`; present only
+   * when the entity carries one (country entities with a confident match).
+   */
+  boundaryGeoJSON?: GeoMultiPolygon;
 }
 
 /**

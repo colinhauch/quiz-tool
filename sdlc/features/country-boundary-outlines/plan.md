@@ -37,7 +37,7 @@ QID overrides: `Q29999→Q55`, `Q756617→Q35`. Downstream steps read these.
 
 _Spike was a throwaway Visvalingam preview grid in scratch; nothing to ship._
 
-## Step 1 — Data seam: `boundaryGeoJSON` through the stack (no data yet)  `[ ]`
+## Step 1 — Data seam: `boundaryGeoJSON` through the stack (no data yet)  `[x]` (done 2026-09-07)
 
 - **Goal:** thread the optional field end to end so later steps have a target.
 - **Files:**

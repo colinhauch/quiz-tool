@@ -73,6 +73,8 @@ function revealVisualFor(entity: Entity | undefined): VisualAid | undefined {
   // world silhouette — the client falls back to full-world framing.
   if (entity.localGeoJSON) visual.localGeoJSON = entity.localGeoJSON;
   if (entity.regionExtent) visual.regionExtent = entity.regionExtent;
+  // The country outline (#203) rides along the same way, when precomputed.
+  if (entity.boundaryGeoJSON) visual.boundaryGeoJSON = entity.boundaryGeoJSON;
   return visual;
 }
 
