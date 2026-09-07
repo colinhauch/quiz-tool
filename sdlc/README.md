@@ -1,7 +1,7 @@
 # The loop — this repo's AI-native SDLC
 
 How this repo takes a feature from idea to production. It adapts Anthropic's
-AI-native SDLC playbook (`docs/AI_SDLC_Article.md`) to a **single developer**.
+AI-native SDLC playbook (`docs/articles/AI_SDLC_Article.md`) to a **single developer**.
 The reasoning behind the adaptation lives in `sdlc/CLAUDE.md`; this file is the
 operational how-to. Tracker mechanics (the `gh` commands) live in
 `docs/agents/issue-tracker.md`.

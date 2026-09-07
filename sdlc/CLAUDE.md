@@ -44,15 +44,22 @@ live skill.
 - `sdlc/skills/intent/` → `intent` — Stage 1 front door: `/intent` interviews a
   raw idea and opens an `intent`-labeled issue.
 
+## Ideas inbox (pre-intent)
+
+`sdlc/ideas.md` is a scratch list for half-formed ideas — cheaper than opening an
+issue for something that isn't a commitment yet. `/intent` promotes a ripe entry
+into an `intent` issue; the record starts there, not in `ideas.md`.
+
 ## Retired
 
-The old file-based artifact chain — `sdlc/features/<slug>/*.md`, `sdlc/templates/`,
-`sdlc/ideas.md` — is gone; issues replaced it. Those paths are kept only as
-historical record. Don't scaffold `sdlc/features/` or write artifacts there.
+The old file-based artifact chain — per-feature `sdlc/features/<slug>/*.md` — is
+gone; issues replaced it. Don't scaffold `sdlc/features/` or write artifacts
+there. `sdlc/templates/` is kept for posterity (the real issue templates live in
+`.github/ISSUE_TEMPLATE/`).
 
 ## Deliberately skipped
 
-The enterprise controls in the article (`docs/AI_SDLC_Article.md`) govern *many
+The enterprise controls in the article (`docs/articles/AI_SDLC_Article.md`) govern *many
 humans* and are overhead for one dev: PRDs-as-committees, sign-offs,
 separation-of-duties hooks, MDM/managed settings, OpenTelemetry export, DORA
 dashboards.
