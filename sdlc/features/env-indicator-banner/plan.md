@@ -30,7 +30,7 @@ Commit subject convention (so the log is greppable):
 `feat(env-indicator): <checkpoint N — short name>`.
 
 - [x] **C1** — Contract: `environment`/`config` schema + `normalizeEnvironment`
-- [ ] **C2** — Server: `GET /api/config` wired from `DEPLOY_ENV`
+- [x] **C2** — Server: `GET /api/config` wired from `DEPLOY_ENV`
 - [ ] **C3** — Client: badge component mounted on the app shell
 - [ ] **C4** — End-to-end verification + PR into `dev`
 
@@ -94,6 +94,20 @@ Expose the Environment at an unauthenticated endpoint, sourced from `DEPLOY_ENV`
 - `/config` returns 200 with **no** auth header (proves it's public, i.e. above the middleware).
 
 **Green:** `pnpm --filter @geo/server test` + `pnpm -w typecheck`.
+
+**Done (C2):** implemented per plan. Route registered at app.ts (public, beside
+`/health`, above the auth `app.use`); `deployEnv?` added to `AppOptions` and
+destructured; `worker.ts` passes `env.DEPLOY_ENV`; `index.ts` passes
+`process.env.DEPLOY_ENV ?? "local"`. Imports are `configSchema` +
+`normalizeEnvironment` (the C1 names). Green: `pnpm --filter @geo/server test`
+= 161 passed / 14 skipped; `pnpm -w typecheck` clean.
+**Deviation (minor):** the "public with no auth header" case was folded into the
+existing multi-user test `leaves /health and /config public but guards the data
+routes` (asserts `/config` → 200 while `/question`/`/packs` → 401) rather than a
+standalone test — that multi-user app is the only one with the auth middleware
+mounted, so it's the meaningful place to prove `/config` sits above it. The
+single-user matrix (dev/test/prod, unset→unknown, staging→unknown) lives in a new
+`describe("GET /config")`.
 
 ## C3 — Client badge (`packages/web`)
 

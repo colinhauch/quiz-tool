@@ -159,6 +159,30 @@ describe("server app", () => {
   });
 });
 
+describe("GET /config", () => {
+  function config(deployEnv?: string) {
+    return createApp({ pack: fixturePack(), store: memoryStore(), deployEnv }).request("/config");
+  }
+
+  it("reports the injected deploy environment", async () => {
+    for (const env of ["dev", "test", "prod"] as const) {
+      const res = await config(env);
+      expect(res.status).toBe(200);
+      expect(await res.json()).toEqual({ environment: env });
+    }
+  });
+
+  it("falls back to unknown when deployEnv is unset", async () => {
+    const res = await config();
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ environment: "unknown" });
+  });
+
+  it("falls back to unknown for an unrecognized deployEnv", async () => {
+    expect(await (await config("staging")).json()).toEqual({ environment: "unknown" });
+  });
+});
+
 describe("GET /entities", () => {
   function app() {
     return createApp({ pack: fixturePack(), store: memoryStore(), rng: () => 0 });
@@ -918,9 +942,10 @@ describe("multi-user mode", () => {
     });
   }
 
-  it("leaves /health public but guards the data routes", async () => {
+  it("leaves /health and /config public but guards the data routes", async () => {
     const app = multiUserApp();
     expect((await app.request("/health")).status).toBe(200);
+    expect((await app.request("/config")).status).toBe(200);
     expect((await app.request("/question")).status).toBe(401);
     expect((await app.request("/packs")).status).toBe(401);
   });

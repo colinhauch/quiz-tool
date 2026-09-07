@@ -26,7 +26,21 @@ const scheduler = createSchedulerStore(db);
 const feedback = createFeedbackStore(db);
 
 serve(
-  { fetch: createApp({ pack, store, selection, rating, scheduler, feedback, catalog }).fetch, port },
+  {
+    fetch: createApp({
+      pack,
+      store,
+      selection,
+      rating,
+      scheduler,
+      feedback,
+      catalog,
+      // Local Node dev is labeled `local`, yet overridable to test another
+      // environment's badge locally.
+      deployEnv: process.env.DEPLOY_ENV ?? "local",
+    }).fetch,
+    port,
+  },
   (info) => {
   console.log(`geo-quiz server listening on http://localhost:${info.port}`);
 });
