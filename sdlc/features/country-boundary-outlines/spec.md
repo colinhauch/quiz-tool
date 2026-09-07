@@ -1,6 +1,6 @@
 # Spec: country boundary outlines on the reveal map  (from intent)
 
-Status: accepted (2026-09-07) — open questions resolved (below); two tuning constants + match coverage pending the plan's first-step data spike.
+Status: **done (2026-09-07)** — built end to end across plan Steps 0–5 (186 country boundaries live in `core-geo`; feature visible on the reveal map). See `plan.md` for the per-step record and the "Known limitations" section below for the two accepted v1 imperfections. Originally accepted (2026-09-07) with open questions resolved (below).
 
 Copied from GitHub issue #203 (https://github.com/colinhauch/quiz-tool/issues/203),
 then the Open Questions were reviewed and resolved (see that section).

@@ -16,11 +16,14 @@ import {
  * The reveal map: one animated equirectangular viewport that shows both the
  * global and the regional scale over time in a single box (spec #152, #156).
  *
- * Two detail layers, one coordinate space (#155): the baked 110m
- * `WORLD_LAND_PATH` is the base; the server-sent `localGeoJSON` — hi-res land
- * clipped for the pinned region — is projected with the *same* point math
- * (`x = lon + 180`, `y = 90 - lat`) and composited on top, so the two align by
- * construction.
+ * Layers, one coordinate space (#155, #203): the baked 110m `WORLD_LAND_PATH` is
+ * the base; the server-sent `localGeoJSON` — hi-res land clipped for the pinned
+ * region — is composited on top; and for a country, the `boundaryGeoJSON` outline
+ * (spec #203) draws above that as a translucent highlight + stroke, below the
+ * pin/label. All three are projected with the *same* point math (`x = lon + 180`,
+ * `y = 90 - lat`), so they align by construction. When a boundary is present it
+ * also becomes the zoom target (its padded bbox), so the reveal frames the real
+ * country instead of the coarse `regionExtent` window.
  *
  * Zoom is a 1-D track (see `mapZoom`): the `viewBox` is the linear interpolation
  * between the whole-world frame (`t = 0`) and the regional target (`t = 1`). The

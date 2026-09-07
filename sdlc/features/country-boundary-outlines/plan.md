@@ -145,7 +145,12 @@ recorded in `spec.md` "Known limitations".
 - **Done-when:** boundary renders + auto-zoom frames it; existing MapAid tests
   pass; reduced-motion still snaps. Green — feature visible end to end.
 
-## Step 5 — Vocabulary + docs + close-out  `[ ]`
+## Step 5 — Vocabulary + docs + close-out  `[x]` (done 2026-09-07)
+
+**Result:** CONTEXT.md gains a **Boundary** glossary entry (new "Reveal map"
+section, contrasted with the Region window); MapAid.tsx + regional-geometry.ts
+module docs mention the boundary layer; spec.md marked **done**; issue #203
+closed with a link to the feature folder. Feature complete — all Steps 0–5 done.
 
 - **Files:** `CONTEXT.md` — add glossary entry **Boundary** (the country outline;
   distinct from `regionExtent`'s coastline window); update `MapAid.tsx` /
