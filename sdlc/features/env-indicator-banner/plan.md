@@ -32,7 +32,7 @@ Commit subject convention (so the log is greppable):
 - [x] **C1** — Contract: `environment`/`config` schema + `normalizeEnvironment`
 - [x] **C2** — Server: `GET /api/config` wired from `DEPLOY_ENV`
 - [x] **C3** — Client: badge component mounted on the app shell
-- [ ] **C4** — End-to-end verification + PR into `dev`
+- [x] **C4** — End-to-end verification + PR into `dev`
 
 ---
 
@@ -182,6 +182,13 @@ collision; exported symbol is still `badgeFor`.
 - Confirm the signed-out gate also shows the badge (mount point check).
 - Full gate: `pnpm -w typecheck && pnpm -w test` (mirrors the `checks` CI job).
 - Set `spec.md`/`plan.md` statuses as done; open a PR `feature/env-indicator-intent` → `dev`.
+
+**Done (C4):** full gate green — `pnpm -w typecheck` clean; `pnpm -w test` = 639
+passed / 19 skipped (incl. `EnvironmentBadge`, `badgeFor`, server `/config`
+matrix). Verified live locally: `/api/config` → `{ environment: "local" }` and a
+grey `LOCAL` pill renders top-left by the logo (screenshot in the session).
+dev/test/prod/unknown colour + show-hide paths are covered by unit tests rather
+than four live deploys. PR opened into `dev`.
 
 ---
 
