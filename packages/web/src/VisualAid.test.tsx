@@ -28,11 +28,12 @@ const WORLD_VIEWBOX = "0 0 360 180";
 // A country boundary far from Tokyo's coordinate/regionExtent, so a frame aimed
 // at the boundary is unmistakably distinct from one aimed at `regionExtent`.
 // Boundary lon [100,120], lat [0,20] → center (110, 10) → projected (290, 80).
+// Wound clockwise, as d3-geo (and the real Natural Earth data) require.
 const withBoundary: VisualAidData = {
   ...enriched,
   boundaryGeoJSON: {
     type: "MultiPolygon",
-    coordinates: [[[[100, 0], [120, 0], [120, 20], [100, 20], [100, 0]]]],
+    coordinates: [[[[100, 0], [100, 20], [120, 20], [120, 0], [100, 0]]]],
   },
 };
 

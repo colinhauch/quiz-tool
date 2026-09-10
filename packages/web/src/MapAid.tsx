@@ -5,8 +5,8 @@ import {
   type View,
   WORLD_ASPECT,
   WORLD_VIEW,
-  bboxOf,
   extentToView,
+  geometryView,
   fitAspect,
   interpolateView,
   zoomAtTime,
@@ -130,7 +130,7 @@ export function MapAid({
   const regionView = !hasCoords
     ? null
     : hasBoundary
-      ? fitAspect(padView(bboxOf(boundaryGeoJSON!), BOUNDARY_PAD_FRAC), WORLD_ASPECT)
+      ? fitAspect(padView(geometryView(boundaryGeoJSON!), BOUNDARY_PAD_FRAC), WORLD_ASPECT)
       : regionExtent
         ? fitAspect(extentToView(regionExtent), WORLD_ASPECT)
         : null;

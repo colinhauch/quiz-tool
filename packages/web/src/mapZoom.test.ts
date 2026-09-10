@@ -2,10 +2,10 @@ import { describe, expect, it } from "vitest";
 import {
   WORLD_ASPECT,
   WORLD_VIEW,
-  bboxOf,
   easeInOutCubic,
   extentToView,
   fitAspect,
+  geometryView,
   interpolateView,
   zoomAtTime,
 } from "./mapZoom.js";
@@ -13,6 +13,14 @@ import {
 const region = extentToView({ minLon: 138.19, minLat: 34.69, maxLon: 141.19, maxLat: 36.69 });
 
 describe("mapZoom", () => {
+  // Backward-compat: the world frame is now derived from the active projection's
+  // own sphere bounds (`geoBounds({type:"Sphere"})`), not the literal 0,0,360,180.
+  // Under the default equirectangular projection it must still be exactly that.
+  it("derives the world frame from the projection's sphere bounds (equirect: 0,0,360,180)", () => {
+    expect(WORLD_VIEW).toEqual({ x: 0, y: 0, w: 360, h: 180 });
+    expect(WORLD_ASPECT).toBe(2);
+  });
+
   it("projects a regional extent to a viewBox (x=minLon+180, y=90-maxLat, w, h)", () => {
     expect(region).toEqual({ x: 318.19, y: 53.31, w: 3, h: 2 });
   });
@@ -40,25 +48,28 @@ describe("mapZoom", () => {
   });
 });
 
-describe("bboxOf", () => {
-  it("projects a MultiPolygon's lon/lat bbox to a viewBox (x=minLon+180, y=90-maxLat)", () => {
+describe("geometryView", () => {
+  // Rings are wound clockwise — d3-geo's spherical convention for an exterior
+  // ring — matching the real Natural Earth boundary data. (A counter-clockwise
+  // ring is read as the whole sphere minus a hole, framing the entire globe.)
+  it("frames a MultiPolygon from its projected bounds (x=minLon+180, y=90-maxLat)", () => {
     const geo = {
       type: "MultiPolygon" as const,
-      coordinates: [[[[139, 35], [141, 35], [141, 37], [139, 37], [139, 35]]]],
+      coordinates: [[[[139, 35], [139, 37], [141, 37], [141, 35], [139, 35]]]],
     };
-    expect(bboxOf(geo)).toEqual({ x: 319, y: 53, w: 2, h: 2 });
+    expect(geometryView(geo)).toEqual({ x: 319, y: 53, w: 2, h: 2 });
   });
 
   it("spans every part of a multipart geometry", () => {
     const geo = {
       type: "MultiPolygon" as const,
       coordinates: [
-        [[[0, 0], [1, 0], [1, 1], [0, 0]]],
-        [[[10, 10], [11, 10], [11, 11], [10, 10]]],
+        [[[0, 0], [0, 1], [1, 1], [1, 0], [0, 0]]],
+        [[[10, 10], [10, 11], [11, 11], [11, 10], [10, 10]]],
       ],
     };
     // Union bbox is lon [0,11], lat [0,11].
-    expect(bboxOf(geo)).toEqual({ x: 180, y: 79, w: 11, h: 11 });
+    expect(geometryView(geo)).toEqual({ x: 180, y: 79, w: 11, h: 11 });
   });
 });
 
