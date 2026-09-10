@@ -12,6 +12,12 @@ function stubFetch() {
   vi.stubGlobal(
     "fetch",
     vi.fn((url: string) => {
+      if (url === "/api/preferences") {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ preferences: { autoZoom: true, autocomplete: true } }),
+        });
+      }
       if (url === "/api/answers") {
         return Promise.resolve({
           json: async () => [
@@ -72,7 +78,8 @@ describe("App shell", () => {
   it("renders the title and starts on the quiz view when signed in", async () => {
     stubFetch();
     render(<App boundary={fakeBoundary(signedIn)} />);
-    expect(screen.getByRole("heading", { name: /geography quiz/i })).toBeInTheDocument();
+    // Entry blocks on the preferences read, so the header appears once it settles.
+    expect(await screen.findByRole("heading", { name: /geography quiz/i })).toBeInTheDocument();
     expect(await screen.findByText("What country is Tokyo in?")).toBeInTheDocument();
   });
 
@@ -100,6 +107,77 @@ describe("App shell", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /^feedback$/i }));
     expect(await screen.findByLabelText(/your feedback/i)).toBeInTheDocument();
+  });
+});
+
+describe("App preferences bootstrap", () => {
+  it("holds entry until the preferences read settles", async () => {
+    let releasePrefs: (() => void) | undefined;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((url: string) => {
+        if (url === "/api/preferences") {
+          return new Promise((resolve) => {
+            releasePrefs = () =>
+              resolve({
+                ok: true,
+                json: async () => ({ preferences: { autoZoom: true, autocomplete: true } }),
+              });
+          });
+        }
+        return Promise.resolve({
+          json: async () => ({
+            cardId: "cc:tokyo-japan:object",
+            prompt: "What country is Tokyo in?",
+            input: "text",
+          }),
+        });
+      }),
+    );
+
+    render(<App boundary={fakeBoundary(signedIn)} />);
+
+    // The quiz is gated behind the in-flight preferences read.
+    expect(screen.getByText(/loading your preferences/i)).toBeInTheDocument();
+    expect(screen.queryByText("What country is Tokyo in?")).not.toBeInTheDocument();
+
+    await act(async () => {
+      releasePrefs?.();
+    });
+
+    expect(await screen.findByText("What country is Tokyo in?")).toBeInTheDocument();
+  });
+
+  it("enters with defaults when the preferences read fails", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((url: string) => {
+        if (url === "/api/preferences") return Promise.reject(new Error("network"));
+        return Promise.resolve({
+          json: async () => ({
+            cardId: "cc:tokyo-japan:object",
+            prompt: "What country is Tokyo in?",
+            input: "text",
+          }),
+        });
+      }),
+    );
+
+    render(<App boundary={fakeBoundary(signedIn)} />);
+
+    // A failed read must not strand the learner: entry proceeds on defaults.
+    expect(await screen.findByText("What country is Tokyo in?")).toBeInTheDocument();
+  });
+
+  it("makes no preferences request for a signed-out visitor", () => {
+    const fetchMock = vi.fn(() =>
+      Promise.resolve({ json: async () => ({}), ok: true }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<App boundary={fakeBoundary(signedOut)} />);
+
+    expect(fetchMock).not.toHaveBeenCalledWith("/api/preferences", expect.anything());
   });
 });
 

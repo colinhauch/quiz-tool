@@ -5,6 +5,7 @@ import { AuthCallback } from "./AuthCallback.js";
 import { AuthWidget } from "./AuthWidget.js";
 import { Feedback } from "./Feedback.js";
 import { Packs } from "./Packs.js";
+import { loadPreferences } from "./preferences.js";
 import { Quiz } from "./Quiz.js";
 import { SignInGate } from "./SignInGate.js";
 
@@ -29,8 +30,29 @@ export function App({ boundary = getAuthBoundary() }: { boundary?: AuthBoundary 
   const [isAuthCallback, setIsAuthCallback] = useState(
     () => window.location.pathname === AUTH_CALLBACK_PATH,
   );
+  // Whether the post-login preferences read has settled. Entry into the signed-in
+  // app blocks on this so a synced toggle is in place before the quiz seeds from
+  // it — no flash-of-default-preference. A failed read falls back to defaults
+  // inside loadPreferences, so this still flips true and never strands the learner.
+  const [prefsLoaded, setPrefsLoaded] = useState(false);
 
   useEffect(() => boundary.subscribe(setAuth), [boundary]);
+
+  // Load account-synced preferences once per sign-in, never for a signed-out
+  // visitor. Re-runs if the learner signs out and back in (a different account).
+  useEffect(() => {
+    if (auth.status !== "signed-in") {
+      setPrefsLoaded(false);
+      return;
+    }
+    let active = true;
+    void loadPreferences().finally(() => {
+      if (active) setPrefsLoaded(true);
+    });
+    return () => {
+      active = false;
+    };
+  }, [auth.status]);
 
   if (isAuthCallback) {
     return (
@@ -45,6 +67,12 @@ export function App({ boundary = getAuthBoundary() }: { boundary?: AuthBoundary 
 
   if (auth.status === "signed-out") {
     return <SignInGate reason={auth.reason} boundary={boundary} />;
+  }
+
+  // Signed in, but the preferences read hasn't settled yet: hold entry so the
+  // quiz never mounts against default toggles it would then have to correct.
+  if (!prefsLoaded) {
+    return <p className="app-loading">Loading your preferences…</p>;
   }
 
   return (
