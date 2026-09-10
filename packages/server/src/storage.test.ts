@@ -7,6 +7,7 @@ import {
   type AnswerRecord,
   createAnswerStore,
   createFeedbackStore,
+  createPreferencesStore,
   createRatingStore,
   createSchedulerStore,
   type FeedbackRecord,
@@ -19,6 +20,36 @@ const answer: AnswerRecord = {
   correct: true,
   askedAt: "2026-07-19T12:00:00.000Z",
 };
+
+describe("createPreferencesStore (in-memory)", () => {
+  it("returns every default for a learner with no stored row", async () => {
+    const store = createPreferencesStore(openDatabase(":memory:"));
+    expect(await store.read()).toEqual({ autoZoom: true, autocomplete: true });
+  });
+
+  it("writes the blob and reads it back", async () => {
+    const store = createPreferencesStore(openDatabase(":memory:"));
+    await store.write({ autoZoom: false, autocomplete: false });
+    expect(await store.read()).toEqual({ autoZoom: false, autocomplete: false });
+  });
+
+  it("replaces wholesale on write", async () => {
+    const store = createPreferencesStore(openDatabase(":memory:"));
+    await store.write({ autoZoom: false, autocomplete: false });
+    await store.write({ autoZoom: true, autocomplete: false });
+    expect(await store.read()).toEqual({ autoZoom: true, autocomplete: false });
+  });
+
+  it("defaults a key missing from an older stored blob", async () => {
+    const db = openDatabase(":memory:");
+    const store = createPreferencesStore(db);
+    // Simulate a blob written before `autocomplete` existed.
+    db.prepare("INSERT INTO user_preferences (id, preferences) VALUES (1, ?)").run(
+      JSON.stringify({ autoZoom: false }),
+    );
+    expect(await store.read()).toEqual({ autoZoom: false, autocomplete: true });
+  });
+});
 
 describe("createAnswerStore (in-memory)", () => {
   it("writes an answer and reads it back", async () => {

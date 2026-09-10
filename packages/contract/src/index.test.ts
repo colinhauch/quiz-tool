@@ -7,6 +7,8 @@ import {
   feedbackRequestSchema,
   healthSchema,
   normalizeEnvironment,
+  preferencesRequestSchema,
+  preferencesSchema,
   questionResponseSchema,
   visualAidSchema,
 } from "./index.js";
@@ -18,6 +20,43 @@ describe("contract", () => {
 
   it("rejects a malformed health payload", () => {
     expect(healthSchema.safeParse({ status: "down" }).success).toBe(false);
+  });
+});
+
+describe("preferencesSchema", () => {
+  it("fills every key with its default from an empty object", () => {
+    expect(preferencesSchema.parse({})).toEqual({ autoZoom: true, autocomplete: true });
+  });
+
+  it("fills omitted keys with their defaults (whole-blob replace resets them)", () => {
+    expect(preferencesSchema.parse({ autoZoom: false })).toEqual({ autoZoom: false, autocomplete: true });
+  });
+
+  it("keeps supplied values", () => {
+    expect(preferencesSchema.parse({ autoZoom: false, autocomplete: false })).toEqual({
+      autoZoom: false,
+      autocomplete: false,
+    });
+  });
+
+  it("rejects an unknown key", () => {
+    expect(preferencesSchema.safeParse({ theme: "dark" }).success).toBe(false);
+  });
+
+  it("rejects a wrong type", () => {
+    expect(preferencesSchema.safeParse({ autoZoom: "yes" }).success).toBe(false);
+  });
+});
+
+describe("preferencesRequestSchema", () => {
+  it("parses a partial body into a complete, defaulted blob", () => {
+    expect(preferencesRequestSchema.parse({ preferences: { autocomplete: false } })).toEqual({
+      preferences: { autoZoom: true, autocomplete: false },
+    });
+  });
+
+  it("rejects an unknown preference key", () => {
+    expect(preferencesRequestSchema.safeParse({ preferences: { nope: true } }).success).toBe(false);
   });
 });
 

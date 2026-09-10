@@ -5,6 +5,7 @@ import { loadAllPacks } from "./pack-loader.js";
 import {
   createAnswerStore,
   createFeedbackStore,
+  createPreferencesStore,
   createRatingStore,
   createSchedulerStore,
   createSelectionStore,
@@ -24,6 +25,7 @@ const selection = createSelectionStore(db);
 const rating = createRatingStore(db);
 const scheduler = createSchedulerStore(db);
 const feedback = createFeedbackStore(db);
+const preferences = createPreferencesStore(db);
 
 serve(
   {
@@ -34,6 +36,7 @@ serve(
       rating,
       scheduler,
       feedback,
+      preferences,
       catalog,
       // Local Node dev is labeled `local`, yet overridable to test another
       // environment's badge locally.

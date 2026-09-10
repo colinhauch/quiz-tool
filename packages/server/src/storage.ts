@@ -1,4 +1,4 @@
-import type { FeedbackContext } from "@geo/contract";
+import { type FeedbackContext, type Preferences, preferencesSchema } from "@geo/contract";
 import { SEED_RATING, type Scheduler } from "@geo/engine";
 import Database from "better-sqlite3";
 
@@ -274,6 +274,54 @@ export function createFeedbackStore(
         context: row.context === null ? null : (JSON.parse(row.context) as FeedbackContext),
         createdAt: row.createdAt,
       }));
+    },
+  };
+}
+
+/**
+ * A signed-in learner's display preferences (spec #216). One blob per learner,
+ * account-synced — the durable replacement for per-device `localStorage`.
+ *
+ * `read` always returns a complete, defaulted `Preferences`: a learner with no
+ * stored row gets every default, and a stored blob missing a key (an older shape)
+ * has that key defaulted in. `write` replaces the whole blob — whole-blob replace,
+ * not per-key merge (the route fills defaults for omitted keys before handing the
+ * full object here). Mirrors {@link SchedulerStore}: one small JSON document per
+ * learner, scoped per user by RLS in the Supabase counterpart.
+ */
+export interface PreferencesStore {
+  read(): Promise<Preferences>;
+  write(prefs: Preferences): Promise<void>;
+}
+
+/**
+ * A better-sqlite3 preferences store for local dev and tests — one row (id = 1,
+ * single-user locally) holding the blob as JSON, mirroring {@link createSchedulerStore}.
+ * Both read paths parse through {@link preferencesSchema}, so defaults are filled
+ * and the returned value is always complete and valid.
+ */
+export function createPreferencesStore(db: Database.Database): PreferencesStore {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS user_preferences (
+      id INTEGER PRIMARY KEY CHECK (id = 1),
+      preferences TEXT NOT NULL
+    )
+  `);
+
+  const select = db.prepare("SELECT preferences FROM user_preferences WHERE id = 1");
+  const upsert = db.prepare(
+    "INSERT INTO user_preferences (id, preferences) VALUES (1, ?) ON CONFLICT(id) DO UPDATE SET preferences = excluded.preferences",
+  );
+
+  return {
+    async read() {
+      const row = select.get() as { preferences: string } | undefined;
+      // No row => first run => every default. A stored blob is re-parsed so a
+      // missing key (older shape) is defaulted rather than returned absent.
+      return preferencesSchema.parse(row ? JSON.parse(row.preferences) : {});
+    },
+    async write(prefs: Preferences) {
+      upsert.run(JSON.stringify(prefs));
     },
   };
 }
