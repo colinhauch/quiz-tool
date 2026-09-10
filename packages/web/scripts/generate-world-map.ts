@@ -11,19 +11,18 @@
 import { writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
-import { geoEquirectangular, geoPath } from "d3-geo";
+import { geoPath } from "d3-geo";
 import { feature } from "topojson-client";
+import { projectionFor } from "../src/projection.js";
 
 const require = createRequire(import.meta.url);
 // 110m resolution: coarse, but tiny and legible on a small card. Public domain.
 const land = require("world-atlas/land-110m.json");
 
-// Match MapAid's projection exactly: lon [-180,180] → x [0,360], lat [90,-90] →
-// y [0,180]. geoEquirectangular is plate carrée; scale 180/π + translate makes
-// one radian of longitude one degree of x.
-const projection = geoEquirectangular()
-  .scale(180 / Math.PI)
-  .translate([180, 90]);
+// The baked land path shares MapAid's runtime projection by construction: same
+// registry entry, same d3 `GeoProjection`. So the path and the plotted points
+// live in one coordinate space (#217).
+const projection = projectionFor("equirectangular").factory();
 
 const landGeo = feature(land, land.objects.land) as unknown as Parameters<
   ReturnType<typeof geoPath>

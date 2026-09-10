@@ -1,4 +1,5 @@
 import type { VisualAid as VisualAidData } from "@geo/contract";
+import { project } from "./projection.js";
 
 /**
  * The 1-D zoom track for the reveal map (spec #152, #156).
@@ -18,8 +19,16 @@ export type View = { x: number; y: number; w: number; h: number };
 type RegionExtent = NonNullable<Extract<VisualAidData, { kind: "map" }>["regionExtent"]>;
 type GeoMultiPolygon = NonNullable<Extract<VisualAidData, { kind: "map" }>["boundaryGeoJSON"]>;
 
-/** Projected size of the full-world frame (`x = lon + 180`, `y = 90 - lat`). */
-export const WORLD_VIEW: View = { x: 0, y: 0, w: 360, h: 180 };
+/** Projected size of the full-world frame, from the shared projection's own
+ * corners (NW pole/antimeridian → SE) rather than a hard-coded rectangle. */
+const worldNW = project(90, -180);
+const worldSE = project(-90, 180);
+export const WORLD_VIEW: View = {
+  x: worldNW.x,
+  y: worldNW.y,
+  w: worldSE.x - worldNW.x,
+  h: worldSE.y - worldNW.y,
+};
 
 /** The frame's width-to-height ratio, held constant across the whole zoom. */
 export const WORLD_ASPECT = WORLD_VIEW.w / WORLD_VIEW.h;
@@ -43,12 +52,9 @@ export function fitAspect(view: View, aspect: number): View {
 
 /** The regional extent (a lon/lat rectangle) as a projected `viewBox`. */
 export function extentToView(extent: RegionExtent): View {
-  return {
-    x: extent.minLon + 180,
-    y: 90 - extent.maxLat,
-    w: extent.maxLon - extent.minLon,
-    h: extent.maxLat - extent.minLat,
-  };
+  const nw = project(extent.maxLat, extent.minLon);
+  const se = project(extent.minLat, extent.maxLon);
+  return { x: nw.x, y: nw.y, w: se.x - nw.x, h: se.y - nw.y };
 }
 
 /**
@@ -75,7 +81,9 @@ export function bboxOf(geo: GeoMultiPolygon): View {
       }
     }
   }
-  return { x: minLon + 180, y: 90 - maxLat, w: maxLon - minLon, h: maxLat - minLat };
+  const nw = project(maxLat, minLon);
+  const se = project(minLat, maxLon);
+  return { x: nw.x, y: nw.y, w: se.x - nw.x, h: se.y - nw.y };
 }
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;

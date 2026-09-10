@@ -11,6 +11,7 @@ import {
   interpolateView,
   zoomAtTime,
 } from "./mapZoom.js";
+import { geoPathString, project } from "./projection.js";
 
 /**
  * The reveal map: one animated equirectangular viewport that shows both the
@@ -20,8 +21,8 @@ import {
  * the base; the server-sent `localGeoJSON` — hi-res land clipped for the pinned
  * region — is composited on top; and for a country, the `boundaryGeoJSON` outline
  * (spec #203) draws above that as a translucent highlight + stroke, below the
- * pin/label. All three are projected with the *same* point math (`x = lon + 180`,
- * `y = 90 - lat`), so they align by construction. When a boundary is present it
+ * pin/label. All three go through the *same* shared `projection` module (#217),
+ * so they align by construction. When a boundary is present it
  * also becomes the zoom target (its padded bbox), so the reveal frames the real
  * country instead of the coarse `regionExtent` window.
  *
@@ -85,10 +86,6 @@ const HOLD_MS = 3000;
 /** Framing margin around the boundary bbox, as a fraction of each span (#203). */
 const BOUNDARY_PAD_FRAC = 0.08;
 
-function project(lat: number, lon: number) {
-  return { x: lon + 180, y: 90 - lat };
-}
-
 /** Grow a projected view outward by `frac` of each side — breathing room so a
  * framed boundary doesn't sit flush against the frame edge. */
 function padView(v: View, frac: number): View {
@@ -104,21 +101,6 @@ function prefersReducedMotion(): boolean {
   } catch {
     return false;
   }
-}
-
-/** A GeoJSON MultiPolygon → an SVG path in the same lon/lat-derived space. */
-function geoToPath(geo: NonNullable<MapProps["localGeoJSON"]>): string {
-  const parts: string[] = [];
-  for (const polygon of geo.coordinates) {
-    for (const ring of polygon) {
-      ring.forEach((vertex, i) => {
-        const { x, y } = project(vertex[1] ?? 0, vertex[0] ?? 0);
-        parts.push(`${i === 0 ? "M" : "L"}${x.toFixed(3)},${y.toFixed(3)}`);
-      });
-      parts.push("Z");
-    }
-  }
-  return parts.join("");
 }
 
 export function MapAid({
@@ -213,7 +195,7 @@ export function MapAid({
         {hasCoords && localGeoJSON && (
           <path
             className="map-aid__local"
-            d={geoToPath(localGeoJSON)}
+            d={geoPathString(localGeoJSON)}
             vectorEffect="non-scaling-stroke"
           />
         )}
@@ -222,7 +204,7 @@ export function MapAid({
         {hasCoords && hasBoundary && (
           <path
             className="map-aid__boundary"
-            d={geoToPath(boundaryGeoJSON!)}
+            d={geoPathString(boundaryGeoJSON!)}
             vectorEffect="non-scaling-stroke"
           />
         )}
