@@ -31,6 +31,7 @@ import {
   type AnswerStore,
   createAnswerStore,
   createFeedbackStore,
+  createPreferencesStore,
   createRatingStore,
   createSchedulerStore,
   createSelectionStore,
@@ -416,6 +417,57 @@ describe("POST /feedback", () => {
     // Unknown kind is refused too.
     expect((await post(app, { kind: "praise", comment: "hi" })).status).toBe(400);
     expect(await feedback.all()).toEqual([]);
+  });
+});
+
+describe("/preferences", () => {
+  function memoryPreferences() {
+    return createPreferencesStore(openDatabase(":memory:"));
+  }
+
+  function put(app: ReturnType<typeof createApp>, body: unknown) {
+    return app.request("/preferences", {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+    });
+  }
+
+  it("returns a complete, defaulted blob for a learner with no stored prefs", async () => {
+    const app = createApp({ pack: fixturePack(), store: memoryStore(), preferences: memoryPreferences() });
+    const res = await app.request("/preferences");
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ preferences: { autoZoom: true, autocomplete: true } });
+  });
+
+  it("round-trips a written value", async () => {
+    const preferences = memoryPreferences();
+    const app = createApp({ pack: fixturePack(), store: memoryStore(), preferences });
+    const put1 = await put(app, { preferences: { autoZoom: false, autocomplete: false } });
+    expect(put1.status).toBe(200);
+    expect(await put1.json()).toEqual({ ok: true });
+    const res = await app.request("/preferences");
+    expect(await res.json()).toEqual({ preferences: { autoZoom: false, autocomplete: false } });
+  });
+
+  it("resets an omitted key to its default (whole-blob replace)", async () => {
+    const preferences = memoryPreferences();
+    const app = createApp({ pack: fixturePack(), store: memoryStore(), preferences });
+    await put(app, { preferences: { autoZoom: false, autocomplete: false } });
+    // A body that omits autocomplete must reset it to the default, not preserve it.
+    await put(app, { preferences: { autoZoom: false } });
+    const res = await app.request("/preferences");
+    expect(await res.json()).toEqual({ preferences: { autoZoom: false, autocomplete: true } });
+  });
+
+  it("returns 400 on an unknown key and persists nothing", async () => {
+    const preferences = memoryPreferences();
+    const app = createApp({ pack: fixturePack(), store: memoryStore(), preferences });
+    expect((await put(app, { preferences: { theme: "dark" } })).status).toBe(400);
+    expect((await put(app, { preferences: { autoZoom: "yes" } })).status).toBe(400);
+    expect((await put(app, { nope: true })).status).toBe(400);
+    const res = await app.request("/preferences");
+    expect(await res.json()).toEqual({ preferences: { autoZoom: true, autocomplete: true } });
   });
 });
 

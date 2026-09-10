@@ -3,6 +3,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { setSignedInSource } from "./auth.js";
 import { DEFAULT_QUESTION_COMMENT } from "./QuestionFeedback.js";
+import { resetPreferences } from "./preferences.js";
 import { Quiz } from "./Quiz.js";
 import { clearSuggestionCache } from "./suggestions.js";
 
@@ -104,6 +105,9 @@ afterEach(() => {
   setSignedInSource(() => false);
   clearSuggestionCache();
   localStorage.clear();
+  // Preferences now live in an in-memory store, not localStorage; reset it so a
+  // toggle flipped in one test does not leak into the next.
+  resetPreferences();
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
 });

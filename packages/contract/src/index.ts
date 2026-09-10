@@ -381,3 +381,56 @@ export const feedbackRequestSchema = z
   .strict();
 
 export type FeedbackRequest = z.infer<typeof feedbackRequestSchema>;
+
+/**
+ * A signed-in learner's display/UX preferences (spec #216) — the account-synced
+ * replacement for the per-device `localStorage` prefs. Display only: nothing here
+ * touches the learning engine (pack selection stays with the scheduler).
+ *
+ * Each key carries its own default, so parsing an empty or partial object yields
+ * a complete, well-formed `Preferences` — the server fills defaults for omitted
+ * keys on both read and write. `.strict()` rejects unknown keys, so the server is
+ * the authority on the key set: adding a preference is a change here (and a
+ * coordinated deploy), but never a database migration — the JSONB column is
+ * unchanged. There is deliberately no schema `version` field: the server owns the
+ * keys and defaults every missing one on read, so an old stored blob upgrades
+ * lazily without blob-level migration logic.
+ *
+ * v1 carries the two prefs migrated off `localStorage`; #215 adds `mapProjection`
+ * by extending this object.
+ */
+export const preferencesSchema = z
+  .object({
+    /** Whether the reveal map auto-zooms from global to the regional framing. */
+    autoZoom: z.boolean().default(true),
+    /** Whether the answer box offers inline spelling suggestions. */
+    autocomplete: z.boolean().default(true),
+  })
+  .strict();
+
+export type Preferences = z.infer<typeof preferencesSchema>;
+
+/**
+ * `GET /preferences` response — the caller's complete, defaulted preferences.
+ */
+export const preferencesResponseSchema = z
+  .object({
+    preferences: preferencesSchema,
+  })
+  .strict();
+
+export type PreferencesResponse = z.infer<typeof preferencesResponseSchema>;
+
+/**
+ * `PUT /preferences` request — a whole-blob replace. Omitted keys default (so a
+ * client that doesn't know a key resets it to its default — the accepted
+ * whole-blob tradeoff over per-key merge, see #216); unknown keys are refused at
+ * the seam. Same shape as the response because the write carries the full object.
+ */
+export const preferencesRequestSchema = z
+  .object({
+    preferences: preferencesSchema,
+  })
+  .strict();
+
+export type PreferencesRequest = z.infer<typeof preferencesRequestSchema>;

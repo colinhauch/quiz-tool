@@ -20,6 +20,7 @@ import { resolveSchema } from "./schema-guard.js";
 import {
   createSupabaseAnswerStore,
   createSupabaseFeedbackStore,
+  createSupabasePreferencesStore,
   createSupabaseRatingStore,
   createSupabaseSchedulerStore,
   createSupabaseSelectionStore,
@@ -74,6 +75,7 @@ function getApp(env: Env) {
         rating: createSupabaseRatingStore(client),
         scheduler: createSupabaseSchedulerStore(client),
         feedback: createSupabaseFeedbackStore(client),
+        preferences: createSupabasePreferencesStore(client),
       }),
     });
     builtFor = env;

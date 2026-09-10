@@ -2,8 +2,12 @@ import type { AnswerResponse, CardStats, QuestionResponse } from "@geo/contract"
 import { type FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { AnswerBox } from "./AnswerBox.js";
 import { getQuestion, submitAnswer as submitAnswerRequest } from "./apiClient.js";
-import { readAutocompletePref, writeAutocompletePref } from "./autocompletePref.js";
-import { readAutoZoomPref, writeAutoZoomPref } from "./autoZoomPref.js";
+import {
+  readAutocompletePref,
+  readAutoZoomPref,
+  writeAutocompletePref,
+  writeAutoZoomPref,
+} from "./preferences.js";
 import { MapAid } from "./MapAid.js";
 import { QuestionFeedback } from "./QuestionFeedback.js";
 import { useWideLayout } from "./useWideLayout.js";

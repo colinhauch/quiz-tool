@@ -10,6 +10,8 @@ import {
   normalizeEnvironment,
   packListSchema,
   packSelectionRequestSchema,
+  preferencesRequestSchema,
+  preferencesResponseSchema,
   questionResponseSchema,
 } from "@geo/contract";
 import {
@@ -42,15 +44,23 @@ import { type Context, Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { type AuthEnv, type AuthOptions, createAuthMiddleware } from "./auth.js";
 import type { Catalog } from "./catalog.js";
-import type { AnswerStore, FeedbackStore, RatingStore, SchedulerStore, SelectionStore } from "./storage.js";
+import type {
+  AnswerStore,
+  FeedbackStore,
+  PreferencesStore,
+  RatingStore,
+  SchedulerStore,
+  SelectionStore,
+} from "./storage.js";
 
-/** The stores that serve one learner: their answer log, pack selection, Elo ratings, scheduler state, and feedback channel. */
+/** The stores that serve one learner: their answer log, pack selection, Elo ratings, scheduler state, feedback channel, and display preferences. */
 export interface UserStores {
   store: AnswerStore;
   selection?: SelectionStore;
   rating?: RatingStore;
   scheduler?: SchedulerStore;
   feedback?: FeedbackStore;
+  preferences?: PreferencesStore;
 }
 
 export interface AppOptions {
@@ -79,6 +89,8 @@ export interface AppOptions {
    * per-isolate cache (the pre-persistence behaviour).
    */
   scheduler?: SchedulerStore;
+  /** Single-user mode: where the learner's display preferences are persisted. Omit to disable the preferences route. */
+  preferences?: PreferencesStore;
   /**
    * Multi-user mode: verify each request's Supabase JWT. Given together with
    * {@link AppOptions.storesForUser}, the data routes are guarded (401 without a
@@ -160,6 +172,7 @@ export function createApp({
   rating,
   scheduler,
   feedback,
+  preferences,
   auth,
   storesForUser,
   rng,
@@ -185,6 +198,7 @@ export function createApp({
     rating?: RatingStore;
     scheduler?: SchedulerStore;
     feedback?: FeedbackStore;
+    preferences?: PreferencesStore;
     key: string;
   } {
     if (storesForUser) {
@@ -196,11 +210,12 @@ export function createApp({
         rating: built.rating,
         scheduler: built.scheduler,
         feedback: built.feedback,
+        preferences: built.preferences,
         key: userId,
       };
     }
     // Guarded in the constructor: single-user mode always has an injected store.
-    return { store: store as AnswerStore, selection, rating, scheduler, feedback, key: SINGLE_USER };
+    return { store: store as AnswerStore, selection, rating, scheduler, feedback, preferences, key: SINGLE_USER };
   }
 
   // First run selects everything, so introducing the picker regresses nothing.
@@ -493,6 +508,34 @@ export function createApp({
           })),
       ),
     );
+  });
+
+  // The learner's account-synced display preferences (spec #216). Read returns a
+  // complete, defaulted blob; write replaces it wholesale. Both are RLS-scoped to
+  // the caller. Signed-in only by construction — in multi-user mode the auth
+  // middleware guards the route; single-user local dev serves the injected store.
+  app.get("/preferences", async (c) => {
+    const { preferences: prefs } = resolve(c);
+    if (!prefs) throw new HTTPException(500, { message: "no preferences store configured" });
+    return c.json(preferencesResponseSchema.parse({ preferences: await prefs.read() }));
+  });
+
+  // Whole-blob replace: the body is validated and defaulted (omitted keys reset
+  // to their default — the accepted tradeoff over per-key merge, see #216), then
+  // the full object is persisted. Like /answer and /feedback, untrusted input —
+  // a malformed or unknown-key body maps to 400, not a 500.
+  app.put("/preferences", async (c) => {
+    let body: ReturnType<typeof preferencesRequestSchema.parse>;
+    try {
+      body = preferencesRequestSchema.parse(await c.req.json());
+    } catch (err) {
+      throw new HTTPException(400, { message: "malformed preferences request", cause: err });
+    }
+
+    const { preferences: prefs } = resolve(c);
+    if (!prefs) throw new HTTPException(500, { message: "no preferences store configured" });
+    await prefs.write(body.preferences);
+    return c.json({ ok: true });
   });
 
   return app;
