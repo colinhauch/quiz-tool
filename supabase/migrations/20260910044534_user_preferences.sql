@@ -12,6 +12,12 @@
 --
 -- Idempotent: create-table-if-not-exists and drop-then-create policies
 -- throughout. Safe to re-run.
+--
+-- APPLIED 2026-09-09 to the live project (fmxjevgxlnqujsqeqfwt) via the Supabase
+-- MCP apply_migration, which stamped version 20260910044534 (this filename matches
+-- the recorded version). Verified: baseline answer/scheduler/feedback counts
+-- unchanged across public/dev/test; user_preferences RLS enabled+forced with 3
+-- policies in all three schemas; no new security advisors.
 
 do $$
 declare
