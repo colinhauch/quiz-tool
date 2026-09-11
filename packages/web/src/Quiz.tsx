@@ -5,11 +5,13 @@ import { getQuestion, submitAnswer as submitAnswerRequest } from "./apiClient.js
 import {
   readAutocompletePref,
   readAutoZoomPref,
+  readMapProjectionPref,
   writeAutocompletePref,
   writeAutoZoomPref,
+  writeMapProjectionPref,
 } from "./preferences.js";
 import { MapAid } from "./MapAid.js";
-import { DEFAULT_PROJECTION_ID, type ProjectionId } from "./projection.js";
+import { type ProjectionId, projectionFor } from "./projection.js";
 import { QuestionFeedback } from "./QuestionFeedback.js";
 import { useWideLayout } from "./useWideLayout.js";
 import { VisualAid } from "./VisualAid.js";
@@ -116,9 +118,11 @@ export function Quiz() {
   const [input, setInput] = useState("");
   const [suggestEnabled, setSuggestEnabled] = useState(readAutocompletePref);
   const [autoZoomEnabled, setAutoZoomEnabled] = useState(readAutoZoomPref);
-  // The map projection, session-local (#220): held in React state, defaults to
-  // Equal Earth, and resets on reload. Account-synced persistence is #221.
-  const [projectionId, setProjectionId] = useState<ProjectionId>(DEFAULT_PROJECTION_ID);
+  // The map projection (#221): seeded from the account-synced preferences store
+  // and written back through it on change, so the choice follows the learner
+  // across sessions and devices. `projectionFor` resolves the stored id to a
+  // valid one (falling back to Equal Earth for an unknown/legacy/missing id).
+  const [projectionId, setProjectionId] = useState<ProjectionId>(() => projectionFor(readMapProjectionPref()).id);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const nextButtonRef = useRef<HTMLButtonElement>(null);
   const settingsButtonRef = useRef<HTMLButtonElement>(null);
@@ -137,6 +141,11 @@ export function Quiz() {
   function toggleAutoZoom(enabled: boolean) {
     setAutoZoomEnabled(enabled);
     writeAutoZoomPref(enabled);
+  }
+
+  function changeProjection(id: ProjectionId) {
+    setProjectionId(id);
+    writeMapProjectionPref(id);
   }
 
   const loadQuestion = useCallback(async () => {
@@ -310,7 +319,7 @@ export function Quiz() {
                   : {})}
                 autoZoom={autoZoomEnabled}
                 projectionId={projectionId}
-                onProjectionChange={setProjectionId}
+                onProjectionChange={changeProjection}
               />
             </div>
           </div>
@@ -347,7 +356,7 @@ export function Quiz() {
                 slot="reveal"
                 autoZoom={autoZoomEnabled}
                 projectionId={projectionId}
-                onProjectionChange={setProjectionId}
+                onProjectionChange={changeProjection}
               />
             )}
             <button ref={nextButtonRef} className="btn-primary" type="submit">

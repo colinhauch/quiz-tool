@@ -396,8 +396,14 @@ export type FeedbackRequest = z.infer<typeof feedbackRequestSchema>;
  * keys and defaults every missing one on read, so an old stored blob upgrades
  * lazily without blob-level migration logic.
  *
- * v1 carries the two prefs migrated off `localStorage`; #215 adds `mapProjection`
- * by extending this object.
+ * v1 carries the two prefs migrated off `localStorage`; #215/#221 add
+ * `mapProjection` by extending this object.
+ *
+ * `mapProjection` is a bare projection-id string, not an enum: the web-side
+ * projection registry is the authority on which ids exist, and it already falls
+ * back to the Equal Earth default for an unknown/legacy id, so an old or removed
+ * id resolves to a working map rather than being rejected here. The default
+ * mirrors that registry's `DEFAULT_PROJECTION_ID` (`equal-earth`).
  */
 export const preferencesSchema = z
   .object({
@@ -405,6 +411,8 @@ export const preferencesSchema = z
     autoZoom: z.boolean().default(true),
     /** Whether the answer box offers inline spelling suggestions. */
     autocomplete: z.boolean().default(true),
+    /** The reveal map's projection id; resolved (with default fallback) client-side. */
+    mapProjection: z.string().default("equal-earth"),
   })
   .strict();
 

@@ -437,27 +437,37 @@ describe("/preferences", () => {
     const app = createApp({ pack: fixturePack(), store: memoryStore(), preferences: memoryPreferences() });
     const res = await app.request("/preferences");
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ preferences: { autoZoom: true, autocomplete: true } });
+    expect(await res.json()).toEqual({ preferences: { autoZoom: true, autocomplete: true, mapProjection: "equal-earth" } });
   });
 
   it("round-trips a written value", async () => {
     const preferences = memoryPreferences();
     const app = createApp({ pack: fixturePack(), store: memoryStore(), preferences });
-    const put1 = await put(app, { preferences: { autoZoom: false, autocomplete: false } });
+    const put1 = await put(app, { preferences: { autoZoom: false, autocomplete: false, mapProjection: "equal-earth" } });
     expect(put1.status).toBe(200);
     expect(await put1.json()).toEqual({ ok: true });
     const res = await app.request("/preferences");
-    expect(await res.json()).toEqual({ preferences: { autoZoom: false, autocomplete: false } });
+    expect(await res.json()).toEqual({ preferences: { autoZoom: false, autocomplete: false, mapProjection: "equal-earth" } });
+  });
+
+  it("round-trips the mapProjection id", async () => {
+    const preferences = memoryPreferences();
+    const app = createApp({ pack: fixturePack(), store: memoryStore(), preferences });
+    await put(app, { preferences: { autoZoom: true, autocomplete: true, mapProjection: "equirectangular" } });
+    const res = await app.request("/preferences");
+    expect(await res.json()).toEqual({
+      preferences: { autoZoom: true, autocomplete: true, mapProjection: "equirectangular" },
+    });
   });
 
   it("resets an omitted key to its default (whole-blob replace)", async () => {
     const preferences = memoryPreferences();
     const app = createApp({ pack: fixturePack(), store: memoryStore(), preferences });
-    await put(app, { preferences: { autoZoom: false, autocomplete: false } });
+    await put(app, { preferences: { autoZoom: false, autocomplete: false, mapProjection: "equal-earth" } });
     // A body that omits autocomplete must reset it to the default, not preserve it.
     await put(app, { preferences: { autoZoom: false } });
     const res = await app.request("/preferences");
-    expect(await res.json()).toEqual({ preferences: { autoZoom: false, autocomplete: true } });
+    expect(await res.json()).toEqual({ preferences: { autoZoom: false, autocomplete: true, mapProjection: "equal-earth" } });
   });
 
   it("returns 400 on an unknown key and persists nothing", async () => {
@@ -467,7 +477,7 @@ describe("/preferences", () => {
     expect((await put(app, { preferences: { autoZoom: "yes" } })).status).toBe(400);
     expect((await put(app, { nope: true })).status).toBe(400);
     const res = await app.request("/preferences");
-    expect(await res.json()).toEqual({ preferences: { autoZoom: true, autocomplete: true } });
+    expect(await res.json()).toEqual({ preferences: { autoZoom: true, autocomplete: true, mapProjection: "equal-earth" } });
   });
 });
 
