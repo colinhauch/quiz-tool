@@ -5,10 +5,13 @@ import { getQuestion, submitAnswer as submitAnswerRequest } from "./apiClient.js
 import {
   readAutocompletePref,
   readAutoZoomPref,
+  readMapProjectionPref,
   writeAutocompletePref,
   writeAutoZoomPref,
+  writeMapProjectionPref,
 } from "./preferences.js";
 import { MapAid } from "./MapAid.js";
+import { type ProjectionId, projectionFor } from "./projection.js";
 import { QuestionFeedback } from "./QuestionFeedback.js";
 import { useWideLayout } from "./useWideLayout.js";
 import { VisualAid } from "./VisualAid.js";
@@ -115,6 +118,11 @@ export function Quiz() {
   const [input, setInput] = useState("");
   const [suggestEnabled, setSuggestEnabled] = useState(readAutocompletePref);
   const [autoZoomEnabled, setAutoZoomEnabled] = useState(readAutoZoomPref);
+  // The map projection (#221): seeded from the account-synced preferences store
+  // and written back through it on change, so the choice follows the learner
+  // across sessions and devices. `projectionFor` resolves the stored id to a
+  // valid one (falling back to Equal Earth for an unknown/legacy/missing id).
+  const [projectionId, setProjectionId] = useState<ProjectionId>(() => projectionFor(readMapProjectionPref()).id);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const nextButtonRef = useRef<HTMLButtonElement>(null);
   const settingsButtonRef = useRef<HTMLButtonElement>(null);
@@ -133,6 +141,11 @@ export function Quiz() {
   function toggleAutoZoom(enabled: boolean) {
     setAutoZoomEnabled(enabled);
     writeAutoZoomPref(enabled);
+  }
+
+  function changeProjection(id: ProjectionId) {
+    setProjectionId(id);
+    writeMapProjectionPref(id);
   }
 
   const loadQuestion = useCallback(async () => {
@@ -305,6 +318,8 @@ export function Quiz() {
                     }
                   : {})}
                 autoZoom={autoZoomEnabled}
+                projectionId={projectionId}
+                onProjectionChange={changeProjection}
               />
             </div>
           </div>
@@ -336,7 +351,13 @@ export function Quiz() {
               submitButtonRef={nextButtonRef}
             />
             {view.state === "answered" && (
-              <VisualAid visual={view.result.revealVisual} slot="reveal" autoZoom={autoZoomEnabled} />
+              <VisualAid
+                visual={view.result.revealVisual}
+                slot="reveal"
+                autoZoom={autoZoomEnabled}
+                projectionId={projectionId}
+                onProjectionChange={changeProjection}
+              />
             )}
             <button ref={nextButtonRef} className="btn-primary" type="submit">
               {asking ? "Submit" : "Next question"}

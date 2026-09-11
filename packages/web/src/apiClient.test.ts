@@ -119,11 +119,13 @@ describe("apiClient", () => {
     const fetchMock = vi.fn(() => Promise.resolve({ ok: true, json: async () => ({ ok: true }) }));
     vi.stubGlobal("fetch", fetchMock);
 
-    await expect(putPreferences({ autoZoom: false, autocomplete: true })).resolves.toBeUndefined();
+    await expect(
+      putPreferences({ autoZoom: false, autocomplete: true, mapProjection: "equal-earth" }),
+    ).resolves.toBeUndefined();
     expect(fetchMock).toHaveBeenCalledWith("/api/preferences", {
       method: "PUT",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ preferences: { autoZoom: false, autocomplete: true } }),
+      body: JSON.stringify({ preferences: { autoZoom: false, autocomplete: true, mapProjection: "equal-earth" } }),
     });
   });
 
@@ -131,7 +133,9 @@ describe("apiClient", () => {
     const fetchMock = vi.fn(() => Promise.resolve({ ok: false, json: async () => ({}) }));
     vi.stubGlobal("fetch", fetchMock);
 
-    await expect(putPreferences({ autoZoom: true, autocomplete: true })).rejects.toThrow();
+    await expect(
+      putPreferences({ autoZoom: true, autocomplete: true, mapProjection: "equal-earth" }),
+    ).rejects.toThrow();
   });
 });
 

@@ -74,3 +74,16 @@ export function readAutocompletePref(): boolean {
 export function writeAutocompletePref(enabled: boolean): void {
   persist({ ...current, autocomplete: enabled });
 }
+
+/**
+ * The stored reveal-map projection id (#221). A bare string: the projection
+ * registry resolves it to a working projection (falling back to Equal Earth for
+ * an unknown/legacy id), so the store never validates the id itself.
+ */
+export function readMapProjectionPref(): string {
+  return current.mapProjection;
+}
+
+export function writeMapProjectionPref(id: string): void {
+  persist({ ...current, mapProjection: id });
+}
