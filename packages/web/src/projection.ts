@@ -109,26 +109,49 @@ export function projectionFor(id: string): ProjectionConfig {
   return PROJECTIONS.find((p) => p.id === id) ?? DEFAULT_PROJECTION;
 }
 
-// v1 has a single, module-level active projection. When the projection becomes a
-// per-user preference (#215), this is what the setting selects.
-const active = projectionFor(DEFAULT_PROJECTION_ID);
-const activePath = geoPath(active.factory());
+/**
+ * A projection bound to its coordinate helpers — the runtime handle a map
+ * surface holds. Where the module-level `project`/`geoPathString`/`geoBounds`
+ * are fixed to the default projection, a `Projector` carries the *chosen* one,
+ * so `MapAid` can re-render live when the learner switches projection (#220)
+ * without any module-level mutable state. Its `geoPath` is built once per
+ * projector (the `fitExtent`/`geoPath` solve isn't free), so callers memoize the
+ * projector by id rather than rebuilding it per render.
+ */
+export type Projector = {
+  id: ProjectionId;
+  label: string;
+  /** Project a stored (lat, lon) to this projection's (x, y) screen space. */
+  project: PointProjector;
+  /** A GeoJSON geometry as an SVG path string in this projection's space. */
+  geoPathString: (geo: GeoPermissibleObjects) => string;
+  /** Projected bounds `[[x0, y0], [x1, y1]]` of a GeoJSON geometry. */
+  geoBounds: (geo: GeoPermissibleObjects) => [[number, number], [number, number]];
+};
 
-/** The id of the active projection — how `MapAid` picks the matching baked land
- * path from `world-map.generated`. Tracks `active`, so it flips with the default. */
-export const ACTIVE_PROJECTION_ID: ProjectionId = active.id;
-
-/** Project a stored (lat, lon) to the active projection's (x, y) screen space. */
-export function project(lat: number, lon: number): { x: number; y: number } {
-  return active.point(lat, lon);
+/** Build the projector for `id` (falling back to the default for an unknown id). */
+export function makeProjector(id: string): Projector {
+  const config = projectionFor(id);
+  const path = geoPath(config.factory());
+  return {
+    id: config.id,
+    label: config.label,
+    project: config.point,
+    geoPathString: (geo) => path(geo) ?? "",
+    geoBounds: (geo) => path.bounds(geo),
+  };
 }
 
-/** A GeoJSON geometry as an SVG path string in the active projection's space. */
-export function geoPathString(geo: GeoPermissibleObjects): string {
-  return activePath(geo) ?? "";
-}
+// The module-level default projector — every map surface starts here, and the
+// bare `project`/`geoPathString`/`geoBounds` exports below (kept for `mapZoom`'s
+// default frame and the projection tests) are its bound helpers.
+export const DEFAULT_PROJECTOR: Projector = makeProjector(DEFAULT_PROJECTION_ID);
 
-/** Projected bounds `[[x0, y0], [x1, y1]]` of a GeoJSON geometry. */
-export function geoBounds(geo: GeoPermissibleObjects): [[number, number], [number, number]] {
-  return activePath.bounds(geo);
-}
+/** Project a stored (lat, lon) to the default projection's (x, y) screen space. */
+export const project = DEFAULT_PROJECTOR.project;
+
+/** A GeoJSON geometry as an SVG path string in the default projection's space. */
+export const geoPathString = DEFAULT_PROJECTOR.geoPathString;
+
+/** Projected bounds `[[x0, y0], [x1, y1]]` of a GeoJSON geometry (default projection). */
+export const geoBounds = DEFAULT_PROJECTOR.geoBounds;

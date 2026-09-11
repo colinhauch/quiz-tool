@@ -1,7 +1,6 @@
 import { geoPath } from "d3-geo";
 import { describe, expect, it } from "vitest";
 import {
-  ACTIVE_PROJECTION_ID,
   DEFAULT_PROJECTION_ID,
   PROJECTIONS,
   geoBounds,
@@ -15,7 +14,6 @@ describe("projection registry", () => {
   it("offers equal-earth (default) and equirectangular", () => {
     expect(PROJECTIONS.map((p) => p.id)).toEqual(["equal-earth", "equirectangular"]);
     expect(DEFAULT_PROJECTION_ID).toBe("equal-earth");
-    expect(ACTIVE_PROJECTION_ID).toBe("equal-earth");
     for (const p of PROJECTIONS) {
       expect(p).toMatchObject({ id: expect.any(String), label: expect.any(String) });
       expect(typeof p.factory).toBe("function");
@@ -76,7 +74,7 @@ describe("equirectangular point projector", () => {
   });
 });
 
-describe("geoPathString / geoBounds (active projection)", () => {
+describe("geoPathString / geoBounds (default projection)", () => {
   // A LineString sidesteps polygon-winding (spherical-interior) semantics, so it
   // tests the projected coordinate space cleanly. Real land/boundary data is
   // correctly wound, so `geoPathString` renders it as a filled shape.
@@ -94,8 +92,8 @@ describe("geoPathString / geoBounds (active projection)", () => {
     expect(d.startsWith("M")).toBe(true);
   });
 
-  it("bounds a geometry in the same projected space as the active projection", () => {
-    const expected = geoPath(projectionFor(ACTIVE_PROJECTION_ID).factory()).bounds(diagonal);
+  it("bounds a geometry in the same projected space as the default projection", () => {
+    const expected = geoPath(projectionFor(DEFAULT_PROJECTION_ID).factory()).bounds(diagonal);
     expect(geoBounds(diagonal)).toEqual(expected);
   });
 });

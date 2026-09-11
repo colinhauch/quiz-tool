@@ -9,6 +9,7 @@ import {
   writeAutoZoomPref,
 } from "./preferences.js";
 import { MapAid } from "./MapAid.js";
+import { DEFAULT_PROJECTION_ID, type ProjectionId } from "./projection.js";
 import { QuestionFeedback } from "./QuestionFeedback.js";
 import { useWideLayout } from "./useWideLayout.js";
 import { VisualAid } from "./VisualAid.js";
@@ -115,6 +116,9 @@ export function Quiz() {
   const [input, setInput] = useState("");
   const [suggestEnabled, setSuggestEnabled] = useState(readAutocompletePref);
   const [autoZoomEnabled, setAutoZoomEnabled] = useState(readAutoZoomPref);
+  // The map projection, session-local (#220): held in React state, defaults to
+  // Equal Earth, and resets on reload. Account-synced persistence is #221.
+  const [projectionId, setProjectionId] = useState<ProjectionId>(DEFAULT_PROJECTION_ID);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const nextButtonRef = useRef<HTMLButtonElement>(null);
   const settingsButtonRef = useRef<HTMLButtonElement>(null);
@@ -305,6 +309,8 @@ export function Quiz() {
                     }
                   : {})}
                 autoZoom={autoZoomEnabled}
+                projectionId={projectionId}
+                onProjectionChange={setProjectionId}
               />
             </div>
           </div>
@@ -336,7 +342,13 @@ export function Quiz() {
               submitButtonRef={nextButtonRef}
             />
             {view.state === "answered" && (
-              <VisualAid visual={view.result.revealVisual} slot="reveal" autoZoom={autoZoomEnabled} />
+              <VisualAid
+                visual={view.result.revealVisual}
+                slot="reveal"
+                autoZoom={autoZoomEnabled}
+                projectionId={projectionId}
+                onProjectionChange={setProjectionId}
+              />
             )}
             <button ref={nextButtonRef} className="btn-primary" type="submit">
               {asking ? "Submit" : "Next question"}
