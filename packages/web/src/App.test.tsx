@@ -61,13 +61,13 @@ function fakeBoundary(initial: AuthState): AuthBoundary & { set(next: AuthState)
     signInWithGoogle: vi.fn(async () => {}),
     signInWithMagicLink: vi.fn(async () => {}),
     signOut: vi.fn(async () => {}),
-    handleExpiry: vi.fn(() => set({ status: "signed-out", accessToken: null, reason: "expired" })),
+    handleExpiry: vi.fn(() => set({ status: "signed-out", accessToken: null, email: null, reason: "expired" })),
   };
 }
 
-const signedIn: AuthState = { status: "signed-in", accessToken: "tok", reason: null };
-const signedOut: AuthState = { status: "signed-out", accessToken: null, reason: null };
-const expired: AuthState = { status: "signed-out", accessToken: null, reason: "expired" };
+const signedIn: AuthState = { status: "signed-in", accessToken: "tok", email: null, reason: null };
+const signedOut: AuthState = { status: "signed-out", accessToken: null, email: null, reason: null };
+const expired: AuthState = { status: "signed-out", accessToken: null, email: null, reason: "expired" };
 
 afterEach(() => {
   setSignedInSource(() => false);
@@ -107,6 +107,19 @@ describe("App shell", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /^feedback$/i }));
     expect(await screen.findByLabelText(/your feedback/i)).toBeInTheDocument();
+  });
+
+  it("navigates to the settings view and tracks the current tab", async () => {
+    stubFetch();
+    render(<App boundary={fakeBoundary(signedIn)} />);
+    await screen.findByText("What country is Tokyo in?");
+
+    const settingsTab = screen.getByRole("button", { name: /^settings$/i });
+    fireEvent.click(settingsTab);
+
+    // The Settings page mounts (its Preferences section) and aria-current follows.
+    expect(await screen.findByRole("heading", { name: /preferences/i })).toBeInTheDocument();
+    expect(settingsTab).toHaveAttribute("aria-current", "true");
   });
 });
 

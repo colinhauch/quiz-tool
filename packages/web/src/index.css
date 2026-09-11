@@ -189,6 +189,7 @@ body {
   /* Text-only tabs keep a readable measure even though their shared shell is
      now wide — only the quiz card and the packs/answers grids want the room. */
   .feedback,
+  .settings,
   .sign-in-gate {
     max-width: 680px;
     margin-inline: auto;
@@ -1399,4 +1400,80 @@ body {
 
 .env-badge--unknown {
   background: #c0392b;
+}
+
+/* ── Settings: account + preferences home ────────────────── */
+/* A stack of card sections: account (read-only email), the preference toggles
+   as a list (a future toggle is one more row), and sign-out at the bottom. */
+.settings {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.settings__section {
+  background: #fff;
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 8px rgba(39, 24, 126, 0.08);
+  padding: 1.5rem;
+}
+
+.settings__heading {
+  font-family: var(--serif);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--indigo);
+  margin-bottom: 1rem;
+}
+
+.settings__account-email {
+  font-family: var(--sans);
+  font-size: 1rem;
+  color: var(--indigo);
+}
+
+.settings__toggles {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.settings__toggle-row + .settings__toggle-row {
+  border-top: 1px solid rgba(39, 24, 126, 0.1);
+}
+
+.settings__toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.75rem 0;
+  font-family: var(--sans);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--indigo);
+  cursor: pointer;
+}
+
+.settings__toggle input {
+  cursor: pointer;
+}
+
+.settings__section--signout {
+  display: flex;
+}
+
+.settings__signout {
+  font-family: var(--sans);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--indigo);
+  background: var(--platinum);
+  border: 1px solid rgba(39, 24, 126, 0.16);
+  border-radius: 0.4rem;
+  padding: 0.6rem 1.2rem;
+  cursor: pointer;
+}
+
+.settings__signout:hover {
+  background: var(--periwinkle);
 }
