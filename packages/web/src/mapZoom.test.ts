@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  type View,
   WORLD_ASPECT,
   WORLD_VIEW,
   easeInOutCubic,
@@ -9,20 +10,41 @@ import {
   interpolateView,
   zoomAtTime,
 } from "./mapZoom.js";
+import { geoBounds, project } from "./projection.js";
+
+/** `geoBounds` result as a `viewBox` rect — the contract `mapZoom`'s framing
+ * helpers implement, expressed independently of any one projection's numbers. */
+function boundsView(geo: Parameters<typeof geoBounds>[0]): View {
+  const [[x0, y0], [x1, y1]] = geoBounds(geo);
+  return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
+}
 
 const region = extentToView({ minLon: 138.19, minLat: 34.69, maxLon: 141.19, maxLat: 36.69 });
 
 describe("mapZoom", () => {
-  // Backward-compat: the world frame is now derived from the active projection's
-  // own sphere bounds (`geoBounds({type:"Sphere"})`), not the literal 0,0,360,180.
-  // Under the default equirectangular projection it must still be exactly that.
-  it("derives the world frame from the projection's sphere bounds (equirect: 0,0,360,180)", () => {
-    expect(WORLD_VIEW).toEqual({ x: 0, y: 0, w: 360, h: 180 });
-    expect(WORLD_ASPECT).toBe(2);
+  // The world frame is derived from the active projection's own sphere bounds
+  // (`geoBounds({type:"Sphere"})`), not a literal rectangle — so it tracks
+  // whatever projection is the default (Equal Earth, #219).
+  it("derives the world frame from the projection's sphere bounds", () => {
+    expect(WORLD_VIEW).toEqual(boundsView({ type: "Sphere" }));
+    expect(WORLD_ASPECT).toBe(WORLD_VIEW.w / WORLD_VIEW.h);
   });
 
-  it("projects a regional extent to a viewBox (x=minLon+180, y=90-maxLat, w, h)", () => {
-    expect(region).toEqual({ x: 318.19, y: 53.31, w: 3, h: 2 });
+  it("frames a regional extent to a viewBox that contains its projected corners", () => {
+    expect(region.w).toBeGreaterThan(0);
+    expect(region.h).toBeGreaterThan(0);
+    for (const [lat, lon] of [
+      [34.69, 138.19],
+      [34.69, 141.19],
+      [36.69, 138.19],
+      [36.69, 141.19],
+    ] as const) {
+      const { x, y } = project(lat, lon);
+      expect(x).toBeGreaterThanOrEqual(region.x);
+      expect(x).toBeLessThanOrEqual(region.x + region.w);
+      expect(y).toBeGreaterThanOrEqual(region.y);
+      expect(y).toBeLessThanOrEqual(region.y + region.h);
+    }
   });
 
   it("interpolates global at t=0 and regional at t=1", () => {
@@ -32,10 +54,10 @@ describe("mapZoom", () => {
 
   it("interpolates the midpoint of every viewBox component at t=0.5", () => {
     expect(interpolateView(WORLD_VIEW, region, 0.5)).toEqual({
-      x: (0 + 318.19) / 2,
-      y: (0 + 53.31) / 2,
-      w: (360 + 3) / 2,
-      h: (180 + 2) / 2,
+      x: (WORLD_VIEW.x + region.x) / 2,
+      y: (WORLD_VIEW.y + region.y) / 2,
+      w: (WORLD_VIEW.w + region.w) / 2,
+      h: (WORLD_VIEW.h + region.h) / 2,
     });
   });
 
@@ -52,12 +74,12 @@ describe("geometryView", () => {
   // Rings are wound clockwise — d3-geo's spherical convention for an exterior
   // ring — matching the real Natural Earth boundary data. (A counter-clockwise
   // ring is read as the whole sphere minus a hole, framing the entire globe.)
-  it("frames a MultiPolygon from its projected bounds (x=minLon+180, y=90-maxLat)", () => {
+  it("frames a MultiPolygon from its projected bounds", () => {
     const geo = {
       type: "MultiPolygon" as const,
       coordinates: [[[[139, 35], [139, 37], [141, 37], [141, 35], [139, 35]]]],
     };
-    expect(geometryView(geo)).toEqual({ x: 319, y: 53, w: 2, h: 2 });
+    expect(geometryView(geo)).toEqual(boundsView(geo));
   });
 
   it("spans every part of a multipart geometry", () => {
@@ -68,8 +90,8 @@ describe("geometryView", () => {
         [[[10, 10], [10, 11], [11, 11], [11, 10], [10, 10]]],
       ],
     };
-    // Union bbox is lon [0,11], lat [0,11].
-    expect(geometryView(geo)).toEqual({ x: 180, y: 79, w: 11, h: 11 });
+    // Union bbox is lon [0,11], lat [0,11] — geometryView is its projected bounds.
+    expect(geometryView(geo)).toEqual(boundsView(geo));
   });
 });
 
@@ -78,9 +100,15 @@ describe("fitAspect", () => {
     expect(fitAspect(WORLD_VIEW, WORLD_ASPECT)).toEqual(WORLD_VIEW);
   });
 
-  it("widens a too-tall view around its center, never cropping", () => {
-    // Tokyo's 3×2 extent (aspect 1.5) → widened to 4×2 (aspect 2), same center.
-    expect(fitAspect(region, WORLD_ASPECT)).toEqual({ x: 317.69, y: 53.31, w: 4, h: 2 });
+  it("fits a view to the target aspect around its center, never cropping", () => {
+    const fitted = fitAspect(region, WORLD_ASPECT);
+    // Never crops: each side is at least as large as the original.
+    expect(fitted.w).toBeGreaterThanOrEqual(region.w);
+    expect(fitted.h).toBeGreaterThanOrEqual(region.h);
+    // Same center.
+    expect(fitted.x + fitted.w / 2).toBeCloseTo(region.x + region.w / 2);
+    expect(fitted.y + fitted.h / 2).toBeCloseTo(region.y + region.h / 2);
+    expect(fitted.w / fitted.h).toBeCloseTo(WORLD_ASPECT);
   });
 
   it("heightens a too-wide view around its center, never cropping", () => {

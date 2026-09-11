@@ -1,4 +1,10 @@
-import { type GeoPermissibleObjects, type GeoProjection, geoEquirectangular, geoPath } from "d3-geo";
+import {
+  type GeoPermissibleObjects,
+  type GeoProjection,
+  geoEqualEarth,
+  geoEquirectangular,
+  geoPath,
+} from "d3-geo";
 
 /**
  * The one place lat/lon becomes screen coordinates (spec #215, prefactor #217).
@@ -12,9 +18,11 @@ import { type GeoPermissibleObjects, type GeoProjection, geoEquirectangular, geo
  * A projection is looked up by a stable string id from `PROJECTIONS`, each entry
  * `{ id, label, factory }` where `factory` returns a d3 `GeoProjection`. The
  * layer is general — any d3 projection works because all geometry is stored as
- * lat/lon — even though v1 ships a single entry, `equirectangular`. Adding
- * Equal Earth (the spec's real goal) is one more registry entry plus one baked
- * land path; nothing here hard-codes the pair.
+ * lat/lon. The registry ships two entries: `equal-earth` (the default every
+ * learner now sees) and `equirectangular` (the historical mapping, kept for its
+ * exact closed form and as a second option). Each projection also owns a baked
+ * land path (`scripts/generate-world-map.ts` emits one per entry); `MapAid`
+ * looks the path up by the active projection id, so nothing hard-codes the pair.
  *
  * Two shaped outputs, one mapping:
  *   - `project(lat, lon)` — the scalar point projector the pins and `mapZoom`
@@ -27,7 +35,7 @@ import { type GeoPermissibleObjects, type GeoProjection, geoEquirectangular, geo
  *     and never asserted numerically.
  * Both are driven by the same projection config, so they describe one mapping.
  */
-export type ProjectionId = "equirectangular";
+export type ProjectionId = "equal-earth" | "equirectangular";
 
 /** A scalar point projector: stored (lat, lon) → projected (x, y). */
 type PointProjector = (lat: number, lon: number) => { x: number; y: number };
@@ -59,10 +67,42 @@ const EQUIRECTANGULAR: ProjectionConfig = {
   point: (lat, lon) => ({ x: lon + 180, y: 90 - lat }),
 };
 
-export const PROJECTIONS: ProjectionConfig[] = [EQUIRECTANGULAR];
+/**
+ * Equal Earth (Šavrič–Patterson–Jenny, 2018) — an equal-area world projection —
+ * fit into the same `0 0 360 180` box the equirectangular entry uses, so both
+ * projections plot into a comparably sized viewport and the marker/label sizing
+ * (authored in full-world units) stays sensible. `fitExtent` solves scale +
+ * translate so the whole sphere fills the box's width; the equator lands on the
+ * centre line (lat 0 → y 90) and the poles pull inward, giving Equal Earth its
+ * rounded silhouette. Unlike equirectangular there is no clean closed form, so
+ * the `point` projector defers to d3's own `GeoProjection` (a single cached
+ * instance — the `fitExtent` solve is not free to redo per point).
+ */
+const equalEarthFactory = (): GeoProjection =>
+  geoEqualEarth().fitExtent(
+    [
+      [0, 0],
+      [360, 180],
+    ],
+    { type: "Sphere" },
+  );
 
-export const DEFAULT_PROJECTION_ID: ProjectionId = "equirectangular";
-const DEFAULT_PROJECTION = EQUIRECTANGULAR;
+const equalEarthProjection = equalEarthFactory();
+
+const EQUAL_EARTH: ProjectionConfig = {
+  id: "equal-earth",
+  label: "Equal Earth",
+  factory: equalEarthFactory,
+  point: (lat, lon) => {
+    const p = equalEarthProjection([lon, lat]) ?? [Number.NaN, Number.NaN];
+    return { x: p[0], y: p[1] };
+  },
+};
+
+export const PROJECTIONS: ProjectionConfig[] = [EQUAL_EARTH, EQUIRECTANGULAR];
+
+export const DEFAULT_PROJECTION_ID: ProjectionId = "equal-earth";
+const DEFAULT_PROJECTION = EQUAL_EARTH;
 
 /** Resolve a projection by id, falling back to the default for an unknown id. */
 export function projectionFor(id: string): ProjectionConfig {
@@ -73,6 +113,10 @@ export function projectionFor(id: string): ProjectionConfig {
 // per-user preference (#215), this is what the setting selects.
 const active = projectionFor(DEFAULT_PROJECTION_ID);
 const activePath = geoPath(active.factory());
+
+/** The id of the active projection — how `MapAid` picks the matching baked land
+ * path from `world-map.generated`. Tracks `active`, so it flips with the default. */
+export const ACTIVE_PROJECTION_ID: ProjectionId = active.id;
 
 /** Project a stored (lat, lon) to the active projection's (x, y) screen space. */
 export function project(lat: number, lon: number): { x: number; y: number } {

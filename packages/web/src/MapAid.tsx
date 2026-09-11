@@ -1,6 +1,6 @@
 import type { VisualAid as VisualAidData } from "@geo/contract";
 import { useEffect, useRef, useState } from "react";
-import { WORLD_LAND_PATH } from "./world-map.generated.js";
+import { WORLD_LAND_PATHS } from "./world-map.generated.js";
 import {
   type View,
   WORLD_ASPECT,
@@ -11,13 +11,20 @@ import {
   interpolateView,
   zoomAtTime,
 } from "./mapZoom.js";
-import { geoPathString, project } from "./projection.js";
+import { ACTIVE_PROJECTION_ID, geoPathString, project } from "./projection.js";
+
+// The baked land silhouette for the active projection (#219). Picked by id so it
+// shares the exact projection the pins/overlays/boundary go through — the four
+// layers align by construction.
+const WORLD_LAND_PATH = WORLD_LAND_PATHS[ACTIVE_PROJECTION_ID];
 
 /**
- * The reveal map: one animated equirectangular viewport that shows both the
- * global and the regional scale over time in a single box (spec #152, #156).
+ * The reveal map: one animated viewport (Equal Earth by default, #219) that
+ * shows both the global and the regional scale over time in a single box (spec
+ * #152, #156).
  *
- * Layers, one coordinate space (#155, #203): the baked 110m `WORLD_LAND_PATH` is
+ * Layers, one coordinate space (#155, #203): the baked 110m `WORLD_LAND_PATH` —
+ * selected for the active projection (#219) — is
  * the base; the server-sent `localGeoJSON` — hi-res land clipped for the pinned
  * region — is composited on top; and for a country, the `boundaryGeoJSON` outline
  * (spec #203) draws above that as a translucent highlight + stroke, below the
