@@ -62,6 +62,15 @@ describe("Settings page", () => {
     expect(readAutoZoomPref()).toBe(false);
   });
 
+  it("persists a toggle flip across remounts", () => {
+    const first = render(<Settings boundary={fakeBoundary(signedIn("a@b.co"))} />);
+    fireEvent.click(screen.getByRole("checkbox", { name: /autocomplete/i }));
+    first.unmount();
+
+    render(<Settings boundary={fakeBoundary(signedIn("a@b.co"))} />);
+    expect(screen.getByRole("checkbox", { name: /autocomplete/i })).not.toBeChecked();
+  });
+
   it("calls the boundary's signOut when Sign out is clicked", () => {
     const boundary = fakeBoundary(signedIn("a@b.co"));
     render(<Settings boundary={boundary} />);

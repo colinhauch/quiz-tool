@@ -2,12 +2,7 @@ import type { AnswerResponse, CardStats, QuestionResponse } from "@geo/contract"
 import { type FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { AnswerBox } from "./AnswerBox.js";
 import { getQuestion, submitAnswer as submitAnswerRequest } from "./apiClient.js";
-import {
-  readAutocompletePref,
-  readAutoZoomPref,
-  writeAutocompletePref,
-  writeAutoZoomPref,
-} from "./preferences.js";
+import { readAutocompletePref, readAutoZoomPref } from "./preferences.js";
 import { MapAid } from "./MapAid.js";
 import { QuestionFeedback } from "./QuestionFeedback.js";
 import { useWideLayout } from "./useWideLayout.js";
@@ -64,76 +59,21 @@ function QuestionStats({ stats }: { stats: CardStats }) {
   );
 }
 
-function SettingsIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <path d="M10.5 2h3l.7 2.4a7.8 7.8 0 0 1 1.8 1l2.3-1 2.1 2.1-1 2.3c.4.6.7 1.2 1 1.8l2.4.7v3l-2.4.7a7.8 7.8 0 0 1-1 1.8l1 2.3-2.1 2.1-2.3-1a7.8 7.8 0 0 1-1.8 1l-.7 2.4h-3l-.7-2.4a7.8 7.8 0 0 1-1.8-1l-2.3 1-2.1-2.1 1-2.3a7.8 7.8 0 0 1-1-1.8L2 13.5v-3l2.4-.7c.2-.6.6-1.2 1-1.8l-1-2.3 2.1-2.1 2.3 1a7.8 7.8 0 0 1 1.8-1L10.5 2Z" />
-      <circle cx="12" cy="12" r="3" />
-    </svg>
-  );
-}
-
-type CardSettingsProps = {
-  suggestEnabled: boolean;
-  autoZoomEnabled: boolean;
-  onSuggestChange: (enabled: boolean) => void;
-  onAutoZoomChange: (enabled: boolean) => void;
-  onClose: () => void;
-};
-
-function CardSettings({
-  suggestEnabled,
-  autoZoomEnabled,
-  onSuggestChange,
-  onAutoZoomChange,
-  onClose,
-}: CardSettingsProps) {
-  return (
-    <div className="quiz-settings__backdrop">
-      <section className="quiz-settings" id="quiz-card-settings" role="dialog" aria-modal="true" aria-labelledby="quiz-settings-title">
-        <div className="quiz-settings__header">
-          <h2 id="quiz-settings-title">Card settings</h2>
-          <button className="quiz-settings__close" type="button" onClick={onClose} aria-label="Close settings">
-            ×
-          </button>
-        </div>
-        <label className="quiz-settings__toggle">
-          <input type="checkbox" checked={suggestEnabled} onChange={(e) => onSuggestChange(e.target.checked)} />
-          Autocomplete
-        </label>
-        <label className="quiz-settings__toggle">
-          <input type="checkbox" checked={autoZoomEnabled} onChange={(e) => onAutoZoomChange(e.target.checked)} />
-          Auto-zoom
-        </label>
-      </section>
-    </div>
-  );
-}
-
 export function Quiz() {
   const [view, setView] = useState<View>({ state: "loading" });
   const [input, setInput] = useState("");
-  const [suggestEnabled, setSuggestEnabled] = useState(readAutocompletePref);
-  const [autoZoomEnabled, setAutoZoomEnabled] = useState(readAutoZoomPref);
-  const [settingsOpen, setSettingsOpen] = useState(false);
+  // Read once at mount, never written here: preference writes only happen on
+  // the Settings page. Quiz picks up a changed value by remounting when the
+  // learner navigates away and back (see App's tab switch).
+  const suggestEnabled = readAutocompletePref();
+  const autoZoomEnabled = readAutoZoomPref();
   const nextButtonRef = useRef<HTMLButtonElement>(null);
-  const settingsButtonRef = useRef<HTMLButtonElement>(null);
   // The next question, drawn in the background while the learner reads the
   // verdict. Holding the promise (not the resolved value) lets "Next" swap
   // instantly when it has landed and simply await it when it hasn't — either
   // way without unmounting the card to a bare loading screen. See loadQuestion.
   const prefetchedRef = useRef<Promise<QuestionResponse> | null>(null);
   const wide = useWideLayout();
-
-  function toggleSuggest(enabled: boolean) {
-    setSuggestEnabled(enabled);
-    writeAutocompletePref(enabled);
-  }
-
-  function toggleAutoZoom(enabled: boolean) {
-    setAutoZoomEnabled(enabled);
-    writeAutoZoomPref(enabled);
-  }
 
   const loadQuestion = useCallback(async () => {
     // Consume a background prefetch if one is in flight. When it is, keep the
@@ -175,22 +115,6 @@ export function Quiz() {
     }
   }, [view.state]);
 
-  useEffect(() => {
-    if (!settingsOpen) return;
-
-    function closeOnEscape(event: KeyboardEvent) {
-      if (event.key === "Escape") closeSettings();
-    }
-
-    document.addEventListener("keydown", closeOnEscape);
-    return () => document.removeEventListener("keydown", closeOnEscape);
-  }, [settingsOpen]);
-
-  function closeSettings() {
-    setSettingsOpen(false);
-    settingsButtonRef.current?.focus();
-  }
-
   async function submitAnswer(question: QuestionResponse) {
     try {
       const result = await submitAnswerRequest(question.cardId, input);
@@ -224,29 +148,7 @@ export function Quiz() {
     <div className="quiz-card">
       <div className="quiz-card__strip">
         <span className="quiz-card__eyebrow">{view.question.packLabel}</span>
-        <button
-          ref={settingsButtonRef}
-          className="quiz-card__settings-button"
-          type="button"
-          aria-label="Open settings"
-          aria-haspopup="dialog"
-          aria-expanded={settingsOpen}
-          aria-controls="quiz-card-settings"
-          onClick={() => setSettingsOpen(true)}
-        >
-          <SettingsIcon />
-        </button>
       </div>
-
-      {settingsOpen && (
-        <CardSettings
-          suggestEnabled={suggestEnabled}
-          autoZoomEnabled={autoZoomEnabled}
-          onSuggestChange={toggleSuggest}
-          onAutoZoomChange={toggleAutoZoom}
-          onClose={closeSettings}
-        />
-      )}
 
       {wide ? (
         <div className="quiz-card__body quiz-card__body--wide">
