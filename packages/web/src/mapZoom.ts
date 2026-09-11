@@ -1,4 +1,5 @@
 import type { VisualAid as VisualAidData } from "@geo/contract";
+import { geoBounds, project } from "./projection.js";
 
 /**
  * The 1-D zoom track for the reveal map (spec #152, #156).
@@ -18,8 +19,21 @@ export type View = { x: number; y: number; w: number; h: number };
 type RegionExtent = NonNullable<Extract<VisualAidData, { kind: "map" }>["regionExtent"]>;
 type GeoMultiPolygon = NonNullable<Extract<VisualAidData, { kind: "map" }>["boundaryGeoJSON"]>;
 
-/** Projected size of the full-world frame (`x = lon + 180`, `y = 90 - lat`). */
-export const WORLD_VIEW: View = { x: 0, y: 0, w: 360, h: 180 };
+/** A projected bounds pair `[[x0, y0], [x1, y1]]` (as `geoBounds` returns) as a
+ * `viewBox` rectangle. */
+function viewFromBounds([[x0, y0], [x1, y1]]: [[number, number], [number, number]]): View {
+  return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
+}
+
+/**
+ * The full-world frame, from the *projected* bounds of the whole sphere for the
+ * active projection (`geoBounds({ type: "Sphere" })`) — not a hard-coded
+ * rectangle, and not the projected NW/SE corners (which only bound the sphere
+ * for a rectangular projection; under, say, Equal Earth the widest point is the
+ * equator, not the pole line). Under the default equirectangular projection this
+ * is exactly `{ 0, 0, 360, 180 }`, so all existing frame numbers are unchanged.
+ */
+export const WORLD_VIEW: View = viewFromBounds(geoBounds({ type: "Sphere" }));
 
 /** The frame's width-to-height ratio, held constant across the whole zoom. */
 export const WORLD_ASPECT = WORLD_VIEW.w / WORLD_VIEW.h;
@@ -41,41 +55,62 @@ export function fitAspect(view: View, aspect: number): View {
   return { x: cx - w / 2, y: cy - h / 2, w, h };
 }
 
-/** The regional extent (a lon/lat rectangle) as a projected `viewBox`. */
+/** Bounding `viewBox` of a set of already-projected points. */
+function boundsOfPoints(points: { x: number; y: number }[]): View {
+  let x0 = Infinity;
+  let y0 = Infinity;
+  let x1 = -Infinity;
+  let y1 = -Infinity;
+  for (const { x, y } of points) {
+    if (x < x0) x0 = x;
+    if (x > x1) x1 = x;
+    if (y < y0) y0 = y;
+    if (y > y1) y1 = y;
+  }
+  return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
+}
+
+/** Samples per edge when framing an extent-only region (below). */
+const EXTENT_SAMPLES = 16;
+
+/**
+ * The fallback zoom target for a point/extent-only entity (no boundary polygon):
+ * the projected box around a lon/lat rectangle. We can't just project the two
+ * corners — under a non-rectangular projection a lon/lat box maps to a *curved*
+ * quad whose extremes lie along the edges, not at the corners — so we sample
+ * along all four edges and bound the projected samples. For equirectangular the
+ * mapping is linear, so the extrema are the corners and this reproduces the
+ * historical `{ x: minLon+180, y: 90-maxLat, w, h }` exactly.
+ */
 export function extentToView(extent: RegionExtent): View {
-  return {
-    x: extent.minLon + 180,
-    y: 90 - extent.maxLat,
-    w: extent.maxLon - extent.minLon,
-    h: extent.maxLat - extent.minLat,
-  };
+  const { minLon, minLat, maxLon, maxLat } = extent;
+  const points: { x: number; y: number }[] = [];
+  for (let i = 0; i <= EXTENT_SAMPLES; i++) {
+    const f = i / EXTENT_SAMPLES;
+    const lon = minLon + f * (maxLon - minLon);
+    const lat = minLat + f * (maxLat - minLat);
+    points.push(project(maxLat, lon)); // top edge
+    points.push(project(minLat, lon)); // bottom edge
+    points.push(project(lat, minLon)); // left edge
+    points.push(project(lat, maxLon)); // right edge
+  }
+  return boundsOfPoints(points);
 }
 
 /**
- * A MultiPolygon's lon/lat bounding box as a projected `viewBox` (spec #203,
- * Q5). Used to frame the reveal map to a country's real outline instead of the
- * coarse type-based `regionExtent`: the client derives the zoom target from the
- * boundary geometry it was already sent, so nothing new is persisted. Raw bbox,
- * no padding — the caller pads and `fitAspect`s it into the final frame.
+ * A region polygon's projected bounds as a `viewBox` (spec #203, Q5), via
+ * `geoBounds` over the active projection — the geometry's *actual* projected
+ * extent (a lon/lat box projects to a curved quad, so its bounds differ from the
+ * naively projected corner bbox under any non-rectangular projection). Used to
+ * frame the reveal map to a country's real outline instead of the coarse
+ * type-based `regionExtent`: the client derives the zoom target from the
+ * boundary geometry it was already sent, so nothing new is persisted. Rings must
+ * be wound clockwise (d3-geo's exterior-ring convention, which the stored
+ * Natural Earth boundaries follow). Raw bounds, no padding — the caller pads and
+ * `fitAspect`s it into the final frame.
  */
-export function bboxOf(geo: GeoMultiPolygon): View {
-  let minLon = Infinity;
-  let minLat = Infinity;
-  let maxLon = -Infinity;
-  let maxLat = -Infinity;
-  for (const polygon of geo.coordinates) {
-    for (const ring of polygon) {
-      for (const vertex of ring) {
-        const lon = vertex[0] ?? 0;
-        const lat = vertex[1] ?? 0;
-        if (lon < minLon) minLon = lon;
-        if (lon > maxLon) maxLon = lon;
-        if (lat < minLat) minLat = lat;
-        if (lat > maxLat) maxLat = lat;
-      }
-    }
-  }
-  return { x: minLon + 180, y: 90 - maxLat, w: maxLon - minLon, h: maxLat - minLat };
+export function geometryView(geo: GeoMultiPolygon): View {
+  return viewFromBounds(geoBounds(geo));
 }
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
