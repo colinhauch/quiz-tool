@@ -7,9 +7,10 @@ import { Feedback } from "./Feedback.js";
 import { Packs } from "./Packs.js";
 import { loadPreferences } from "./preferences.js";
 import { Quiz } from "./Quiz.js";
+import { Settings } from "./Settings.js";
 import { SignInGate } from "./SignInGate.js";
 
-type Tab = "quiz" | "answers" | "packs" | "feedback";
+type Tab = "quiz" | "answers" | "packs" | "feedback" | "settings";
 
 /**
  * The app shell: an Indigo header band (carrying the topographic texture) with
@@ -105,6 +106,13 @@ export function App({ boundary = getAuthBoundary() }: { boundary?: AuthBoundary 
             >
               Feedback
             </button>
+            <button
+              type="button"
+              aria-current={tab === "settings"}
+              onClick={() => setTab("settings")}
+            >
+              Settings
+            </button>
           </nav>
         </div>
       </header>
@@ -114,6 +122,7 @@ export function App({ boundary = getAuthBoundary() }: { boundary?: AuthBoundary 
         {tab === "answers" && <AnswerLog />}
         {tab === "packs" && <Packs />}
         {tab === "feedback" && <Feedback />}
+        {tab === "settings" && <Settings boundary={boundary} />}
       </main>
     </>
   );
