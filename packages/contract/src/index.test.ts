@@ -25,17 +25,26 @@ describe("contract", () => {
 
 describe("preferencesSchema", () => {
   it("fills every key with its default from an empty object", () => {
-    expect(preferencesSchema.parse({})).toEqual({ autoZoom: true, autocomplete: true });
+    expect(preferencesSchema.parse({})).toEqual({
+      autoZoom: true,
+      autocomplete: true,
+      mapProjection: "equal-earth",
+    });
   });
 
   it("fills omitted keys with their defaults (whole-blob replace resets them)", () => {
-    expect(preferencesSchema.parse({ autoZoom: false })).toEqual({ autoZoom: false, autocomplete: true });
+    expect(preferencesSchema.parse({ autoZoom: false })).toEqual({
+      autoZoom: false,
+      autocomplete: true,
+      mapProjection: "equal-earth",
+    });
   });
 
   it("keeps supplied values", () => {
-    expect(preferencesSchema.parse({ autoZoom: false, autocomplete: false })).toEqual({
+    expect(preferencesSchema.parse({ autoZoom: false, autocomplete: false, mapProjection: "equirectangular" })).toEqual({
       autoZoom: false,
       autocomplete: false,
+      mapProjection: "equirectangular",
     });
   });
 
@@ -46,12 +55,18 @@ describe("preferencesSchema", () => {
   it("rejects a wrong type", () => {
     expect(preferencesSchema.safeParse({ autoZoom: "yes" }).success).toBe(false);
   });
+
+  it("accepts any mapProjection string (registry resolves it, with default fallback, client-side)", () => {
+    // The schema does not enumerate projection ids: an unknown/legacy id must
+    // parse so the client can fall it back to the default rather than 400.
+    expect(preferencesSchema.parse({ mapProjection: "legacy-mercator" }).mapProjection).toBe("legacy-mercator");
+  });
 });
 
 describe("preferencesRequestSchema", () => {
   it("parses a partial body into a complete, defaulted blob", () => {
     expect(preferencesRequestSchema.parse({ preferences: { autocomplete: false } })).toEqual({
-      preferences: { autoZoom: true, autocomplete: false },
+      preferences: { autoZoom: true, autocomplete: false, mapProjection: "equal-earth" },
     });
   });
 

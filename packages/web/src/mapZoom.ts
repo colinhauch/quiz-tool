@@ -1,5 +1,5 @@
 import type { VisualAid as VisualAidData } from "@geo/contract";
-import { geoBounds, project } from "./projection.js";
+import { DEFAULT_PROJECTOR, type Projector } from "./projection.js";
 
 /**
  * The 1-D zoom track for the reveal map (spec #152, #156).
@@ -26,16 +26,24 @@ function viewFromBounds([[x0, y0], [x1, y1]]: [[number, number], [number, number
 }
 
 /**
- * The full-world frame, from the *projected* bounds of the whole sphere for the
- * active projection (`geoBounds({ type: "Sphere" })`) — not a hard-coded
- * rectangle, and not the projected NW/SE corners (which only bound the sphere
- * for a rectangular projection; under, say, Equal Earth the widest point is the
- * equator, not the pole line). Under the default equirectangular projection this
- * is exactly `{ 0, 0, 360, 180 }`, so all existing frame numbers are unchanged.
+ * The full-world frame for a projection, from the *projected* bounds of the whole
+ * sphere (`projector.geoBounds({ type: "Sphere" })`) — not a hard-coded
+ * rectangle, and not the projected NW/SE corners (which only bound the sphere for
+ * a rectangular projection; under, say, Equal Earth the widest point is the
+ * equator, not the pole line). Every framing helper here takes the projection as
+ * a `Projector` so `MapAid` can switch projection live (#220); the module-level
+ * `WORLD_VIEW`/`extentToView`/`geometryView` below are the same helpers bound to
+ * the default projector — the default-projection frame the projection tests
+ * pin, with no production caller now that `MapAid` threads its own projector.
  */
-export const WORLD_VIEW: View = viewFromBounds(geoBounds({ type: "Sphere" }));
+export function worldViewFor(projector: Projector): View {
+  return viewFromBounds(projector.geoBounds({ type: "Sphere" }));
+}
 
-/** The frame's width-to-height ratio, held constant across the whole zoom. */
+/** The default projection's full-world frame. */
+export const WORLD_VIEW: View = worldViewFor(DEFAULT_PROJECTOR);
+
+/** The default frame's width-to-height ratio, held constant across the whole zoom. */
 export const WORLD_ASPECT = WORLD_VIEW.w / WORLD_VIEW.h;
 
 /**
@@ -82,19 +90,24 @@ const EXTENT_SAMPLES = 16;
  * mapping is linear, so the extrema are the corners and this reproduces the
  * historical `{ x: minLon+180, y: 90-maxLat, w, h }` exactly.
  */
-export function extentToView(extent: RegionExtent): View {
+export function extentToViewFor(projector: Projector, extent: RegionExtent): View {
   const { minLon, minLat, maxLon, maxLat } = extent;
   const points: { x: number; y: number }[] = [];
   for (let i = 0; i <= EXTENT_SAMPLES; i++) {
     const f = i / EXTENT_SAMPLES;
     const lon = minLon + f * (maxLon - minLon);
     const lat = minLat + f * (maxLat - minLat);
-    points.push(project(maxLat, lon)); // top edge
-    points.push(project(minLat, lon)); // bottom edge
-    points.push(project(lat, minLon)); // left edge
-    points.push(project(lat, maxLon)); // right edge
+    points.push(projector.project(maxLat, lon)); // top edge
+    points.push(projector.project(minLat, lon)); // bottom edge
+    points.push(projector.project(lat, minLon)); // left edge
+    points.push(projector.project(lat, maxLon)); // right edge
   }
   return boundsOfPoints(points);
+}
+
+/** {@link extentToViewFor} bound to the default projection. */
+export function extentToView(extent: RegionExtent): View {
+  return extentToViewFor(DEFAULT_PROJECTOR, extent);
 }
 
 /**
@@ -109,8 +122,13 @@ export function extentToView(extent: RegionExtent): View {
  * Natural Earth boundaries follow). Raw bounds, no padding — the caller pads and
  * `fitAspect`s it into the final frame.
  */
+export function geometryViewFor(projector: Projector, geo: GeoMultiPolygon): View {
+  return viewFromBounds(projector.geoBounds(geo));
+}
+
+/** {@link geometryViewFor} bound to the default projection. */
 export function geometryView(geo: GeoMultiPolygon): View {
-  return viewFromBounds(geoBounds(geo));
+  return geometryViewFor(DEFAULT_PROJECTOR, geo);
 }
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;

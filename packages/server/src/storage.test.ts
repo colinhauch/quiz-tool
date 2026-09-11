@@ -24,30 +24,30 @@ const answer: AnswerRecord = {
 describe("createPreferencesStore (in-memory)", () => {
   it("returns every default for a learner with no stored row", async () => {
     const store = createPreferencesStore(openDatabase(":memory:"));
-    expect(await store.read()).toEqual({ autoZoom: true, autocomplete: true });
+    expect(await store.read()).toEqual({ autoZoom: true, autocomplete: true, mapProjection: "equal-earth" });
   });
 
   it("writes the blob and reads it back", async () => {
     const store = createPreferencesStore(openDatabase(":memory:"));
-    await store.write({ autoZoom: false, autocomplete: false });
-    expect(await store.read()).toEqual({ autoZoom: false, autocomplete: false });
+    await store.write({ autoZoom: false, autocomplete: false, mapProjection: "equirectangular" });
+    expect(await store.read()).toEqual({ autoZoom: false, autocomplete: false, mapProjection: "equirectangular" });
   });
 
   it("replaces wholesale on write", async () => {
     const store = createPreferencesStore(openDatabase(":memory:"));
-    await store.write({ autoZoom: false, autocomplete: false });
-    await store.write({ autoZoom: true, autocomplete: false });
-    expect(await store.read()).toEqual({ autoZoom: true, autocomplete: false });
+    await store.write({ autoZoom: false, autocomplete: false, mapProjection: "equal-earth" });
+    await store.write({ autoZoom: true, autocomplete: false, mapProjection: "equal-earth" });
+    expect(await store.read()).toEqual({ autoZoom: true, autocomplete: false, mapProjection: "equal-earth" });
   });
 
   it("defaults a key missing from an older stored blob", async () => {
     const db = openDatabase(":memory:");
     const store = createPreferencesStore(db);
-    // Simulate a blob written before `autocomplete` existed.
+    // Simulate a blob written before `autocomplete`/`mapProjection` existed.
     db.prepare("INSERT INTO user_preferences (id, preferences) VALUES (1, ?)").run(
       JSON.stringify({ autoZoom: false }),
     );
-    expect(await store.read()).toEqual({ autoZoom: false, autocomplete: true });
+    expect(await store.read()).toEqual({ autoZoom: false, autocomplete: true, mapProjection: "equal-earth" });
   });
 });
 

@@ -1,23 +1,29 @@
 import type { VisualAid as VisualAidData } from "@geo/contract";
-import { useEffect, useRef, useState } from "react";
-import { WORLD_LAND_PATH } from "./world-map.generated.js";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { WORLD_LAND_PATHS } from "./world-map.generated.js";
 import {
   type View,
-  WORLD_ASPECT,
-  WORLD_VIEW,
-  extentToView,
-  geometryView,
+  extentToViewFor,
+  geometryViewFor,
   fitAspect,
   interpolateView,
+  worldViewFor,
   zoomAtTime,
 } from "./mapZoom.js";
-import { geoPathString, project } from "./projection.js";
+import {
+  DEFAULT_PROJECTION_ID,
+  PROJECTIONS,
+  type ProjectionId,
+  makeProjector,
+} from "./projection.js";
 
 /**
- * The reveal map: one animated equirectangular viewport that shows both the
- * global and the regional scale over time in a single box (spec #152, #156).
+ * The reveal map: one animated viewport (Equal Earth by default, #219) that
+ * shows both the global and the regional scale over time in a single box (spec
+ * #152, #156).
  *
- * Layers, one coordinate space (#155, #203): the baked 110m `WORLD_LAND_PATH` is
+ * Layers, one coordinate space (#155, #203): the baked 110m `WORLD_LAND_PATH` —
+ * selected for the active projection (#219) — is
  * the base; the server-sent `localGeoJSON` — hi-res land clipped for the pinned
  * region — is composited on top; and for a country, the `boundaryGeoJSON` outline
  * (spec #203) draws above that as a translucent highlight + stroke, below the
@@ -70,6 +76,11 @@ type MapProps = Omit<
   label?: string;
   /** Whether the map auto-zooms (oscillates global⟷regional). Default off. */
   autoZoom?: boolean;
+  /** The projection to render in. Session-local (#220); defaults to Equal Earth. */
+  projectionId?: ProjectionId;
+  /** When given, the inline projection selector is shown and calls this on change.
+   * Omitted (e.g. a signed-out surface) → no selector, map on `projectionId`. */
+  onProjectionChange?: (id: ProjectionId) => void;
   /** Pause at global scale before easing in. Tunable. */
   idleMs?: number;
   /** Duration of each ease in / ease out. Tunable. */
@@ -78,7 +89,6 @@ type MapProps = Omit<
   holdMs?: number;
 };
 
-const WIDTH = WORLD_VIEW.w;
 const IDLE_MS = 500;
 const FLY_MS = 900;
 const HOLD_MS = 3000;
@@ -111,10 +121,23 @@ export function MapAid({
   regionExtent,
   boundaryGeoJSON,
   autoZoom = false,
+  projectionId = DEFAULT_PROJECTION_ID,
+  onProjectionChange,
   idleMs = IDLE_MS,
   flyMs = FLY_MS,
   holdMs = HOLD_MS,
 }: MapProps) {
+  // The chosen projection, bound to its coordinate helpers. Rebuilt only when the
+  // learner switches projection (#220) — the `fitExtent`/`geoPath` solve is not
+  // free to redo per render — so pins, overlays, boundary, land, and the zoom
+  // frame all move to the new projection together, in one coordinate space.
+  const projector = useMemo(() => makeProjector(projectionId), [projectionId]);
+  const worldView = useMemo(() => worldViewFor(projector), [projector]);
+  const worldAspect = worldView.w / worldView.h;
+  // The baked land silhouette for the active projection (#219). Picked by id so it
+  // shares the exact projection the pins/overlays/boundary go through.
+  const worldLandPath = WORLD_LAND_PATHS[projector.id];
+
   const hasCoords = lat !== undefined && lon !== undefined;
   // A boundary with no polygons (every ring was sub-pixel at its framing — e.g.
   // an all-atoll archipelago) carries no shape and no usable bbox, so treat it
@@ -130,9 +153,9 @@ export function MapAid({
   const regionView = !hasCoords
     ? null
     : hasBoundary
-      ? fitAspect(padView(geometryView(boundaryGeoJSON!), BOUNDARY_PAD_FRAC), WORLD_ASPECT)
+      ? fitAspect(padView(geometryViewFor(projector, boundaryGeoJSON!), BOUNDARY_PAD_FRAC), worldAspect)
       : regionExtent
-        ? fitAspect(extentToView(regionExtent), WORLD_ASPECT)
+        ? fitAspect(extentToViewFor(projector, regionExtent), worldAspect)
         : null;
   const canZoom = regionView !== null;
 
@@ -174,12 +197,12 @@ export function MapAid({
 
   // The viewBox is the framing rectangle in projected space, interpolated along
   // the track. Without a regional target it is simply the whole world.
-  const view = regionView ? interpolateView(WORLD_VIEW, regionView, t) : WORLD_VIEW;
+  const view = regionView ? interpolateView(worldView, regionView, t) : worldView;
 
   // Marks are authored in full-world units; scale them by how zoomed-in the
   // frame is so pin/label/coords stay roughly the same on-screen size at any
   // extent. Strokes use non-scaling-stroke instead (constant pixel width).
-  const s = view.w / WIDTH;
+  const s = view.w / worldView.w;
 
   return (
     <div className="map-aid-viewport">
@@ -191,11 +214,11 @@ export function MapAid({
         aria-label={hasCoords ? `Map showing the location of ${label}` : "World map"}
       >
         <rect className="map-aid__ocean" x={view.x} y={view.y} width={view.w} height={view.h} />
-        <path className="map-aid__land" d={WORLD_LAND_PATH} vectorEffect="non-scaling-stroke" />
+        <path className="map-aid__land" d={worldLandPath} vectorEffect="non-scaling-stroke" />
         {hasCoords && localGeoJSON && (
           <path
             className="map-aid__local"
-            d={geoPathString(localGeoJSON)}
+            d={projector.geoPathString(localGeoJSON)}
             vectorEffect="non-scaling-stroke"
           />
         )}
@@ -204,7 +227,7 @@ export function MapAid({
         {hasCoords && hasBoundary && (
           <path
             className="map-aid__boundary"
-            d={geoPathString(boundaryGeoJSON!)}
+            d={projector.geoPathString(boundaryGeoJSON!)}
             vectorEffect="non-scaling-stroke"
           />
         )}
@@ -218,9 +241,32 @@ export function MapAid({
         />
 
         {hasCoords && (
-          <MapMarks lat={lat} lon={lon} label={label} view={view} scale={s} />
+          <MapMarks lat={lat} lon={lon} label={label} view={view} scale={s} project={projector.project} />
         )}
       </svg>
+
+      {/* The projection selector sits with the map controls (#220). Shown only
+          when a change handler is wired — a signed-in surface — so a signed-out
+          map just renders on the default. Session-local: the chosen id lives in
+          React state upstream and resets on reload (persistence is #221). */}
+      {onProjectionChange && (
+        <div className="map-aid__projection">
+          <label className="map-aid__projection-label">
+            Projection
+            <select
+              className="map-aid__projection-select"
+              value={projectionId}
+              onChange={(e) => onProjectionChange(e.target.value as ProjectionId)}
+            >
+              {PROJECTIONS.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+      )}
 
       {/* Reserved regardless of whether a slider is shown, so the asking
           (no coords) and answered (coords) states are the same height —
@@ -252,12 +298,14 @@ function MapMarks({
   label,
   view,
   scale: s,
+  project,
 }: {
   lat: number;
   lon: number;
   label: string | undefined;
   view: { x: number; y: number; w: number; h: number };
   scale: number;
+  project: (lat: number, lon: number) => { x: number; y: number };
 }) {
   const { x, y } = project(lat, lon);
   const pad = 4 * s;

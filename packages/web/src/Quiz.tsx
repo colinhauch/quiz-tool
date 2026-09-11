@@ -2,8 +2,16 @@ import type { AnswerResponse, CardStats, QuestionResponse } from "@geo/contract"
 import { type FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { AnswerBox } from "./AnswerBox.js";
 import { getQuestion, submitAnswer as submitAnswerRequest } from "./apiClient.js";
-import { readAutocompletePref, readAutoZoomPref } from "./preferences.js";
+import {
+  readAutocompletePref,
+  readAutoZoomPref,
+  readMapProjectionPref,
+  writeAutocompletePref,
+  writeAutoZoomPref,
+  writeMapProjectionPref,
+} from "./preferences.js";
 import { MapAid } from "./MapAid.js";
+import { type ProjectionId, projectionFor } from "./projection.js";
 import { QuestionFeedback } from "./QuestionFeedback.js";
 import { useWideLayout } from "./useWideLayout.js";
 import { VisualAid } from "./VisualAid.js";
@@ -62,11 +70,14 @@ function QuestionStats({ stats }: { stats: CardStats }) {
 export function Quiz() {
   const [view, setView] = useState<View>({ state: "loading" });
   const [input, setInput] = useState("");
-  // Read once at mount, never written here: preference writes only happen on
-  // the Settings page. Quiz picks up a changed value by remounting when the
-  // learner navigates away and back (see App's tab switch).
-  const suggestEnabled = readAutocompletePref();
-  const autoZoomEnabled = readAutoZoomPref();
+  const [suggestEnabled, setSuggestEnabled] = useState(readAutocompletePref);
+  const [autoZoomEnabled, setAutoZoomEnabled] = useState(readAutoZoomPref);
+  // The map projection (#221): seeded from the account-synced preferences store
+  // and written back through it on change, so the choice follows the learner
+  // across sessions and devices. `projectionFor` resolves the stored id to a
+  // valid one (falling back to Equal Earth for an unknown/legacy/missing id).
+  const [projectionId, setProjectionId] = useState<ProjectionId>(() => projectionFor(readMapProjectionPref()).id);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const nextButtonRef = useRef<HTMLButtonElement>(null);
   // The next question, drawn in the background while the learner reads the
   // verdict. Holding the promise (not the resolved value) lets "Next" swap
@@ -74,6 +85,21 @@ export function Quiz() {
   // way without unmounting the card to a bare loading screen. See loadQuestion.
   const prefetchedRef = useRef<Promise<QuestionResponse> | null>(null);
   const wide = useWideLayout();
+
+  function toggleSuggest(enabled: boolean) {
+    setSuggestEnabled(enabled);
+    writeAutocompletePref(enabled);
+  }
+
+  function toggleAutoZoom(enabled: boolean) {
+    setAutoZoomEnabled(enabled);
+    writeAutoZoomPref(enabled);
+  }
+
+  function changeProjection(id: ProjectionId) {
+    setProjectionId(id);
+    writeMapProjectionPref(id);
+  }
 
   const loadQuestion = useCallback(async () => {
     // Consume a background prefetch if one is in flight. When it is, keep the
@@ -207,6 +233,8 @@ export function Quiz() {
                     }
                   : {})}
                 autoZoom={autoZoomEnabled}
+                projectionId={projectionId}
+                onProjectionChange={changeProjection}
               />
             </div>
           </div>
@@ -238,7 +266,13 @@ export function Quiz() {
               submitButtonRef={nextButtonRef}
             />
             {view.state === "answered" && (
-              <VisualAid visual={view.result.revealVisual} slot="reveal" autoZoom={autoZoomEnabled} />
+              <VisualAid
+                visual={view.result.revealVisual}
+                slot="reveal"
+                autoZoom={autoZoomEnabled}
+                projectionId={projectionId}
+                onProjectionChange={changeProjection}
+              />
             )}
             <button ref={nextButtonRef} className="btn-primary" type="submit">
               {asking ? "Submit" : "Next question"}
