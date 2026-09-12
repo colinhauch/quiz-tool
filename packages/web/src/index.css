@@ -188,7 +188,6 @@ body {
 
   /* Text-only tabs keep a readable measure even though their shared shell is
      now wide — only the quiz card and the packs/answers grids want the room. */
-  .feedback,
   .settings,
   .sign-in-gate {
     max-width: 680px;
@@ -746,30 +745,6 @@ body {
   cursor: pointer;
 }
 
-/* The session-local projection selector (#220): a compact control sitting with
-   the map controls. Shown only to signed-in learners; resets to Equal Earth on
-   reload (persistence is #221). */
-.map-aid__projection {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 0.375rem;
-}
-
-.map-aid__projection-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  font-size: 0.8125rem;
-}
-
-.map-aid__projection-select {
-  font: inherit;
-  font-size: 0.8125rem;
-  padding: 0.15rem 0.35rem;
-  border-radius: 0.25rem;
-  cursor: pointer;
-}
-
 .map-aid__ocean {
   fill: var(--cornflower);
   opacity: 0.35;
@@ -1323,8 +1298,9 @@ body {
 }
 
 /* ── Settings: account + preferences home ────────────────── */
-/* A stack of card sections: account (read-only email), the preference toggles
-   as a list (a future toggle is one more row), and sign-out at the bottom. */
+/* A stack of card sections: account (read-only email with Sign out on its row),
+   the preferences as a list (a new preference is one more row, checkbox or
+   select), and the feedback card last. */
 .settings {
   display: flex;
   flex-direction: column;
@@ -1346,23 +1322,36 @@ body {
   margin-bottom: 1rem;
 }
 
+/* Email left, Sign out right, on one row — and wrapping to two rather than
+   squeezing the button when a long email needs the width. */
+.settings__account-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
 .settings__account-email {
   font-family: var(--sans);
   font-size: 1rem;
   color: var(--indigo);
+  /* Let a long address wrap inside the row instead of pushing the button off. */
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
-.settings__toggles {
+.settings__prefs {
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
-.settings__toggle-row + .settings__toggle-row {
+.settings__pref-row + .settings__pref-row {
   border-top: 1px solid rgba(39, 24, 126, 0.1);
 }
 
-.settings__toggle {
+.settings__pref {
   display: flex;
   align-items: center;
   gap: 0.6rem;
@@ -1374,12 +1363,41 @@ body {
   cursor: pointer;
 }
 
-.settings__toggle input {
+/* A choice row reads label-left, control-right; a toggle keeps its checkbox
+   beside the label, where the box is part of reading the row. */
+.settings__pref--choice {
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.settings__pref input {
   cursor: pointer;
 }
 
-.settings__section--signout {
-  display: flex;
+.settings__pref-select {
+  font-family: var(--sans);
+  font-size: 0.85rem;
+  color: var(--indigo);
+  background: var(--platinum);
+  border: 1px solid rgba(39, 24, 126, 0.16);
+  border-radius: 0.4rem;
+  padding: 0.35rem 0.5rem;
+  cursor: pointer;
+}
+
+/* The absorbed feedback card (#236): its own heading steps down to the size the
+   sibling section headings use, so it reads as a section and not a transplanted
+   page. */
+.settings__section--feedback .feedback__head {
+  margin-bottom: 1rem;
+}
+
+.settings__section--feedback .feedback__title {
+  font-size: 1.5rem;
+}
+
+.settings__section--feedback .feedback__sub {
+  font-size: 0.9rem;
 }
 
 .settings__signout {

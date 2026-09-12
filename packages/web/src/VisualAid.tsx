@@ -17,23 +17,20 @@ import type { ProjectionId } from "./projection.js";
  * `autoZoom` is the learner's persisted auto-zoom preference, forwarded to the
  * map; the slot itself is otherwise oblivious to what any descriptor does.
  *
- * `projectionId`/`onProjectionChange` are the session-local map projection (#220),
- * forwarded to the map so its inline selector can switch projection live. Passing
- * the handler is what shows the selector, so a caller that omits it (a signed-out
- * surface) gets the map on the default projection with no selector.
+ * `projectionId` is the learner's account-synced map projection, forwarded to the
+ * map. A caller that omits it gets the default projection; the choice itself is
+ * made in Settings (#235), never here.
  */
 export function VisualAid({
   visual,
   slot,
   autoZoom,
   projectionId,
-  onProjectionChange,
 }: {
   visual: VisualAidData | undefined;
   slot?: "prompt" | "reveal";
   autoZoom?: boolean;
   projectionId?: ProjectionId;
-  onProjectionChange?: (id: ProjectionId) => void;
 }) {
   if (!visual) return null;
 
@@ -50,7 +47,6 @@ export function VisualAid({
             boundaryGeoJSON={visual.boundaryGeoJSON}
             autoZoom={autoZoom}
             projectionId={projectionId}
-            onProjectionChange={onProjectionChange}
           />
         );
       case "image":

@@ -8,7 +8,6 @@ import {
   readMapProjectionPref,
   writeAutocompletePref,
   writeAutoZoomPref,
-  writeMapProjectionPref,
 } from "./preferences.js";
 import { MapAid } from "./MapAid.js";
 import { type ProjectionId, projectionFor } from "./projection.js";
@@ -72,12 +71,12 @@ export function Quiz() {
   const [input, setInput] = useState("");
   const [suggestEnabled, setSuggestEnabled] = useState(readAutocompletePref);
   const [autoZoomEnabled, setAutoZoomEnabled] = useState(readAutoZoomPref);
-  // The map projection (#221): seeded from the account-synced preferences store
-  // and written back through it on change, so the choice follows the learner
-  // across sessions and devices. `projectionFor` resolves the stored id to a
-  // valid one (falling back to Equal Earth for an unknown/legacy/missing id).
-  const [projectionId, setProjectionId] = useState<ProjectionId>(() => projectionFor(readMapProjectionPref()).id);
-  const [settingsOpen, setSettingsOpen] = useState(false);
+  // The map projection (#221): read from the account-synced preferences store,
+  // where Settings is the only writer (#235). Read rather than held in state —
+  // nothing here changes it, and a change in Settings is picked up on the remount
+  // a tab switch does. `projectionFor` resolves the stored id to a valid one
+  // (falling back to Equal Earth for an unknown/legacy/missing id).
+  const projectionId: ProjectionId = projectionFor(readMapProjectionPref()).id;
   const nextButtonRef = useRef<HTMLButtonElement>(null);
   // The next question, drawn in the background while the learner reads the
   // verdict. Holding the promise (not the resolved value) lets "Next" swap
@@ -94,11 +93,6 @@ export function Quiz() {
   function toggleAutoZoom(enabled: boolean) {
     setAutoZoomEnabled(enabled);
     writeAutoZoomPref(enabled);
-  }
-
-  function changeProjection(id: ProjectionId) {
-    setProjectionId(id);
-    writeMapProjectionPref(id);
   }
 
   const loadQuestion = useCallback(async () => {
@@ -234,7 +228,6 @@ export function Quiz() {
                   : {})}
                 autoZoom={autoZoomEnabled}
                 projectionId={projectionId}
-                onProjectionChange={changeProjection}
               />
             </div>
           </div>
@@ -271,7 +264,6 @@ export function Quiz() {
                 slot="reveal"
                 autoZoom={autoZoomEnabled}
                 projectionId={projectionId}
-                onProjectionChange={changeProjection}
               />
             )}
             <button ref={nextButtonRef} className="btn-primary" type="submit">

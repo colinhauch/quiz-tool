@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { App } from "./App.js";
 import { type AuthBoundary, type AuthState, setSignedInSource } from "./auth.js";
@@ -97,18 +97,6 @@ describe("App shell", () => {
     expect(await screen.findByText("What country is Tokyo in?")).toBeInTheDocument();
   });
 
-  it("navigates to the feedback view when signed in", async () => {
-    stubFetch();
-    // The feedback surfaces read the sign-in state themselves rather than
-    // trusting this shell's gate, so the seam has to agree with the boundary.
-    setSignedInSource(() => true);
-    render(<App boundary={fakeBoundary(signedIn)} />);
-    await screen.findByText("What country is Tokyo in?");
-
-    fireEvent.click(screen.getByRole("button", { name: /^feedback$/i }));
-    expect(await screen.findByLabelText(/your feedback/i)).toBeInTheDocument();
-  });
-
   it("navigates to the settings view and tracks the current tab", async () => {
     stubFetch();
     render(<App boundary={fakeBoundary(signedIn)} />);
@@ -120,6 +108,32 @@ describe("App shell", () => {
     // The Settings page mounts (its Preferences section) and aria-current follows.
     expect(await screen.findByRole("heading", { name: /preferences/i })).toBeInTheDocument();
     expect(settingsTab).toHaveAttribute("aria-current", "true");
+  });
+
+  it("offers four nav tabs, feedback no longer among them (#236)", async () => {
+    stubFetch();
+    render(<App boundary={fakeBoundary(signedIn)} />);
+    await screen.findByText("What country is Tokyo in?");
+
+    const nav = screen.getByRole("navigation", { name: /views/i });
+    expect(within(nav).getAllByRole("button").map((b) => b.textContent)).toEqual([
+      "Quiz",
+      "My answers",
+      "Packs",
+      "Settings",
+    ]);
+  });
+
+  it("reaches the feedback card through Settings when signed in (#236)", async () => {
+    stubFetch();
+    // The feedback surfaces read the sign-in state themselves rather than
+    // trusting this shell's gate, so the seam has to agree with the boundary.
+    setSignedInSource(() => true);
+    render(<App boundary={fakeBoundary(signedIn)} />);
+    await screen.findByText("What country is Tokyo in?");
+
+    fireEvent.click(screen.getByRole("button", { name: /^settings$/i }));
+    expect(await screen.findByLabelText(/your feedback/i)).toBeInTheDocument();
   });
 });
 

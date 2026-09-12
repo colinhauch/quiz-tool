@@ -1,11 +1,10 @@
 import type { VisualAid as VisualAidData } from "@geo/contract";
 import { fireEvent, render } from "@testing-library/react";
-import { useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { VisualAid } from "./VisualAid.js";
 import { MapAid } from "./MapAid.js";
 import { WORLD_ASPECT, WORLD_VIEW, type View, extentToView, fitAspect } from "./mapZoom.js";
-import { DEFAULT_PROJECTION_ID, PROJECTIONS, type ProjectionId, geoBounds } from "./projection.js";
+import { DEFAULT_PROJECTION_ID, geoBounds } from "./projection.js";
 
 const tokyo: VisualAidData = {
   kind: "map",
@@ -186,31 +185,19 @@ describe("VisualAid", () => {
     expect(withCoordsRow).toBeInTheDocument();
   });
 
-  // A stateful wrapper mirroring how Quiz owns the session-local projection:
-  // the selector calls back, state flips upstream, the map re-renders (#220).
-  function ProjectionHarness({ visual }: { visual: VisualAidData }) {
-    const [pid, setPid] = useState<ProjectionId>(DEFAULT_PROJECTION_ID);
-    return <VisualAid visual={visual} projectionId={pid} onProjectionChange={setPid} />;
-  }
+  it("renders on the default projection when none is given, with no selector of its own (#235)", () => {
+    const { container, queryByRole } = render(<VisualAid visual={tokyo} />);
 
-  it("shows no projection selector without a change handler (signed-out surface) (#220)", () => {
-    const { queryByRole } = render(<VisualAid visual={tokyo} />);
-    expect(queryByRole("combobox")).not.toBeInTheDocument();
-    // The map still renders, on the default projection.
     expect(queryByRole("img")).toBeInTheDocument();
+    expect(container.querySelector("svg")).toHaveAttribute("viewBox", viewBox(WORLD_VIEW));
+    // The projection is chosen in Settings; the map surface offers no control.
+    expect(queryByRole("combobox")).not.toBeInTheDocument();
   });
 
-  it("renders the selector listing the registry's projections, defaulting to Equal Earth (#220)", () => {
-    const { getByRole, getAllByRole } = render(<ProjectionHarness visual={tokyo} />);
-    const select = getByRole("combobox") as HTMLSelectElement;
-    expect(select.value).toBe("equal-earth");
-    expect(getAllByRole("option").map((o) => o.textContent)).toEqual(
-      PROJECTIONS.map((p) => p.label),
+  it("moves pins, land, and zoom framing together to the projection it is given (#220, #235)", () => {
+    const { container, rerender } = render(
+      <VisualAid visual={tokyo} projectionId={DEFAULT_PROJECTION_ID} />,
     );
-  });
-
-  it("switches pins, land, and zoom framing to the chosen projection live (#220)", () => {
-    const { container, getByRole } = render(<ProjectionHarness visual={tokyo} />);
     const svg = () => container.querySelector("svg");
     const land = () => container.querySelector(".map-aid__land")?.getAttribute("d");
     const pin = () => {
@@ -223,7 +210,7 @@ describe("VisualAid", () => {
     const equalEarthLand = land();
     const equalEarthPin = pin();
 
-    fireEvent.change(getByRole("combobox"), { target: { value: "equirectangular" } });
+    rerender(<VisualAid visual={tokyo} projectionId="equirectangular" />);
 
     // Equirectangular's projected sphere bounds are exactly 0 0 360 180, and the
     // pin lands at the closed form (lon+180, 90-lat) = Tokyo (319.69, 54.31).

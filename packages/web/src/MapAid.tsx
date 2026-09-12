@@ -12,7 +12,6 @@ import {
 } from "./mapZoom.js";
 import {
   DEFAULT_PROJECTION_ID,
-  PROJECTIONS,
   type ProjectionId,
   makeProjector,
 } from "./projection.js";
@@ -76,11 +75,9 @@ type MapProps = Omit<
   label?: string;
   /** Whether the map auto-zooms (oscillates global⟷regional). Default off. */
   autoZoom?: boolean;
-  /** The projection to render in. Session-local (#220); defaults to Equal Earth. */
+  /** The projection to render in — the learner's account-synced choice, picked
+   * in Settings (#235). Defaults to Equal Earth. */
   projectionId?: ProjectionId;
-  /** When given, the inline projection selector is shown and calls this on change.
-   * Omitted (e.g. a signed-out surface) → no selector, map on `projectionId`. */
-  onProjectionChange?: (id: ProjectionId) => void;
   /** Pause at global scale before easing in. Tunable. */
   idleMs?: number;
   /** Duration of each ease in / ease out. Tunable. */
@@ -122,15 +119,14 @@ export function MapAid({
   boundaryGeoJSON,
   autoZoom = false,
   projectionId = DEFAULT_PROJECTION_ID,
-  onProjectionChange,
   idleMs = IDLE_MS,
   flyMs = FLY_MS,
   holdMs = HOLD_MS,
 }: MapProps) {
   // The chosen projection, bound to its coordinate helpers. Rebuilt only when the
-  // learner switches projection (#220) — the `fitExtent`/`geoPath` solve is not
-  // free to redo per render — so pins, overlays, boundary, land, and the zoom
-  // frame all move to the new projection together, in one coordinate space.
+  // projection changes — the `fitExtent`/`geoPath` solve is not free to redo per
+  // render — so pins, overlays, boundary, land, and the zoom frame all move to
+  // the new projection together, in one coordinate space.
   const projector = useMemo(() => makeProjector(projectionId), [projectionId]);
   const worldView = useMemo(() => worldViewFor(projector), [projector]);
   const worldAspect = worldView.w / worldView.h;
@@ -244,29 +240,6 @@ export function MapAid({
           <MapMarks lat={lat} lon={lon} label={label} view={view} scale={s} project={projector.project} />
         )}
       </svg>
-
-      {/* The projection selector sits with the map controls (#220). Shown only
-          when a change handler is wired — a signed-in surface — so a signed-out
-          map just renders on the default. Session-local: the chosen id lives in
-          React state upstream and resets on reload (persistence is #221). */}
-      {onProjectionChange && (
-        <div className="map-aid__projection">
-          <label className="map-aid__projection-label">
-            Projection
-            <select
-              className="map-aid__projection-select"
-              value={projectionId}
-              onChange={(e) => onProjectionChange(e.target.value as ProjectionId)}
-            >
-              {PROJECTIONS.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.label}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-      )}
 
       {/* Reserved regardless of whether a slider is shown, so the asking
           (no coords) and answered (coords) states are the same height —
