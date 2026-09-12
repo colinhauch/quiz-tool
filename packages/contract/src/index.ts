@@ -23,6 +23,43 @@ export const healthSchema = z.object({
 export type Health = z.infer<typeof healthSchema>;
 
 /**
+ * What a running instance reports itself as for the environment badge.
+ *
+ * A deliberate superset of the canonical `Environment` (`prod`/`test`/`dev`,
+ * defined in `./admin-store.ts`): `local` labels a Node dev process, and
+ * `unknown` is the fail-safe fallback when `DEPLOY_ENV` is unset or
+ * unrecognized. Per CONTEXT.md and the spec, `local`/`unknown` are NOT a fourth
+ * Environment — they're the badge's fallbacks — so this carries its own name
+ * (`ConfigEnvironment`) rather than colliding with the 3-value `Environment`.
+ * Only `prod` suppresses the client badge; everything else is non-prod and shown.
+ */
+export const configEnvironmentSchema = z.enum(["prod", "dev", "test", "local", "unknown"]);
+
+export type ConfigEnvironment = z.infer<typeof configEnvironmentSchema>;
+
+/**
+ * Maps a raw `DEPLOY_ENV` string to a {@link ConfigEnvironment}: an exact enum
+ * match passes through, everything else (including `undefined`) collapses to
+ * `unknown`. The one place the fail-safe rule lives, so server and client can't
+ * disagree on what an unrecognized value means.
+ */
+export function normalizeEnvironment(raw?: string): ConfigEnvironment {
+  const parsed = configEnvironmentSchema.safeParse(raw);
+  return parsed.success ? parsed.data : "unknown";
+}
+
+/**
+ * `GET /config` — the Environment surfaced to the SPA over an unauthenticated
+ * route, so a non-prod tab can name itself. Mirrors {@link healthSchema}: a tiny
+ * public payload with a single field.
+ */
+export const configSchema = z.object({
+  environment: configEnvironmentSchema,
+});
+
+export type Config = z.infer<typeof configSchema>;
+
+/**
  * `GET /question` — a rendered question ready to display. It carries a stable
  * `cardId` for the card being asked, the prompt, the input mode, and which pack
  * the question came from. It deliberately does NOT carry the answer: the seam
@@ -81,6 +118,10 @@ export const mapVisualAidSchema = z
     // clip still maps, at world scale.
     localGeoJSON: geoMultiPolygonSchema.optional(),
     regionExtent: regionExtentSchema.optional(),
+    // The country's real outline (#203), precomputed at author time and carried
+    // here fully hydrated. Optional: only matched country entities carry one;
+    // seam-crossers and unmatched countries fall back to pin + coastline.
+    boundaryGeoJSON: geoMultiPolygonSchema.optional(),
   })
   .strict();
 
@@ -212,8 +253,8 @@ export type AnswerResponse = z.infer<typeof answerResponseSchema>;
  * `GET /answers` — one recorded answer in the raw log. Mirrors what the store
  * persists — the card reference, the learner's verbatim input (which may be
  * empty — a blank submission is still an answer), the verdict, and when it was
- * recorded — plus the rendered `question` text and the canonical
- * `acceptedAnswer`, both of which the server re-derives from `cardId` at read
+ * recorded — plus the rendered `question` text, the canonical `acceptedAnswer`
+ * and the owning pack, all of which the server re-derives from `cardId` at read
  * time rather than storing. `acceptedAnswer` is absent when the card no longer
  * resolves (e.g. the pack changed), the same staleness `question` falls back on.
  * This is the only record that a sitting happened; the review view reads nothing
@@ -226,6 +267,16 @@ export const answerLogEntrySchema = z
     input: z.string(),
     correct: z.boolean(),
     acceptedAnswer: z.string().min(1).optional(),
+    /**
+     * The pack that owns this answer's card, derived at read time like
+     * `acceptedAnswer` and absent for the same reason: a card whose pack has
+     * changed no longer resolves. Ownership is never stored, so every answer
+     * ever logged names its pack the moment the derivation ships. `packLabel`
+     * is the pack's display name; it is absent independently, when the graph
+     * holds the statement but not the manifest that names its pack.
+     */
+    packId: z.string().min(1).optional(),
+    packLabel: z.string().min(1).optional(),
     askedAt: z.string().min(1),
   })
   .strict();
@@ -340,3 +391,64 @@ export const feedbackRequestSchema = z
   .strict();
 
 export type FeedbackRequest = z.infer<typeof feedbackRequestSchema>;
+
+/**
+ * A signed-in learner's display/UX preferences (spec #216) — the account-synced
+ * replacement for the per-device `localStorage` prefs. Display only: nothing here
+ * touches the learning engine (pack selection stays with the scheduler).
+ *
+ * Each key carries its own default, so parsing an empty or partial object yields
+ * a complete, well-formed `Preferences` — the server fills defaults for omitted
+ * keys on both read and write. `.strict()` rejects unknown keys, so the server is
+ * the authority on the key set: adding a preference is a change here (and a
+ * coordinated deploy), but never a database migration — the JSONB column is
+ * unchanged. There is deliberately no schema `version` field: the server owns the
+ * keys and defaults every missing one on read, so an old stored blob upgrades
+ * lazily without blob-level migration logic.
+ *
+ * v1 carries the two prefs migrated off `localStorage`; #215/#221 add
+ * `mapProjection` by extending this object.
+ *
+ * `mapProjection` is a bare projection-id string, not an enum: the web-side
+ * projection registry is the authority on which ids exist, and it already falls
+ * back to the Equal Earth default for an unknown/legacy id, so an old or removed
+ * id resolves to a working map rather than being rejected here. The default
+ * mirrors that registry's `DEFAULT_PROJECTION_ID` (`equal-earth`).
+ */
+export const preferencesSchema = z
+  .object({
+    /** Whether the reveal map auto-zooms from global to the regional framing. */
+    autoZoom: z.boolean().default(true),
+    /** Whether the answer box offers inline spelling suggestions. */
+    autocomplete: z.boolean().default(true),
+    /** The reveal map's projection id; resolved (with default fallback) client-side. */
+    mapProjection: z.string().default("equal-earth"),
+  })
+  .strict();
+
+export type Preferences = z.infer<typeof preferencesSchema>;
+
+/**
+ * `GET /preferences` response — the caller's complete, defaulted preferences.
+ */
+export const preferencesResponseSchema = z
+  .object({
+    preferences: preferencesSchema,
+  })
+  .strict();
+
+export type PreferencesResponse = z.infer<typeof preferencesResponseSchema>;
+
+/**
+ * `PUT /preferences` request — a whole-blob replace. Omitted keys default (so a
+ * client that doesn't know a key resets it to its default — the accepted
+ * whole-blob tradeoff over per-key merge, see #216); unknown keys are refused at
+ * the seam. Same shape as the response because the write carries the full object.
+ */
+export const preferencesRequestSchema = z
+  .object({
+    preferences: preferencesSchema,
+  })
+  .strict();
+
+export type PreferencesRequest = z.infer<typeof preferencesRequestSchema>;

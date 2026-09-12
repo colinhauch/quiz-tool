@@ -1,3 +1,4 @@
+import { type Preferences, preferencesSchema } from "@geo/contract";
 import { SEED_RATING, type Scheduler } from "@geo/engine";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
@@ -5,6 +6,7 @@ import type {
   AnswerStore,
   FeedbackRecord,
   FeedbackStore,
+  PreferencesStore,
   RatingStore,
   SchedulerStore,
   SelectionStore,
@@ -183,6 +185,34 @@ export function createSupabaseFeedbackStore(client: SupabaseClient): FeedbackSto
         created_at: feedback.createdAt,
       });
       if (error) throw new Error(`feedback.insert failed: ${error.message}`);
+    },
+  };
+}
+
+/**
+ * Supabase-backed preferences store (spec #216) — one JSONB blob per learner in
+ * `user_preferences`, scoped by RLS exactly like the scheduler state. `read`
+ * parses through {@link preferencesSchema}, so a learner with no row gets every
+ * default and a stored blob missing a key has it defaulted in. `write` replaces
+ * the whole blob.
+ */
+export function createSupabasePreferencesStore(client: SupabaseClient): PreferencesStore {
+  return {
+    async read(): Promise<Preferences> {
+      const { data, error } = await client.from("user_preferences").select("preferences").maybeSingle();
+      if (error) throw new Error(`user_preferences.select failed: ${error.message}`);
+      return preferencesSchema.parse(data?.preferences ?? {});
+    },
+
+    async write(prefs: Preferences) {
+      // user_id omitted: defaults to auth.uid() and RLS pins it. Conflict on the
+      // user_id primary key overwrites this learner's row in place. `updated_at`
+      // is set explicitly so it advances on the ON CONFLICT update path too — the
+      // column's default only fires on insert.
+      const { error } = await client
+        .from("user_preferences")
+        .upsert({ preferences: prefs, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
+      if (error) throw new Error(`user_preferences.upsert failed: ${error.message}`);
     },
   };
 }

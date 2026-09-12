@@ -4,7 +4,9 @@ import {
   getAnswers,
   getEntities,
   getPacks,
+  getPreferences,
   getQuestion,
+  putPreferences,
   savePacks,
   setAccessTokenSource,
   setUnauthorizedHandler,
@@ -102,6 +104,38 @@ describe("apiClient", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     await expect(savePacks([])).rejects.toThrow();
+  });
+
+  it("getPreferences fetches GET /api/preferences and returns the parsed blob", async () => {
+    const body = { preferences: { autoZoom: false, autocomplete: true } };
+    const fetchMock = vi.fn(() => Promise.resolve({ json: async () => body }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(getPreferences()).resolves.toEqual(body);
+    expect(fetchMock).toHaveBeenCalledWith("/api/preferences", undefined);
+  });
+
+  it("putPreferences PUTs the whole blob as JSON and resolves on success", async () => {
+    const fetchMock = vi.fn(() => Promise.resolve({ ok: true, json: async () => ({ ok: true }) }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      putPreferences({ autoZoom: false, autocomplete: true, mapProjection: "equal-earth" }),
+    ).resolves.toBeUndefined();
+    expect(fetchMock).toHaveBeenCalledWith("/api/preferences", {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ preferences: { autoZoom: false, autocomplete: true, mapProjection: "equal-earth" } }),
+    });
+  });
+
+  it("putPreferences rejects when the server rejects the save", async () => {
+    const fetchMock = vi.fn(() => Promise.resolve({ ok: false, json: async () => ({}) }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      putPreferences({ autoZoom: true, autocomplete: true, mapProjection: "equal-earth" }),
+    ).rejects.toThrow();
   });
 });
 

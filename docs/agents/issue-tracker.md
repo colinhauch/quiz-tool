@@ -1,8 +1,8 @@
 # Issue tracker: GitHub
 
-Tickets, PRDs, and triage for this repo live as GitHub issues; use the `gh` CLI
-for all operations. **Exception:** the feature SDLC artifacts (intent/spec/plan/
-review) are files, not issues — see "SDLC artifacts are files" below.
+Intents, specs, tickets, PRDs, and triage for this repo all live as GitHub
+issues; use the `gh` CLI for all operations. An SDLC feature is one issue that
+moves through labels — see "SDLC lifecycle" below.
 
 ## Conventions
 
@@ -27,28 +27,35 @@ When set to `yes`, PRs run through the same labels and states as issues, using t
 
 GitHub shares one number space across issues and PRs, so a bare `#42` may be either — resolve with `gh pr view 42` and fall back to `gh issue view 42`.
 
-## SDLC artifacts are files (source of truth)
+## SDLC lifecycle (issues, source of truth)
 
-The feature SDLC chain — `intent.md`, `spec.md`, `plan.md`, `review.md` — is
-**canonical as files** under `sdlc/features/<slug>/`, not as issues. See
-`sdlc/README.md` (playbook) and `sdlc/CLAUDE.md` (source-of-truth rules). A
-GitHub issue may exist as an **optional linked mirror** for status/assignment/
-blocking, but it never holds the canonical artifact text — its body points at the
-file. This overrides the generic rules below whenever the thing being published
-is one of those artifacts.
+An artifact's home is its lifetime. Anything that **outlives a branch** —
+intent, spec, tickets — is a GitHub issue. Anything **born and dying with a
+branch** — plan, review findings — lives in the branch or the PR body, never
+here. There are no `sdlc/features/<slug>/*.md` artifacts anymore; `sdlc/` is
+frozen historical record (see its README).
+
+Three main stages (one proto-stage), distinguished by label, in the same tracker:
+
+- **`ideas`** - [the proto-stage] Single, brief concepts that can be turned into 
+more developed intents later. Currently stored at `sdlc/ideas.md`.
+- **`intent`** — cheap capture: what's wanted, why, roughly. Created in seconds
+  (`/intent`). Accumulates as a queue.
+- **`spec`** — a working session takes one intent, grills it (`/grill-me`,
+  `/grill-with-docs`), and writes the spec back into the **same issue**,
+  relabeling `intent` → `spec`. One URL; the edit history keeps the original
+  intent verbatim at the top, which is the guard against spec-vs-intent drift.
+- **tickets** — `/to-tickets` cuts the spec issue into child issues, each sized
+  to one session, labeled `ready-for-agent`.
+
+**Ticket self-sufficiency:** a ticket that requires reading its parent spec to
+be actionable is defective. Each stage is a lossy compression of the one before;
+that caps re-read spend on a cold start.
 
 ## When a skill says "publish to the issue tracker"
 
-**If it's an SDLC artifact (a spec, plan, intent, or review):** write the file to
-`sdlc/features/<slug>/<artifact>.md` first — that is the published record. Then,
-only if the user wants issue-side tracking, create a GitHub issue whose body is a
-short summary plus a link to the file (never a copy of the full artifact). The
-`to-spec` skill says "publish to the issue tracker"; for a spec this means write
-`spec.md`, with the mirror issue optional.
-
-**Otherwise (tickets, PRDs, triage items):** create a GitHub issue as usual.
-Tickets are the tracking layer where issues earn their place (native blocking
-edges, assignment); they link back to the feature folder.
+Create a GitHub issue. A spec relabels its originating intent issue in place; a
+new intent or a ticket is a fresh issue. There is no file to write.
 
 ## When a skill says "fetch the relevant ticket"
 

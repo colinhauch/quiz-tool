@@ -3,11 +3,15 @@ import {
   answerRequestSchema,
   answerResponseSchema,
   type CardStats,
+  configSchema,
   entityListSchema,
   feedbackRequestSchema,
   healthSchema,
+  normalizeEnvironment,
   packListSchema,
   packSelectionRequestSchema,
+  preferencesRequestSchema,
+  preferencesResponseSchema,
   questionResponseSchema,
 } from "@geo/contract";
 import {
@@ -40,15 +44,23 @@ import { type Context, Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { type AuthEnv, type AuthOptions, createAuthMiddleware } from "./auth.js";
 import type { Catalog } from "./catalog.js";
-import type { AnswerStore, FeedbackStore, RatingStore, SchedulerStore, SelectionStore } from "./storage.js";
+import type {
+  AnswerStore,
+  FeedbackStore,
+  PreferencesStore,
+  RatingStore,
+  SchedulerStore,
+  SelectionStore,
+} from "./storage.js";
 
-/** The stores that serve one learner: their answer log, pack selection, Elo ratings, scheduler state, and feedback channel. */
+/** The stores that serve one learner: their answer log, pack selection, Elo ratings, scheduler state, feedback channel, and display preferences. */
 export interface UserStores {
   store: AnswerStore;
   selection?: SelectionStore;
   rating?: RatingStore;
   scheduler?: SchedulerStore;
   feedback?: FeedbackStore;
+  preferences?: PreferencesStore;
 }
 
 export interface AppOptions {
@@ -77,6 +89,8 @@ export interface AppOptions {
    * per-isolate cache (the pre-persistence behaviour).
    */
   scheduler?: SchedulerStore;
+  /** Single-user mode: where the learner's display preferences are persisted. Omit to disable the preferences route. */
+  preferences?: PreferencesStore;
   /**
    * Multi-user mode: verify each request's Supabase JWT. Given together with
    * {@link AppOptions.storesForUser}, the data routes are guarded (401 without a
@@ -95,6 +109,13 @@ export interface AppOptions {
   now?: () => Date;
   /** Per-pack visibility/tier policy. Omit to offer every selectable pack (the default catalog). */
   catalog?: Catalog;
+  /**
+   * The committed stage identifier (`DEPLOY_ENV`) this instance runs as, surfaced
+   * over the public `GET /config` for the environment badge. Normalized fail-safe:
+   * anything but `prod`/`dev`/`test`/`local` (including unset) reports `unknown`,
+   * so a non-prod tab is never mistaken for prod.
+   */
+  deployEnv?: string;
 }
 
 /**
@@ -151,11 +172,13 @@ export function createApp({
   rating,
   scheduler,
   feedback,
+  preferences,
   auth,
   storesForUser,
   rng,
   now = () => new Date(),
   catalog,
+  deployEnv,
 }: AppOptions) {
   const multiUser = Boolean(auth && storesForUser);
   if (!multiUser && !store) {
@@ -175,6 +198,7 @@ export function createApp({
     rating?: RatingStore;
     scheduler?: SchedulerStore;
     feedback?: FeedbackStore;
+    preferences?: PreferencesStore;
     key: string;
   } {
     if (storesForUser) {
@@ -186,11 +210,12 @@ export function createApp({
         rating: built.rating,
         scheduler: built.scheduler,
         feedback: built.feedback,
+        preferences: built.preferences,
         key: userId,
       };
     }
     // Guarded in the constructor: single-user mode always has an injected store.
-    return { store: store as AnswerStore, selection, rating, scheduler, feedback, key: SINGLE_USER };
+    return { store: store as AnswerStore, selection, rating, scheduler, feedback, preferences, key: SINGLE_USER };
   }
 
   // First run selects everything, so introducing the picker regresses nothing.
@@ -277,6 +302,10 @@ export function createApp({
   // Registered before the auth middleware so it stays public; every route below
   // the `app.use` is guarded in multi-user mode.
   app.get("/health", (c) => c.json(healthSchema.parse({ status: "ok" })));
+  // The deploy environment for the badge — public like /health, so a signed-out
+  // non-prod tab still names itself. Fail-safe: an unset/unrecognized DEPLOY_ENV
+  // reports `unknown`, never silently prod.
+  app.get("/config", (c) => c.json(configSchema.parse({ environment: normalizeEnvironment(deployEnv) })));
   if (multiUser && auth) {
     app.use("*", createAuthMiddleware(auth));
   }
@@ -460,10 +489,13 @@ export function createApp({
 
   // The raw answer log for review, most recent first. The store keeps the log
   // in insertion order (it is an append log); reversing here is the view's
-  // choice, not the store's. Each record's question text is re-derived from its
-  // cardId — the prompt is a deterministic function of the card, so it isn't
-  // stored — and falls back to the raw cardId if the card no longer resolves
-  // (e.g. the pack changed). Parsed through the schema so the seam stays honest.
+  // choice, not the store's. Each record's question text, accepted answer and
+  // owning pack are re-derived from its cardId — all three are deterministic
+  // functions of the card, so none is stored — and the question falls back to
+  // the raw cardId if the card no longer resolves (e.g. the pack changed), while
+  // the other two go absent. Deriving rather than storing is what attributes
+  // every answer ever logged without a migration. Parsed through the schema so
+  // the seam stays honest.
   app.get("/answers", async (c) => {
     const { store: s } = resolve(c);
     return c.json(
@@ -476,9 +508,38 @@ export function createApp({
             ...record,
             question: questionText(pack, record.cardId),
             acceptedAnswer: acceptedAnswerFor(pack, record.cardId),
+            ...ownerPackFields(pack, record.cardId),
           })),
       ),
     );
+  });
+
+  // The learner's account-synced display preferences (spec #216). Read returns a
+  // complete, defaulted blob; write replaces it wholesale. Both are RLS-scoped to
+  // the caller. Signed-in only by construction — in multi-user mode the auth
+  // middleware guards the route; single-user local dev serves the injected store.
+  app.get("/preferences", async (c) => {
+    const { preferences: prefs } = resolve(c);
+    if (!prefs) throw new HTTPException(500, { message: "no preferences store configured" });
+    return c.json(preferencesResponseSchema.parse({ preferences: await prefs.read() }));
+  });
+
+  // Whole-blob replace: the body is validated and defaulted (omitted keys reset
+  // to their default — the accepted tradeoff over per-key merge, see #216), then
+  // the full object is persisted. Like /answer and /feedback, untrusted input —
+  // a malformed or unknown-key body maps to 400, not a 500.
+  app.put("/preferences", async (c) => {
+    let body: ReturnType<typeof preferencesRequestSchema.parse>;
+    try {
+      body = preferencesRequestSchema.parse(await c.req.json());
+    } catch (err) {
+      throw new HTTPException(400, { message: "malformed preferences request", cause: err });
+    }
+
+    const { preferences: prefs } = resolve(c);
+    if (!prefs) throw new HTTPException(500, { message: "no preferences store configured" });
+    await prefs.write(body.preferences);
+    return c.json({ ok: true });
   });
 
   return app;
@@ -616,4 +677,26 @@ function acceptedAnswerFor(pack: Pack, cardId: string): string | undefined {
   } catch {
     return undefined;
   }
+}
+
+/**
+ * Which pack owns a recorded card, re-derived from its id the same way the
+ * prompt and the accepted answer are. A stale id (its card gone from the graph)
+ * has no owner, and the keys are *omitted* rather than set to undefined: the
+ * log entry schema is strict, and an answer whose pack cannot be named must say
+ * so by absence rather than by an empty or invented label.
+ *
+ * The label fails independently of the id: a statement can survive in the graph
+ * while the manifest naming its pack does not, and an id still names the owner
+ * even with nothing prettier to show.
+ *
+ * Ownership is read off the graph and never off the selection, so an answer
+ * from a pack the learner has since deselected still names it — the Answer Log
+ * records what *was* asked.
+ */
+function ownerPackFields(pack: Pack, cardId: string): { packId?: string; packLabel?: string } {
+  const packId = ownerPackId(pack, cardId);
+  if (packId === undefined) return {};
+  const label = pack.packs.get(packId)?.labels.en;
+  return label === undefined ? { packId } : { packId, packLabel: label };
 }

@@ -56,3 +56,6 @@ packages/web/public/flags/
 !.claude/skills/
 .agents/*
 !.agents/skills/
+
+# Natural Earth admin-0 download cache for packs:import-boundaries (#203)
+packages/server/scripts/.ne-cache/

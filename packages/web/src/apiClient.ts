@@ -1,9 +1,12 @@
 import type {
   AnswerLog as AnswerLogData,
   AnswerResponse,
+  Config,
   EntityList,
   FeedbackRequest,
   PackList,
+  Preferences,
+  PreferencesResponse,
   QuestionResponse,
 } from "@geo/contract";
 import { getAuthBoundary } from "./auth.js";
@@ -62,6 +65,15 @@ function jsonInit(method: "POST" | "PUT", body: unknown): RequestInit {
   };
 }
 
+/**
+ * Fetches the running instance's environment for the badge. Public and
+ * unauthenticated (the Bearer, if any, rides along harmlessly via `apiFetch`).
+ */
+export async function getConfig(): Promise<Config> {
+  const res = await apiFetch("/api/config");
+  return (await res.json()) as Config;
+}
+
 /** Fetches the next question to ask. */
 export async function getQuestion(): Promise<QuestionResponse> {
   const res = await apiFetch("/api/question");
@@ -96,6 +108,27 @@ export async function getPacks(): Promise<PackList> {
 export async function savePacks(packIds: string[]): Promise<void> {
   const res = await apiFetch("/api/packs", jsonInit("PUT", { packIds }));
   if (!res.ok) throw new Error("save rejected");
+}
+
+/**
+ * Fetches the signed-in learner's account-synced display preferences (spec #216).
+ * The server returns a complete, defaulted blob, so the caller never sees a
+ * missing key. Only called at post-login bootstrap — never for a signed-out
+ * visitor (see preferences.ts).
+ */
+export async function getPreferences(): Promise<PreferencesResponse> {
+  const res = await apiFetch("/api/preferences");
+  return (await res.json()) as PreferencesResponse;
+}
+
+/**
+ * Writes the whole preferences blob back (whole-blob replace, not per-key merge —
+ * see #216). Throws if the server rejects it, so a caller can surface a failed
+ * save rather than silently dropping it.
+ */
+export async function putPreferences(preferences: Preferences): Promise<void> {
+  const res = await apiFetch("/api/preferences", jsonInit("PUT", { preferences }));
+  if (!res.ok) throw new Error("preferences save rejected");
 }
 
 /**

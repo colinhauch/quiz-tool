@@ -31,6 +31,7 @@ import {
   type AnswerStore,
   createAnswerStore,
   createFeedbackStore,
+  createPreferencesStore,
   createRatingStore,
   createSchedulerStore,
   createSelectionStore,
@@ -156,6 +157,30 @@ describe("server app", () => {
       "/question",
     );
     expect(JSON.stringify(await res.json())).not.toContain("Japan");
+  });
+});
+
+describe("GET /config", () => {
+  function config(deployEnv?: string) {
+    return createApp({ pack: fixturePack(), store: memoryStore(), deployEnv }).request("/config");
+  }
+
+  it("reports the injected deploy environment", async () => {
+    for (const env of ["dev", "test", "prod"] as const) {
+      const res = await config(env);
+      expect(res.status).toBe(200);
+      expect(await res.json()).toEqual({ environment: env });
+    }
+  });
+
+  it("falls back to unknown when deployEnv is unset", async () => {
+    const res = await config();
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ environment: "unknown" });
+  });
+
+  it("falls back to unknown for an unrecognized deployEnv", async () => {
+    expect(await (await config("staging")).json()).toEqual({ environment: "unknown" });
   });
 });
 
@@ -395,6 +420,67 @@ describe("POST /feedback", () => {
   });
 });
 
+describe("/preferences", () => {
+  function memoryPreferences() {
+    return createPreferencesStore(openDatabase(":memory:"));
+  }
+
+  function put(app: ReturnType<typeof createApp>, body: unknown) {
+    return app.request("/preferences", {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+    });
+  }
+
+  it("returns a complete, defaulted blob for a learner with no stored prefs", async () => {
+    const app = createApp({ pack: fixturePack(), store: memoryStore(), preferences: memoryPreferences() });
+    const res = await app.request("/preferences");
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ preferences: { autoZoom: true, autocomplete: true, mapProjection: "equal-earth" } });
+  });
+
+  it("round-trips a written value", async () => {
+    const preferences = memoryPreferences();
+    const app = createApp({ pack: fixturePack(), store: memoryStore(), preferences });
+    const put1 = await put(app, { preferences: { autoZoom: false, autocomplete: false, mapProjection: "equal-earth" } });
+    expect(put1.status).toBe(200);
+    expect(await put1.json()).toEqual({ ok: true });
+    const res = await app.request("/preferences");
+    expect(await res.json()).toEqual({ preferences: { autoZoom: false, autocomplete: false, mapProjection: "equal-earth" } });
+  });
+
+  it("round-trips the mapProjection id", async () => {
+    const preferences = memoryPreferences();
+    const app = createApp({ pack: fixturePack(), store: memoryStore(), preferences });
+    await put(app, { preferences: { autoZoom: true, autocomplete: true, mapProjection: "equirectangular" } });
+    const res = await app.request("/preferences");
+    expect(await res.json()).toEqual({
+      preferences: { autoZoom: true, autocomplete: true, mapProjection: "equirectangular" },
+    });
+  });
+
+  it("resets an omitted key to its default (whole-blob replace)", async () => {
+    const preferences = memoryPreferences();
+    const app = createApp({ pack: fixturePack(), store: memoryStore(), preferences });
+    await put(app, { preferences: { autoZoom: false, autocomplete: false, mapProjection: "equal-earth" } });
+    // A body that omits autocomplete must reset it to the default, not preserve it.
+    await put(app, { preferences: { autoZoom: false } });
+    const res = await app.request("/preferences");
+    expect(await res.json()).toEqual({ preferences: { autoZoom: false, autocomplete: true, mapProjection: "equal-earth" } });
+  });
+
+  it("returns 400 on an unknown key and persists nothing", async () => {
+    const preferences = memoryPreferences();
+    const app = createApp({ pack: fixturePack(), store: memoryStore(), preferences });
+    expect((await put(app, { preferences: { theme: "dark" } })).status).toBe(400);
+    expect((await put(app, { preferences: { autoZoom: "yes" } })).status).toBe(400);
+    expect((await put(app, { nope: true })).status).toBe(400);
+    const res = await app.request("/preferences");
+    expect(await res.json()).toEqual({ preferences: { autoZoom: true, autocomplete: true, mapProjection: "equal-earth" } });
+  });
+});
+
 describe("GET /answers", () => {
   async function answer(store: AnswerStore, input: string, at: string) {
     return createApp({ pack: fixturePack(), store, now: () => new Date(at) }).request("/answer", {
@@ -423,6 +509,8 @@ describe("GET /answers", () => {
         input: "china",
         correct: false,
         acceptedAnswer: "Japan",
+        packId: "test-pack",
+        packLabel: "Test Pack",
         askedAt: "2026-07-19T12:05:00.000Z",
       },
       {
@@ -431,6 +519,8 @@ describe("GET /answers", () => {
         input: "japan",
         correct: true,
         acceptedAnswer: "Japan",
+        packId: "test-pack",
+        packLabel: "Test Pack",
         askedAt: "2026-07-19T12:00:00.000Z",
       },
     ]);
@@ -480,6 +570,63 @@ describe("GET /answers", () => {
     const [entry] = answerLogSchema.parse(await res.json());
     expect(entry?.question).toBe("S9:object");
     expect(entry?.acceptedAnswer).toBeUndefined();
+  });
+
+  it("re-derives each answer's owning pack from its card, id and label alike", async () => {
+    const store = memoryStore();
+    await answer(store, "japan", "2026-07-19T12:00:00.000Z");
+    const res = await createApp({ pack: fixturePack(), store }).request("/answers");
+    const [entry] = answerLogSchema.parse(await res.json());
+    expect(entry?.packId).toBe("test-pack");
+    expect(entry?.packLabel).toBe("Test Pack");
+  });
+
+  it("omits both pack fields — rather than emptying or inventing them — when the card no longer resolves", async () => {
+    const store = memoryStore();
+    await store.record({
+      cardId: "S9:object",
+      input: "x",
+      correct: false,
+      askedAt: "2026-07-19T12:00:00.000Z",
+    });
+    const res = await createApp({ pack: fixturePack(), store }).request("/answers");
+    const [entry] = answerLogSchema.parse(await res.json());
+    expect(entry).not.toHaveProperty("packId");
+    expect(entry).not.toHaveProperty("packLabel");
+  });
+
+  it("still names the pack of an answer from a pack since deselected", async () => {
+    // The Answer Log records what *was* asked and is never filtered or
+    // rewritten when a pack is deselected, so attribution reads the graph and
+    // never the selection. `pickerGraph` is used here because it is the fixture
+    // with more than one pack to deselect between.
+    const store = memoryStore();
+    const selection = memorySelection();
+    await store.record({
+      cardId: "cc:tokyo:object",
+      input: "japan",
+      correct: true,
+      askedAt: "2026-07-19T12:00:00.000Z",
+    });
+    await putPacks(createApp({ pack: pickerGraph(), store, selection }), ["continents"]);
+
+    const app = createApp({ pack: pickerGraph(), store, selection });
+    expect((await packList(app)).packs.find((p) => p.id === "cities")?.included).toBe(false);
+    const [entry] = answerLogSchema.parse(await (await app.request("/answers")).json());
+    expect(entry?.packId).toBe("cities");
+    expect(entry?.packLabel).toBe("Cities");
+  });
+
+  it("keeps the pack id when the graph holds the statement but no manifest names its pack", async () => {
+    // Attribution and its label fail independently: an unnamed pack still
+    // attributes an answer, it just has nothing better to show than its id.
+    const store = memoryStore();
+    await answer(store, "japan", "2026-07-19T12:00:00.000Z");
+    const unnamed: Pack = { ...fixturePack(), packs: new Map() };
+    const res = await createApp({ pack: unnamed, store }).request("/answers");
+    const [entry] = answerLogSchema.parse(await res.json());
+    expect(entry?.packId).toBe("test-pack");
+    expect(entry).not.toHaveProperty("packLabel");
   });
 });
 
@@ -562,6 +709,8 @@ describe("full loop over the real fixture pack and a temp-file database", () => 
       input: "Japan",
       correct: true,
       acceptedAnswer: "Japan",
+      packId: "core-cities",
+      packLabel: "Core Cities",
       askedAt: tokyo[0]?.askedAt,
     });
     db.close();
@@ -918,9 +1067,10 @@ describe("multi-user mode", () => {
     });
   }
 
-  it("leaves /health public but guards the data routes", async () => {
+  it("leaves /health and /config public but guards the data routes", async () => {
     const app = multiUserApp();
     expect((await app.request("/health")).status).toBe(200);
+    expect((await app.request("/config")).status).toBe(200);
     expect((await app.request("/question")).status).toBe(401);
     expect((await app.request("/packs")).status).toBe(401);
   });

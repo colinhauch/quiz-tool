@@ -25,6 +25,24 @@
   --red-bg: #faf3f3;
   --red-text: #6a3a3a;
 
+  /* Categorical ramp, for data that has categories but no meaning attached to
+     them (the pack breakdown). Deliberately none of the three feedback colours
+     above, which do mean something, and it wraps rather than running out —
+     nothing fixes how many packs there are. Ordered so that consecutive ranks
+     sit in different hue families: adjacent segments are the pair a reader has
+     to tell apart, and two neighbouring blues are the one way this fails. */
+  --colour-0: #27187e;
+  --colour-1: #4e6bd6;
+  --colour-2: #3f8f9e;
+  --colour-3: #9c7bd8;
+  --colour-4: #758bfd;
+  --colour-5: #c98bbe;
+  --colour-6: #6f5aa8;
+  --colour-7: #b08968;
+  /* Off the ramp on purpose: a neutral grey reads as "owned by no pack" rather
+     than as one more category competing with the real ones. */
+  --colour-unowned: #9aa0b4;
+
   --serif: "EB Garamond", Garamond, "Times New Roman", serif;
   --sans: Inter, system-ui, -apple-system, sans-serif;
 }
@@ -188,7 +206,7 @@ body {
 
   /* Text-only tabs keep a readable measure even though their shared shell is
      now wide — only the quiz card and the packs/answers grids want the room. */
-  .feedback,
+  .settings,
   .sign-in-gate {
     max-width: 680px;
     margin-inline: auto;
@@ -312,110 +330,6 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.12em;
   color: var(--indigo);
-}
-
-/* The strip stays a compact card identity: pack label plus settings only. */
-.quiz-card__settings-button {
-  position: relative;
-  z-index: 1;
-  margin-left: auto;
-  width: 2rem;
-  height: 2rem;
-  padding: 0.4rem;
-  border: 1px solid rgba(39, 24, 126, 0.28);
-  border-radius: 50%;
-  background: rgba(241, 242, 246, 0.25);
-  color: var(--indigo);
-  cursor: pointer;
-  transition: background-color 0.2s, border-color 0.2s;
-}
-
-.quiz-card__settings-button:hover {
-  background: rgba(241, 242, 246, 0.55);
-}
-
-.quiz-card__settings-button:focus-visible,
-.quiz-settings__close:focus-visible {
-  outline: 2px solid var(--indigo);
-  outline-offset: 2px;
-}
-
-.quiz-card__settings-button svg {
-  display: block;
-  width: 100%;
-  height: 100%;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.75;
-  stroke-linejoin: round;
-}
-
-.quiz-settings__backdrop {
-  position: fixed;
-  z-index: 10;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  padding: 1.5rem;
-  background: rgba(39, 24, 126, 0.28);
-}
-
-.quiz-settings {
-  width: min(100%, 24rem);
-  padding: 1.25rem;
-  border: 1px solid rgba(39, 24, 126, 0.16);
-  border-radius: 0.5rem;
-  background: #fff;
-  box-shadow: 0 1rem 3rem rgba(39, 24, 126, 0.24);
-}
-
-.quiz-settings__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 1rem;
-}
-
-.quiz-settings__header h2 {
-  font-family: var(--serif);
-  font-size: 1.4rem;
-  line-height: 1;
-  color: var(--indigo);
-}
-
-.quiz-settings__close {
-  width: 2rem;
-  height: 2rem;
-  padding: 0;
-  border: 0;
-  border-radius: 50%;
-  background: transparent;
-  color: var(--indigo);
-  font-size: 1.5rem;
-  line-height: 1;
-  cursor: pointer;
-}
-
-.quiz-settings__close:hover {
-  background: var(--platinum);
-}
-
-.quiz-settings__toggle {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  padding: 0.75rem 0;
-  border-top: 1px solid rgba(39, 24, 126, 0.1);
-  font-family: var(--sans);
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--indigo);
-  cursor: pointer;
-}
-
-.quiz-settings__toggle input {
-  cursor: pointer;
 }
 
 .quiz-card__body {
@@ -873,6 +787,19 @@ body {
   fill-opacity: 0.9;
 }
 
+/* The country's real administrative outline (spec #203): a translucent orange
+   highlight so the answer country reads apart from its neighbours at a glance
+   (story 2), plus a solid coastline-coloured stroke tracing the shape (story 1)
+   — unlike `.map-aid__local`, which is fill-only. `non-scaling-stroke` keeps the
+   outline a constant pixel width at any zoom. Tuned by feel, so easy to adjust. */
+.map-aid__boundary {
+  fill: var(--orange);
+  fill-opacity: 0.16;
+  stroke: var(--green-text);
+  stroke-width: 1;
+  stroke-linejoin: round;
+}
+
 .map-aid__frame {
   fill: none;
   stroke: var(--indigo);
@@ -967,6 +894,256 @@ body {
 .result-pill--incorrect {
   background: var(--red-bg);
   color: var(--red);
+}
+
+/* ── My Answers summary (#238) ────────────────────────────
+   Sits above the raw table and shares its surface treatment. Single column by
+   default — the phone case is the base case — widening to chart beside totals
+   at the app's one breakpoint (900px, where .app-main gets its extra room). */
+.answer-summary {
+  display: grid;
+  gap: 1.75rem;
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: #fff;
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 8px rgba(39, 24, 126, 0.08);
+}
+
+@media (min-width: 900px) {
+  .answer-summary {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+    gap: 2.5rem 2.5rem;
+  }
+
+  /* Outcomes beside totals, the pack breakdown across both (#239). A stacked
+     bar is the one block here that gets better with width, so it takes the
+     whole row rather than becoming a third narrow column. DOM order and visual
+     order stay the same at both widths — on a phone the three simply stack. */
+  .answer-summary__packs {
+    grid-column: 1 / -1;
+  }
+}
+
+.answer-summary h3,
+.answer-summary__totals caption {
+  font-family: var(--serif);
+  font-size: 1.25rem;
+  font-weight: 700;
+  text-align: left;
+  margin-bottom: 1rem;
+  color: var(--indigo);
+}
+
+/* Pie and legend stack on a phone and sit side by side once there is room. */
+.answer-summary__plot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1.25rem 1.5rem;
+}
+
+.answer-summary__pie {
+  flex: 0 0 auto;
+  width: 8.5rem;
+  max-width: 100%;
+  height: auto;
+}
+
+.answer-summary__wedge {
+  stroke: #fff;
+  stroke-width: 1;
+}
+
+.answer-summary__wedge--correct {
+  fill: var(--green);
+}
+
+.answer-summary__wedge--incorrect {
+  fill: var(--red);
+}
+
+/* Skip is deliberately not a third traffic-light colour: it is not a worse
+   kind of wrong, it is the absence of an attempt. */
+.answer-summary__wedge--skip {
+  fill: var(--periwinkle);
+}
+
+.answer-summary__legend {
+  flex: 1 1 11rem;
+  list-style: none;
+  display: grid;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.answer-summary__key {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.answer-summary__swatch {
+  flex: none;
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 0.2rem;
+}
+
+.answer-summary__key--correct .answer-summary__swatch {
+  background: var(--green);
+}
+
+.answer-summary__key--incorrect .answer-summary__swatch {
+  background: var(--red);
+}
+
+.answer-summary__key--skip .answer-summary__swatch {
+  background: var(--periwinkle);
+}
+
+.answer-summary__key-label {
+  font-weight: 600;
+}
+
+.answer-summary__key-count {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+}
+
+.answer-summary__key-share {
+  opacity: 0.7;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Absolute accuracy. The denominator rides in the label and never comes off:
+   "accuracy" unqualified names two different numbers here (ADR-0004). */
+.answer-summary__headline {
+  margin-top: 1.25rem;
+  line-height: 1.3;
+}
+
+.answer-summary__headline-value {
+  display: block;
+  font-family: var(--serif);
+  font-size: 2.25rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.answer-summary__headline-label {
+  display: block;
+  font-size: 0.85rem;
+  opacity: 0.7;
+}
+
+.answer-summary__totals {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.answer-summary__totals th,
+.answer-summary__totals td {
+  padding: 0.7rem 0;
+  border-bottom: 1px solid var(--platinum);
+  vertical-align: baseline;
+}
+
+.answer-summary__totals th {
+  text-align: left;
+  font-weight: 600;
+  padding-right: 1rem;
+}
+
+.answer-summary__totals td {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.answer-summary__totals tr:last-child th,
+.answer-summary__totals tr:last-child td {
+  border-bottom: none;
+}
+
+.answer-summary__note {
+  display: block;
+  font-size: 0.78rem;
+  font-variant-numeric: normal;
+  opacity: 0.65;
+}
+
+/* ── Pack breakdown (#239) ────────────────────────────────
+   A stacked bar, not a second pie: seven packs is past the handful a pie can
+   be read at. Packs carry no meaning of their own, so the ramp is categorical
+   and deliberately avoids the three outcome colours, which do mean something.
+   Assigned by rank and wrapped modulo its length, because the number of packs
+   is not fixed; the legend carries every value as text, so colour is never the
+   only channel. */
+/* The bar stacks above its legend on a phone and stays full width above it at
+   every size: a horizontal bar beside a legend would squeeze the one dimension
+   that carries the data. */
+.answer-summary__plot--stacked {
+  display: block;
+}
+
+.answer-summary__bar {
+  display: flex;
+  gap: 2px;
+  height: 1.75rem;
+  margin-bottom: 1rem;
+  border-radius: 0.25rem;
+  overflow: hidden;
+}
+
+.answer-summary__segment {
+  flex-basis: 0;
+  /* A pack with a handful of answers out of hundreds still gets a visible
+     sliver — it is in the legend, so an invisible segment would look wrong.
+     This and the bar's gap cost the smallest packs a little over-read; the
+     legend carries their exact figures. */
+  min-width: 3px;
+}
+
+.answer-summary__legend--packs {
+  /* Two columns of keys once there is room, so seven packs do not become a
+     long thin list beside a wide bar. */
+  grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
+  gap: 0.4rem 1.5rem;
+}
+
+/* Each rank class carries its colour as one variable, and the two things that
+   wear it read that variable. Adding a colour is one line here plus bumping
+   CATEGORICAL_RAMP in AnswerSummary.tsx, rather than an edit per use. */
+.answer-summary__colour--0 { --colour: var(--colour-0); }
+.answer-summary__colour--1 { --colour: var(--colour-1); }
+.answer-summary__colour--2 { --colour: var(--colour-2); }
+.answer-summary__colour--3 { --colour: var(--colour-3); }
+.answer-summary__colour--4 { --colour: var(--colour-4); }
+.answer-summary__colour--5 { --colour: var(--colour-5); }
+.answer-summary__colour--6 { --colour: var(--colour-6); }
+.answer-summary__colour--7 { --colour: var(--colour-7); }
+.answer-summary__colour--unowned { --colour: var(--colour-unowned); }
+
+.answer-summary__segment,
+.answer-summary__legend--packs .answer-summary__swatch {
+  background: var(--colour);
+}
+
+/* The pack name is the long part of a key, so it wraps and the number stays
+   pinned right rather than being pushed off the end. */
+.answer-summary__legend--packs .answer-summary__key {
+  align-items: baseline;
+}
+
+.answer-summary__legend--packs .answer-summary__key-label {
+  min-width: 0;
+}
+
+.answer-summary__legend--packs .answer-summary__swatch {
+  position: relative;
+  top: 0.15rem;
 }
 
 /* ── Pack picker: a shelf of packs ───────────────────────── */
@@ -1345,4 +1522,164 @@ body {
   padding: 0.5rem 1.1rem;
   font-size: 0.9rem;
   white-space: nowrap;
+}
+
+/*
+ * Environment badge — a persistent pill fixed to the top-left of the viewport
+ * naming a non-prod environment (prod renders nothing; see EnvironmentBadge).
+ * Viewport-fixed, not in the header, so it also shows in the signed-out gate and
+ * the auth callback. Sits in the top-left dead space, clear of the logo and any
+ * interactive control (requirement 8). Colors: dev=green, test=orange,
+ * local=grey, unknown=red; the environment name is always shown as text.
+ */
+.env-badge {
+  position: fixed;
+  top: 0.5rem;
+  left: 0.5rem;
+  z-index: 1000;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-family: var(--sans);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  color: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+}
+
+.env-badge--dev {
+  background: #2e7d4f;
+}
+
+.env-badge--test {
+  background: #d97706;
+}
+
+.env-badge--local {
+  background: #6b7280;
+}
+
+.env-badge--unknown {
+  background: #c0392b;
+}
+
+/* ── Settings: account + preferences home ────────────────── */
+/* A stack of card sections: account (read-only email with Sign out on its row),
+   the preferences as a list (a new preference is one more row, checkbox or
+   select), and the feedback card last. */
+.settings {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.settings__section {
+  background: #fff;
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 8px rgba(39, 24, 126, 0.08);
+  padding: 1.5rem;
+}
+
+.settings__heading {
+  font-family: var(--serif);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--indigo);
+  margin-bottom: 1rem;
+}
+
+/* Email left, Sign out right, on one row — and wrapping to two rather than
+   squeezing the button when a long email needs the width. */
+.settings__account-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.settings__account-email {
+  font-family: var(--sans);
+  font-size: 1rem;
+  color: var(--indigo);
+  /* Let a long address wrap inside the row instead of pushing the button off. */
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.settings__prefs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.settings__pref-row + .settings__pref-row {
+  border-top: 1px solid rgba(39, 24, 126, 0.1);
+}
+
+.settings__pref {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.75rem 0;
+  font-family: var(--sans);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--indigo);
+  cursor: pointer;
+}
+
+/* A choice row reads label-left, control-right; a toggle keeps its checkbox
+   beside the label, where the box is part of reading the row. */
+.settings__pref--choice {
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.settings__pref input {
+  cursor: pointer;
+}
+
+.settings__pref-select {
+  font-family: var(--sans);
+  font-size: 0.85rem;
+  color: var(--indigo);
+  background: var(--platinum);
+  border: 1px solid rgba(39, 24, 126, 0.16);
+  border-radius: 0.4rem;
+  padding: 0.35rem 0.5rem;
+  cursor: pointer;
+}
+
+/* The absorbed feedback card (#236): its own heading steps down to the size the
+   sibling section headings use, so it reads as a section and not a transplanted
+   page. */
+.settings__section--feedback .feedback__head {
+  margin-bottom: 1rem;
+}
+
+.settings__section--feedback .feedback__title {
+  font-size: 1.5rem;
+}
+
+.settings__section--feedback .feedback__sub {
+  font-size: 0.9rem;
+}
+
+.settings__signout {
+  font-family: var(--sans);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--indigo);
+  background: var(--platinum);
+  border: 1px solid rgba(39, 24, 126, 0.16);
+  border-radius: 0.4rem;
+  padding: 0.6rem 1.2rem;
+  cursor: pointer;
+}
+
+.settings__signout:hover {
+  background: var(--periwinkle);
 }

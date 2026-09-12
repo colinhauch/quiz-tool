@@ -3,6 +3,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { setSignedInSource } from "./auth.js";
 import { DEFAULT_QUESTION_COMMENT } from "./QuestionFeedback.js";
+import { resetPreferences, writeAutocompletePref, writeMapProjectionPref } from "./preferences.js";
 import { Quiz } from "./Quiz.js";
 import { clearSuggestionCache } from "./suggestions.js";
 
@@ -90,11 +91,6 @@ function stubWideLayout(wide: boolean) {
   );
 }
 
-async function openCardSettings() {
-  fireEvent.click(await screen.findByRole("button", { name: "Open settings" }));
-  return screen.findByRole("dialog", { name: "Card settings" });
-}
-
 beforeEach(() => {
   // The quiz card's feedback control checks for itself that someone is signed in.
   setSignedInSource(() => true);
@@ -104,6 +100,9 @@ afterEach(() => {
   setSignedInSource(() => false);
   clearSuggestionCache();
   localStorage.clear();
+  // Preferences now live in an in-memory store, not localStorage; reset it so a
+  // toggle flipped in one test does not leak into the next.
+  resetPreferences();
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
 });
@@ -324,6 +323,29 @@ describe("Quiz", () => {
     expect(screen.getByRole("img")).toBeInTheDocument();
   });
 
+  it("draws the reveal map in the learner's stored projection (#235)", async () => {
+    // The Settings control is the only writer of this preference; this is the
+    // other half of that wiring — the quiz reads it to draw the reveal map.
+    writeMapProjectionPref("equirectangular");
+    stubFetch([tokyo], {
+      correct: true,
+      acceptedAnswer: "Japan",
+      revealVisual: { kind: "map", entityId: "Q1490", lat: 35.6895, lon: 139.6917, label: "Tokyo" },
+    });
+    const { container } = render(<Quiz />);
+
+    fireEvent.change(await screen.findByLabelText(/your answer/i), { target: { value: "Japan" } });
+    fireEvent.click(screen.getByRole("button", { name: /^submit$/i }));
+
+    await screen.findByRole("status");
+    // Equirectangular's projected sphere bounds are exactly 0 0 360 180 (Equal
+    // Earth's are not), and the pin sits at its closed form (lon+180, 90-lat).
+    expect(container.querySelector("svg")).toHaveAttribute("viewBox", "0 0 360 180");
+    const pin = container.querySelector("circle");
+    expect(Number(pin?.getAttribute("cx"))).toBeCloseTo(139.6917 + 180);
+    expect(Number(pin?.getAttribute("cy"))).toBeCloseTo(90 - 35.6895);
+  });
+
   it("shows no map when the answer carries no revealVisual", async () => {
     stubFetch([tokyo], { correct: true, acceptedAnswer: "Japan" });
     render(<Quiz />);
@@ -412,20 +434,15 @@ describe("Quiz", () => {
     });
   });
 
-  it("defaults the autocomplete toggle on", async () => {
-    stubFetch([tokyo], { correct: true, acceptedAnswer: "Japan" });
-    render(<Quiz />);
-    await openCardSettings();
-    expect(screen.getByRole("checkbox", { name: /autocomplete/i })).toBeChecked();
-  });
-
-  it("shows no suggestions and fetches no entities when the toggle is off", async () => {
+  // Autocomplete is now toggled only on the Settings page (see Settings.test.tsx
+  // for the toggle UI itself); Quiz only reads the store's current value, so
+  // these tests drive it via the write helper rather than an in-card control.
+  it("shows no suggestions and fetches no entities when the preference is off", async () => {
+    writeAutocompletePref(false);
     const fetchMock = stubFetch([tokyo], { correct: true, acceptedAnswer: "Japan" });
     render(<Quiz />);
 
-    await openCardSettings();
-    fireEvent.click(screen.getByRole("checkbox", { name: /autocomplete/i }));
-    fireEvent.change(screen.getByLabelText(/your answer/i), { target: { value: "jap" } });
+    fireEvent.change(await screen.findByLabelText(/your answer/i), { target: { value: "jap" } });
 
     await waitFor(() =>
       expect(screen.queryByRole("option", { name: "Japan" })).not.toBeInTheDocument(),
@@ -436,44 +453,25 @@ describe("Quiz", () => {
     );
   });
 
-  it("still answers normally with the toggle off", async () => {
+  it("still answers normally with the preference off", async () => {
+    writeAutocompletePref(false);
     stubFetch([tokyo], { correct: true, acceptedAnswer: "Japan" });
     render(<Quiz />);
 
-    await openCardSettings();
-    fireEvent.click(screen.getByRole("checkbox", { name: /autocomplete/i }));
-    fireEvent.change(screen.getByLabelText(/your answer/i), { target: { value: "Japan" } });
+    fireEvent.change(await screen.findByLabelText(/your answer/i), { target: { value: "Japan" } });
     fireEvent.click(screen.getByRole("button", { name: /^submit$/i }));
 
     expect(await screen.findByRole("status")).toHaveTextContent("Correct! The answer is Japan.");
   });
 
-  it("persists the toggle choice across remounts", async () => {
-    stubFetch([tokyo], { correct: true, acceptedAnswer: "Japan" });
-    const first = render(<Quiz />);
-    await openCardSettings();
-    fireEvent.click(screen.getByRole("checkbox", { name: /autocomplete/i }));
-    first.unmount();
-
-    render(<Quiz />);
-    await openCardSettings();
-    expect(screen.getByRole("checkbox", { name: /autocomplete/i })).not.toBeChecked();
-  });
-
-  it("keeps the strip to its label and gear, and closes settings on escape", async () => {
+  it("keeps the strip to just its label, with no settings affordance", async () => {
     stubFetch([tokyo], { correct: true, acceptedAnswer: "Japan" });
     const { container } = render(<Quiz />);
 
     await screen.findByText("What country is Tokyo in?");
     expect(container.querySelector(".quiz-card__strip input")).not.toBeInTheDocument();
-
-    const settingsButton = screen.getByRole("button", { name: "Open settings" });
-    await openCardSettings();
-    expect(screen.getByRole("dialog", { name: "Card settings" })).toHaveAttribute("aria-modal", "true");
-
-    fireEvent.keyDown(document, { key: "Escape" });
-    expect(screen.queryByRole("dialog", { name: "Card settings" })).not.toBeInTheDocument();
-    expect(settingsButton).toHaveFocus();
+    expect(screen.queryByRole("button", { name: /settings/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
   it("offers the per-question feedback control before answering, with a pre-answer snapshot", async () => {
@@ -547,6 +545,33 @@ describe("Quiz", () => {
       const map = container.querySelector(".mpanel__map svg");
       expect(map).toBeInTheDocument();
       expect(map).toHaveAttribute("aria-label", "World map");
+    });
+
+    it("draws the country boundary in the desktop map slot when the reveal carries one (#203)", async () => {
+      // Regression: the wide layout hand-spreads reveal fields into MapAid and
+      // must forward boundaryGeoJSON, or desktop shows the pin with no outline.
+      stubFetch([tokyo], {
+        correct: true,
+        acceptedAnswer: "Japan",
+        revealVisual: {
+          kind: "map",
+          entityId: "Q17",
+          lat: 35.6895,
+          lon: 139.6917,
+          label: "Tokyo",
+          boundaryGeoJSON: {
+            type: "MultiPolygon",
+            coordinates: [[[[130, 30], [146, 30], [146, 46], [130, 46], [130, 30]]]],
+          },
+        },
+      });
+      const { container } = render(<Quiz />);
+
+      fireEvent.change(await screen.findByLabelText(/your answer/i), { target: { value: "Japan" } });
+      fireEvent.click(screen.getByRole("button", { name: /^submit$/i }));
+
+      await screen.findByRole("status");
+      expect(container.querySelector(".mpanel__map .map-aid__boundary")).toBeInTheDocument();
     });
 
     it("keeps the disabled answer and shows the verdict above it after answering", async () => {

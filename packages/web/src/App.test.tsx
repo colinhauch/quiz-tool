@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { App } from "./App.js";
 import { type AuthBoundary, type AuthState, setSignedInSource } from "./auth.js";
@@ -12,6 +12,12 @@ function stubFetch() {
   vi.stubGlobal(
     "fetch",
     vi.fn((url: string) => {
+      if (url === "/api/preferences") {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ preferences: { autoZoom: true, autocomplete: true } }),
+        });
+      }
       if (url === "/api/answers") {
         return Promise.resolve({
           json: async () => [
@@ -55,13 +61,13 @@ function fakeBoundary(initial: AuthState): AuthBoundary & { set(next: AuthState)
     signInWithGoogle: vi.fn(async () => {}),
     signInWithMagicLink: vi.fn(async () => {}),
     signOut: vi.fn(async () => {}),
-    handleExpiry: vi.fn(() => set({ status: "signed-out", accessToken: null, reason: "expired" })),
+    handleExpiry: vi.fn(() => set({ status: "signed-out", accessToken: null, email: null, reason: "expired" })),
   };
 }
 
-const signedIn: AuthState = { status: "signed-in", accessToken: "tok", reason: null };
-const signedOut: AuthState = { status: "signed-out", accessToken: null, reason: null };
-const expired: AuthState = { status: "signed-out", accessToken: null, reason: "expired" };
+const signedIn: AuthState = { status: "signed-in", accessToken: "tok", email: null, reason: null };
+const signedOut: AuthState = { status: "signed-out", accessToken: null, email: null, reason: null };
+const expired: AuthState = { status: "signed-out", accessToken: null, email: null, reason: "expired" };
 
 afterEach(() => {
   setSignedInSource(() => false);
@@ -72,7 +78,8 @@ describe("App shell", () => {
   it("renders the title and starts on the quiz view when signed in", async () => {
     stubFetch();
     render(<App boundary={fakeBoundary(signedIn)} />);
-    expect(screen.getByRole("heading", { name: /geography quiz/i })).toBeInTheDocument();
+    // Entry blocks on the preferences read, so the header appears once it settles.
+    expect(await screen.findByRole("heading", { name: /geography quiz/i })).toBeInTheDocument();
     expect(await screen.findByText("What country is Tokyo in?")).toBeInTheDocument();
   });
 
@@ -90,7 +97,34 @@ describe("App shell", () => {
     expect(await screen.findByText("What country is Tokyo in?")).toBeInTheDocument();
   });
 
-  it("navigates to the feedback view when signed in", async () => {
+  it("navigates to the settings view and tracks the current tab", async () => {
+    stubFetch();
+    render(<App boundary={fakeBoundary(signedIn)} />);
+    await screen.findByText("What country is Tokyo in?");
+
+    const settingsTab = screen.getByRole("button", { name: /^settings$/i });
+    fireEvent.click(settingsTab);
+
+    // The Settings page mounts (its Preferences section) and aria-current follows.
+    expect(await screen.findByRole("heading", { name: /preferences/i })).toBeInTheDocument();
+    expect(settingsTab).toHaveAttribute("aria-current", "true");
+  });
+
+  it("offers four nav tabs, feedback no longer among them (#236)", async () => {
+    stubFetch();
+    render(<App boundary={fakeBoundary(signedIn)} />);
+    await screen.findByText("What country is Tokyo in?");
+
+    const nav = screen.getByRole("navigation", { name: /views/i });
+    expect(within(nav).getAllByRole("button").map((b) => b.textContent)).toEqual([
+      "Quiz",
+      "My answers",
+      "Packs",
+      "Settings",
+    ]);
+  });
+
+  it("reaches the feedback card through Settings when signed in (#236)", async () => {
     stubFetch();
     // The feedback surfaces read the sign-in state themselves rather than
     // trusting this shell's gate, so the seam has to agree with the boundary.
@@ -98,8 +132,79 @@ describe("App shell", () => {
     render(<App boundary={fakeBoundary(signedIn)} />);
     await screen.findByText("What country is Tokyo in?");
 
-    fireEvent.click(screen.getByRole("button", { name: /^feedback$/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^settings$/i }));
     expect(await screen.findByLabelText(/your feedback/i)).toBeInTheDocument();
+  });
+});
+
+describe("App preferences bootstrap", () => {
+  it("holds entry until the preferences read settles", async () => {
+    let releasePrefs: (() => void) | undefined;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((url: string) => {
+        if (url === "/api/preferences") {
+          return new Promise((resolve) => {
+            releasePrefs = () =>
+              resolve({
+                ok: true,
+                json: async () => ({ preferences: { autoZoom: true, autocomplete: true } }),
+              });
+          });
+        }
+        return Promise.resolve({
+          json: async () => ({
+            cardId: "cc:tokyo-japan:object",
+            prompt: "What country is Tokyo in?",
+            input: "text",
+          }),
+        });
+      }),
+    );
+
+    render(<App boundary={fakeBoundary(signedIn)} />);
+
+    // The quiz is gated behind the in-flight preferences read.
+    expect(screen.getByText(/loading your preferences/i)).toBeInTheDocument();
+    expect(screen.queryByText("What country is Tokyo in?")).not.toBeInTheDocument();
+
+    await act(async () => {
+      releasePrefs?.();
+    });
+
+    expect(await screen.findByText("What country is Tokyo in?")).toBeInTheDocument();
+  });
+
+  it("enters with defaults when the preferences read fails", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((url: string) => {
+        if (url === "/api/preferences") return Promise.reject(new Error("network"));
+        return Promise.resolve({
+          json: async () => ({
+            cardId: "cc:tokyo-japan:object",
+            prompt: "What country is Tokyo in?",
+            input: "text",
+          }),
+        });
+      }),
+    );
+
+    render(<App boundary={fakeBoundary(signedIn)} />);
+
+    // A failed read must not strand the learner: entry proceeds on defaults.
+    expect(await screen.findByText("What country is Tokyo in?")).toBeInTheDocument();
+  });
+
+  it("makes no preferences request for a signed-out visitor", () => {
+    const fetchMock = vi.fn(() =>
+      Promise.resolve({ json: async () => ({}), ok: true }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<App boundary={fakeBoundary(signedOut)} />);
+
+    expect(fetchMock).not.toHaveBeenCalledWith("/api/preferences", expect.anything());
   });
 });
 

@@ -2,8 +2,8 @@ import type { AuthChangeEvent, Session } from "@supabase/supabase-js";
 import { describe, expect, it, vi } from "vitest";
 import { createAuthBoundary, type SupabaseAuthClient } from "./auth.js";
 
-function fakeSession(accessToken: string): Session {
-  return { access_token: accessToken } as Session;
+function fakeSession(accessToken: string, email?: string): Session {
+  return { access_token: accessToken, user: email ? { email } : {} } as Session;
 }
 
 /**
@@ -34,21 +34,32 @@ describe("createAuthBoundary", () => {
     expect(boundary.getState()).toEqual({
       status: "signed-out",
       accessToken: null,
+      email: null,
       reason: null,
     });
   });
 
-  it("flips to signed-in and exposes the access token once a session appears", () => {
+  it("flips to signed-in and exposes the access token and email once a session appears", () => {
+    const client = makeFakeClient();
+    const boundary = createAuthBoundary(client);
+
+    client.emit("SIGNED_IN", fakeSession("tok-abc", "learner@example.com"));
+
+    expect(boundary.getState()).toEqual({
+      status: "signed-in",
+      accessToken: "tok-abc",
+      email: "learner@example.com",
+      reason: null,
+    });
+  });
+
+  it("carries a null email when the signed-in session has no email", () => {
     const client = makeFakeClient();
     const boundary = createAuthBoundary(client);
 
     client.emit("SIGNED_IN", fakeSession("tok-abc"));
 
-    expect(boundary.getState()).toEqual({
-      status: "signed-in",
-      accessToken: "tok-abc",
-      reason: null,
-    });
+    expect(boundary.getState().email).toBeNull();
   });
 
   it("notifies subscribers immediately, then on every change", () => {
@@ -86,6 +97,7 @@ describe("createAuthBoundary", () => {
     expect(boundary.getState()).toEqual({
       status: "signed-out",
       accessToken: null,
+      email: null,
       reason: null,
     });
   });
@@ -100,6 +112,7 @@ describe("createAuthBoundary", () => {
     expect(boundary.getState()).toEqual({
       status: "signed-out",
       accessToken: null,
+      email: null,
       reason: "expired",
     });
     // The dead session is cleared so the expired token stops being attached.
@@ -127,6 +140,7 @@ describe("createAuthBoundary", () => {
     expect(boundary.getState()).toEqual({
       status: "signed-in",
       accessToken: "tok-new",
+      email: null,
       reason: null,
     });
   });
