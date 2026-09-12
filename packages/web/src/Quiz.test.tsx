@@ -3,7 +3,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { setSignedInSource } from "./auth.js";
 import { DEFAULT_QUESTION_COMMENT } from "./QuestionFeedback.js";
-import { resetPreferences, writeAutocompletePref } from "./preferences.js";
+import { resetPreferences, writeAutocompletePref, writeMapProjectionPref } from "./preferences.js";
 import { Quiz } from "./Quiz.js";
 import { clearSuggestionCache } from "./suggestions.js";
 
@@ -321,6 +321,24 @@ describe("Quiz", () => {
 
     await screen.findByRole("status");
     expect(screen.getByRole("img")).toBeInTheDocument();
+  });
+
+  it("draws the reveal map in the learner's stored projection (#235)", async () => {
+    // The Settings control writes the id; this is the other half of that wiring —
+    // the quiz seeds the reveal map from the same account-synced store.
+    writeMapProjectionPref("equirectangular");
+    stubFetch([tokyo], {
+      correct: true,
+      acceptedAnswer: "Japan",
+      revealVisual: { kind: "map", entityId: "Q1490", lat: 35.6895, lon: 139.6917, label: "Tokyo" },
+    });
+    render(<Quiz />);
+
+    fireEvent.change(await screen.findByLabelText(/your answer/i), { target: { value: "Japan" } });
+    fireEvent.click(screen.getByRole("button", { name: /^submit$/i }));
+
+    await screen.findByRole("status");
+    expect(screen.getByRole("combobox", { name: /projection/i })).toHaveValue("equirectangular");
   });
 
   it("shows no map when the answer carries no revealVisual", async () => {

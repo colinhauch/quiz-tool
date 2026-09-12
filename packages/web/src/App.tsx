@@ -3,18 +3,17 @@ import { AnswerLog } from "./AnswerLog.js";
 import { type AuthBoundary, AUTH_CALLBACK_PATH, getAuthBoundary } from "./auth.js";
 import { AuthCallback } from "./AuthCallback.js";
 import { AuthWidget } from "./AuthWidget.js";
-import { Feedback } from "./Feedback.js";
 import { Packs } from "./Packs.js";
 import { loadPreferences } from "./preferences.js";
 import { Quiz } from "./Quiz.js";
 import { Settings } from "./Settings.js";
 import { SignInGate } from "./SignInGate.js";
 
-type Tab = "quiz" | "answers" | "packs" | "feedback" | "settings";
+type Tab = "quiz" | "answers" | "packs" | "settings";
 
 /**
  * The app shell: an Indigo header band (carrying the topographic texture) with
- * the title and a three-item nav, then the active view. Each tab mounts a fresh
+ * the title and a four-item nav, then the active view. Each tab mounts a fresh
  * component, so switching to "My answers" refetches the log and picks up
  * anything just answered, and returning to the quiz draws from whatever pack
  * selection was just saved — enough navigation for the walking skeleton.
@@ -101,13 +100,6 @@ export function App({ boundary = getAuthBoundary() }: { boundary?: AuthBoundary 
             </button>
             <button
               type="button"
-              aria-current={tab === "feedback"}
-              onClick={() => setTab("feedback")}
-            >
-              Feedback
-            </button>
-            <button
-              type="button"
               aria-current={tab === "settings"}
               onClick={() => setTab("settings")}
             >
@@ -121,7 +113,6 @@ export function App({ boundary = getAuthBoundary() }: { boundary?: AuthBoundary 
         {tab === "quiz" && <Quiz />}
         {tab === "answers" && <AnswerLog />}
         {tab === "packs" && <Packs />}
-        {tab === "feedback" && <Feedback />}
         {tab === "settings" && <Settings boundary={boundary} />}
       </main>
     </>
