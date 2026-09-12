@@ -52,6 +52,10 @@ _Avoid_: Renderer, formatter, template function
 A plausible but wrong option offered alongside the correct one in a multiple-choice question.
 _Avoid_: Decoy, foil, wrong answer
 
+**Skip**:
+An answer submitted with no input. Still an answer in every sense — logged in the *Answer Log*, graded incorrect, and it advances the scheduler — distinguished only at read time, for reporting. There is no Skip control; a skip is what pressing through a card you don't know produces.
+_Avoid_: Pass, blank, empty, unanswered, gave up
+
 ### Scheduling
 
 **Scheduler**:
