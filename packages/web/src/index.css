@@ -903,6 +903,176 @@ body {
   color: var(--red);
 }
 
+/* ── My Answers summary (#238) ────────────────────────────
+   Sits above the raw table and shares its surface treatment. Single column by
+   default — the phone case is the base case — widening to chart beside totals
+   at the app's one breakpoint (900px, where .app-main gets its extra room). */
+.answer-summary {
+  display: grid;
+  gap: 1.75rem;
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: #fff;
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 8px rgba(39, 24, 126, 0.08);
+}
+
+@media (min-width: 900px) {
+  .answer-summary {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+    gap: 2.5rem;
+  }
+}
+
+.answer-summary h3,
+.answer-summary__totals caption {
+  font-family: var(--serif);
+  font-size: 1.25rem;
+  font-weight: 700;
+  text-align: left;
+  margin-bottom: 1rem;
+  color: var(--indigo);
+}
+
+/* Pie and legend stack on a phone and sit side by side once there is room. */
+.answer-summary__plot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1.25rem 1.5rem;
+}
+
+.answer-summary__pie {
+  flex: 0 0 auto;
+  width: 8.5rem;
+  max-width: 100%;
+  height: auto;
+}
+
+.answer-summary__wedge {
+  stroke: #fff;
+  stroke-width: 1;
+}
+
+.answer-summary__wedge--correct {
+  fill: var(--green);
+}
+
+.answer-summary__wedge--incorrect {
+  fill: var(--red);
+}
+
+/* Skip is deliberately not a third traffic-light colour: it is not a worse
+   kind of wrong, it is the absence of an attempt. */
+.answer-summary__wedge--skip {
+  fill: var(--periwinkle);
+}
+
+.answer-summary__legend {
+  flex: 1 1 11rem;
+  list-style: none;
+  display: grid;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.answer-summary__key {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.answer-summary__swatch {
+  flex: none;
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 0.2rem;
+}
+
+.answer-summary__key--correct .answer-summary__swatch {
+  background: var(--green);
+}
+
+.answer-summary__key--incorrect .answer-summary__swatch {
+  background: var(--red);
+}
+
+.answer-summary__key--skip .answer-summary__swatch {
+  background: var(--periwinkle);
+}
+
+.answer-summary__key-label {
+  font-weight: 600;
+}
+
+.answer-summary__key-count {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+}
+
+.answer-summary__key-share {
+  opacity: 0.7;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Absolute accuracy. The denominator rides in the label and never comes off:
+   "accuracy" unqualified names two different numbers here (ADR-0004). */
+.answer-summary__headline {
+  margin-top: 1.25rem;
+  line-height: 1.3;
+}
+
+.answer-summary__headline-value {
+  display: block;
+  font-family: var(--serif);
+  font-size: 2.25rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.answer-summary__headline-label {
+  display: block;
+  font-size: 0.85rem;
+  opacity: 0.7;
+}
+
+.answer-summary__totals {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.answer-summary__totals th,
+.answer-summary__totals td {
+  padding: 0.7rem 0;
+  border-bottom: 1px solid var(--platinum);
+  vertical-align: baseline;
+}
+
+.answer-summary__totals th {
+  text-align: left;
+  font-weight: 600;
+  padding-right: 1rem;
+}
+
+.answer-summary__totals td {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.answer-summary__totals tr:last-child th,
+.answer-summary__totals tr:last-child td {
+  border-bottom: none;
+}
+
+.answer-summary__note {
+  display: block;
+  font-size: 0.78rem;
+  font-variant-numeric: normal;
+  opacity: 0.65;
+}
+
 /* ── Pack picker: a shelf of packs ───────────────────────── */
 /* Each pack is a self-contained card that is itself the include toggle; there
    is no separate detail pane. A sticky bar carries the queue count and Save —
