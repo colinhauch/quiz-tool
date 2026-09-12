@@ -59,7 +59,8 @@ new intent or a ticket is a fresh issue. There is no file to write.
 
 ## When a skill says "fetch the relevant ticket"
 
-Run `gh issue view <number> --comments`.
+Run `gh issue view <number> --comments`. For an SDLC artifact, read the file in
+`sdlc/features/<slug>/` — it is the record; the issue is only a pointer.
 
 ## Wayfinding operations
 

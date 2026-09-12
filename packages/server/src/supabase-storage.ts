@@ -217,6 +217,13 @@ export function createSupabasePreferencesStore(client: SupabaseClient): Preferen
   };
 }
 
+/**
+ * Supabase-backed scheduler state — one JSONB row per learner, keyed by
+ * `user_id` (defaults to `auth.uid()`, pinned by RLS). Unlike the pack selection
+ * there is no sentinel row: the whole state is a single value, so a single-row
+ * upsert on `user_id` is atomic on its own and needs no RPC. `read` is
+ * `null` before anything is saved, which the app turns into "build fresh".
+ */
 export function createSupabaseSchedulerStore(client: SupabaseClient): SchedulerStore {
   return {
     async read() {
