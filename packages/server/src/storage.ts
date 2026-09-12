@@ -123,12 +123,10 @@ export interface SchedulerStore {
  * counterpart (`supabase-storage.ts`) keeps one row per learner under RLS.
  */
 export function createSchedulerStore(db: Database.Database): SchedulerStore {
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS scheduler_state (
-      id INTEGER PRIMARY KEY CHECK (id = 1),
-      state TEXT NOT NULL
-    )
-  `);
+  defineTable(db, "scheduler_state", {
+    id: "INTEGER PRIMARY KEY CHECK (id = 1)",
+    state: "TEXT NOT NULL",
+  });
 
   const select = db.prepare("SELECT state FROM scheduler_state WHERE id = 1");
   const upsert = db.prepare(
@@ -152,19 +150,13 @@ export function createSchedulerStore(db: Database.Database): SchedulerStore {
  * way an add/remove pair can.
  */
 export function createSelectionStore(db: Database.Database): SelectionStore {
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS pack_selection (
-      pack_id TEXT PRIMARY KEY
-    )
-  `);
+  defineTable(db, "pack_selection", { pack_id: "TEXT PRIMARY KEY" });
   // A one-row table recording that a selection was saved at all, so a learner
   // who deselects everything but one pack is not mistaken for a first run.
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS pack_selection_state (
-      id INTEGER PRIMARY KEY CHECK (id = 1),
-      saved_at TEXT NOT NULL
-    )
-  `);
+  defineTable(db, "pack_selection_state", {
+    id: "INTEGER PRIMARY KEY CHECK (id = 1)",
+    saved_at: "TEXT NOT NULL",
+  });
 
   const selectAll = db.prepare("SELECT pack_id AS packId FROM pack_selection ORDER BY pack_id");
   const wasSaved = db.prepare("SELECT 1 FROM pack_selection_state WHERE id = 1");
@@ -238,16 +230,14 @@ interface FeedbackRow {
 export function createFeedbackStore(
   db: Database.Database,
 ): FeedbackStore & { all(): Promise<FeedbackRecord[]> } {
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS feedback (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      kind TEXT NOT NULL,
-      card_id TEXT,
-      comment TEXT NOT NULL,
-      context TEXT,
-      created_at TEXT NOT NULL
-    )
-  `);
+  defineTable(db, "feedback", {
+    id: "INTEGER PRIMARY KEY AUTOINCREMENT",
+    kind: "TEXT NOT NULL",
+    card_id: "TEXT",
+    comment: "TEXT NOT NULL",
+    context: "TEXT",
+    created_at: "TEXT NOT NULL",
+  });
 
   const insert = db.prepare(
     "INSERT INTO feedback (kind, card_id, comment, context, created_at) VALUES (@kind, @cardId, @comment, @context, @createdAt)",
@@ -301,12 +291,10 @@ export interface PreferencesStore {
  * and the returned value is always complete and valid.
  */
 export function createPreferencesStore(db: Database.Database): PreferencesStore {
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS user_preferences (
-      id INTEGER PRIMARY KEY CHECK (id = 1),
-      preferences TEXT NOT NULL
-    )
-  `);
+  defineTable(db, "user_preferences", {
+    id: "INTEGER PRIMARY KEY CHECK (id = 1)",
+    preferences: "TEXT NOT NULL",
+  });
 
   const select = db.prepare("SELECT preferences FROM user_preferences WHERE id = 1");
   const upsert = db.prepare(
@@ -332,19 +320,19 @@ export function createPreferencesStore(db: Database.Database): PreferencesStore 
  * the real app, or an in-memory db under test.
  */
 export function createAnswerStore(db: Database.Database): AnswerStore {
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS answers (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      card_id TEXT NOT NULL,
-      input TEXT NOT NULL,
-      correct INTEGER NOT NULL,
-      asked_at TEXT NOT NULL,
-      card_difficulty REAL,
-      pack_ability REAL,
-      k_applied REAL,
-      rating_pack_id TEXT
-    )
-  `);
+  // The four snapshot columns arrived after this table shipped (#119), so a
+  // database older than that gains them here rather than at a failed INSERT.
+  defineTable(db, "answers", {
+    id: "INTEGER PRIMARY KEY AUTOINCREMENT",
+    card_id: "TEXT NOT NULL",
+    input: "TEXT NOT NULL",
+    correct: "INTEGER NOT NULL",
+    asked_at: "TEXT NOT NULL",
+    card_difficulty: "REAL",
+    pack_ability: "REAL",
+    k_applied: "REAL",
+    rating_pack_id: "TEXT",
+  });
 
   const insert = db.prepare(
     `INSERT INTO answers (card_id, input, correct, asked_at, card_difficulty, pack_ability, k_applied, rating_pack_id)
@@ -402,19 +390,15 @@ function rowToRecord(row: AnswerRow): AnswerRecord {
  * a cache the answer log can rebuild.
  */
 export function createRatingStore(db: Database.Database): RatingStore {
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS card_difficulty (
-      card_id TEXT PRIMARY KEY,
-      difficulty REAL NOT NULL,
-      answer_count INTEGER NOT NULL
-    )
-  `);
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS pack_ability (
-      pack_id TEXT PRIMARY KEY,
-      ability REAL NOT NULL
-    )
-  `);
+  defineTable(db, "card_difficulty", {
+    card_id: "TEXT PRIMARY KEY",
+    difficulty: "REAL NOT NULL",
+    answer_count: "INTEGER NOT NULL",
+  });
+  defineTable(db, "pack_ability", {
+    pack_id: "TEXT PRIMARY KEY",
+    ability: "REAL NOT NULL",
+  });
 
   const selectCard = db.prepare(
     "SELECT difficulty, answer_count AS answerCount FROM card_difficulty WHERE card_id = ?",
@@ -452,6 +436,66 @@ export function createRatingStore(db: Database.Database): RatingStore {
       upsertAbility.run({ packId, ability });
     },
   };
+}
+
+/**
+ * One table's columns, in order: column name to the rest of its declaration.
+ * A single declaration serves both paths below — the `CREATE TABLE` for a fresh
+ * database and the reconciliation for an existing one — so a column cannot be
+ * added to one and forgotten in the other.
+ */
+type TableSchema = Record<string, string>;
+
+/**
+ * Creates `table` if it is absent, then brings an existing one up to `columns`
+ * by adding whatever it lacks.
+ *
+ * The second half is the point. `CREATE TABLE IF NOT EXISTS` does nothing at all
+ * to a table that already exists — it does not reconcile columns — so every
+ * column added to a shipped table left existing local databases behind, and the
+ * miss surfaced as `SQLITE_ERROR: table answers has no column named
+ * card_difficulty` from a prepared statement at boot. Postgres has
+ * `supabase/migrations/`; this is the local file's equivalent, and it runs on
+ * every open because it is a few pragmas against a small file.
+ *
+ * Data is never rewritten or dropped: a column arrives NULL on existing rows,
+ * which is what an answer recorded before the rating spine existed honestly is.
+ *
+ * Names here are internal literals rather than anything a learner supplies, so
+ * interpolating them is safe; `better-sqlite3` cannot parameterise identifiers.
+ */
+function defineTable(db: Database.Database, table: string, columns: TableSchema): void {
+  const declarations = Object.entries(columns);
+  const body = declarations.map(([name, definition]) => `${name} ${definition}`).join(", ");
+  db.exec(`CREATE TABLE IF NOT EXISTS ${table} (${body})`);
+
+  const present = new Set(
+    (db.pragma(`table_info(${table})`) as { name: string }[]).map((column) => column.name),
+  );
+  for (const [name, definition] of declarations) {
+    if (present.has(name)) continue;
+    if (!canAddColumn(definition)) {
+      throw new Error(
+        `cannot upgrade this database: ${table}.${name} is missing and SQLite cannot add it ` +
+          `(${definition}). Give the column a DEFAULT, or delete the database file and start fresh.`,
+      );
+    }
+    db.exec(`ALTER TABLE ${table} ADD COLUMN ${name} ${definition}`);
+  }
+}
+
+/**
+ * Whether SQLite will accept this column in an `ALTER TABLE ADD COLUMN`. It
+ * refuses a PRIMARY KEY or UNIQUE column outright, and a NOT NULL one unless it
+ * carries a default to backfill existing rows with. Every column added to a
+ * table after it shipped therefore has to be nullable or defaulted — a real
+ * constraint on future schema edits, which is why the caller reports it by name
+ * rather than letting SQLite raise it from somewhere less obvious.
+ */
+function canAddColumn(definition: string): boolean {
+  const upper = definition.toUpperCase();
+  if (upper.includes("PRIMARY KEY") || upper.includes("UNIQUE")) return false;
+  return !upper.includes("NOT NULL") || upper.includes("DEFAULT");
 }
 
 /** Opens a better-sqlite3 database at a file path (or `:memory:`). */

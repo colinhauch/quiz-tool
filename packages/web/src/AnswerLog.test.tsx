@@ -117,6 +117,7 @@ describe("AnswerLog", () => {
 // 8 answers: 4 correct, 2 incorrect-with-input, 2 skips (one whitespace-only).
 // 7 distinct cards (Paris appears twice). Earliest answer is 15 July 2026.
 // So: absolute accuracy 4/8 = 50.0%, attempted accuracy 4/6 = 66.7%.
+// By pack: 4 Capital Cities (50.0%), 2 Core Cities (25.0%), 2 Flags (25.0%).
 const mixedLog: AnswerLogData = [
   {
     cardId: "cc:paris-france:object",
@@ -124,6 +125,8 @@ const mixedLog: AnswerLogData = [
     input: "France",
     correct: true,
     acceptedAnswer: "France",
+    packId: "capital-cities",
+    packLabel: "Capital Cities",
     askedAt: "2026-07-19T12:07:00.000Z",
   },
   {
@@ -132,6 +135,8 @@ const mixedLog: AnswerLogData = [
     input: "Japan",
     correct: true,
     acceptedAnswer: "Japan",
+    packId: "capital-cities",
+    packLabel: "Capital Cities",
     askedAt: "2026-07-19T12:06:00.000Z",
   },
   {
@@ -140,6 +145,8 @@ const mixedLog: AnswerLogData = [
     input: "Spain",
     correct: false,
     acceptedAnswer: "France",
+    packId: "capital-cities",
+    packLabel: "Capital Cities",
     askedAt: "2026-07-19T12:05:00.000Z",
   },
   {
@@ -148,6 +155,8 @@ const mixedLog: AnswerLogData = [
     input: "",
     correct: false,
     acceptedAnswer: "Peru",
+    packId: "core-cities",
+    packLabel: "Core Cities",
     askedAt: "2026-07-19T12:04:00.000Z",
   },
   {
@@ -156,6 +165,8 @@ const mixedLog: AnswerLogData = [
     input: "Egypt",
     correct: true,
     acceptedAnswer: "Egypt",
+    packId: "core-cities",
+    packLabel: "Core Cities",
     askedAt: "2026-07-19T12:03:00.000Z",
   },
   {
@@ -164,6 +175,8 @@ const mixedLog: AnswerLogData = [
     input: "   ",
     correct: false,
     acceptedAnswer: "Norway",
+    packId: "flags",
+    packLabel: "Flags",
     askedAt: "2026-07-19T12:02:00.000Z",
   },
   {
@@ -172,6 +185,8 @@ const mixedLog: AnswerLogData = [
     input: "Chile",
     correct: false,
     acceptedAnswer: "Canada",
+    packId: "flags",
+    packLabel: "Flags",
     askedAt: "2026-07-19T12:01:00.000Z",
   },
   {
@@ -180,6 +195,8 @@ const mixedLog: AnswerLogData = [
     input: "Switzerland",
     correct: true,
     acceptedAnswer: "Switzerland",
+    packId: "capital-cities",
+    packLabel: "Capital Cities",
     askedAt: "2026-07-15T09:00:00.000Z",
   },
 ];
@@ -408,5 +425,179 @@ describe("AnswerLog summary — against the live-data figures from #233", () => 
     const totals = await screen.findByRole("table", { name: /totals/i });
     expect(totals).toHaveTextContent(/Questions attempted\s*312/);
     expect(totals).toHaveTextContent(/Attempted accuracy\s*65\.1%/);
+  });
+});
+
+/** The drawn bands of the pack breakdown, in document order. */
+function bands(): Element[] {
+  return Array.from(document.querySelectorAll("[data-pack]"));
+}
+
+/** The breakdown's legend entries, flattened to the text a screen reader hears. */
+async function packKeys() {
+  const breakdown = await screen.findByRole("group", { name: /packs/i });
+  return within(breakdown)
+    .getAllByRole("listitem")
+    .map((item) => (item.textContent ?? "").replace(/\s+/g, " ").trim());
+}
+
+/** The mixed log with every answer's pack attribution stripped off. */
+const unattributedLog: AnswerLogData = mixedLog.map(
+  ({ packId: _packId, packLabel: _packLabel, ...answer }) => answer,
+);
+
+describe("AnswerLog summary — pack breakdown", () => {
+  it("splits the log by pack, most answers first, with a count and a share each", async () => {
+    stubFetch(mixedLog);
+    render(<AnswerLog />);
+
+    // Core Cities and Flags tie at 2; the label breaks the tie, so the order is
+    // deterministic rather than whatever the log happened to arrive in.
+    expect(await packKeys()).toEqual([
+      "Capital Cities 4 (50.0%)",
+      "Core Cities 2 (25.0%)",
+      "Flags 2 (25.0%)",
+    ]);
+  });
+
+  it("labels each pack by its name rather than its id", async () => {
+    stubFetch(mixedLog);
+    render(<AnswerLog />);
+
+    const breakdown = await screen.findByRole("group", { name: /packs/i });
+    expect(breakdown).toHaveTextContent("Capital Cities");
+    expect(within(breakdown).queryByText(/capital-cities/)).not.toBeInTheDocument();
+  });
+
+  it("falls back to the pack id when the server had no name for the pack", async () => {
+    // The two fields fail independently at the seam, so the client has to cope
+    // with an attributed answer whose pack the graph could not name.
+    stubFetch(mixedLog.map(({ packLabel: _packLabel, ...answer }) => answer));
+    render(<AnswerLog />);
+
+    expect(await packKeys()).toEqual([
+      "capital-cities 4 (50.0%)",
+      "core-cities 2 (25.0%)",
+      "flags 2 (25.0%)",
+    ]);
+  });
+
+  it("gives answers whose card no longer resolves their own labelled slice", async () => {
+    stubFetch([...mixedLog.slice(0, 6), ...unattributedLog.slice(6)]);
+    render(<AnswerLog />);
+
+    // The unattributed slice ranks by magnitude like any other — dropping it
+    // to the bottom would misreport how much of the log it accounts for — and
+    // only loses ties to a named pack, here against nothing.
+    expect(await packKeys()).toEqual([
+      "Capital Cities 3 (37.5%)",
+      "Core Cities 2 (25.0%)",
+      "Card no longer in any pack 2 (25.0%)",
+      "Flags 1 (12.5%)",
+    ]);
+  });
+
+  it("accounts for a log nothing in which can be attributed", async () => {
+    stubFetch(unattributedLog);
+    render(<AnswerLog />);
+
+    expect(await packKeys()).toEqual(["Card no longer in any pack 8 (100.0%)"]);
+  });
+
+  it("counts answers from a pack the learner has since deselected", async () => {
+    // The Answer Log records what *was* asked and is never filtered when a pack
+    // is deselected, so the breakdown cannot ask what is currently included.
+    stubFetch(mixedLog);
+    render(<AnswerLog />);
+
+    expect(await packKeys()).toContain("Flags 2 (25.0%)");
+  });
+
+  it("draws one band per pack that occurred and none for a pack with no answers", async () => {
+    stubFetch(mixedLog);
+    render(<AnswerLog />);
+
+    await screen.findByRole("group", { name: /packs/i });
+    expect(bands().map((b) => b.getAttribute("data-pack"))).toEqual([
+      "capital-cities",
+      "core-cities",
+      "flags",
+    ]);
+  });
+
+  it("draws the unattributable answers as their own band", async () => {
+    stubFetch([...mixedLog.slice(0, 7), ...unattributedLog.slice(7)]);
+    render(<AnswerLog />);
+
+    await screen.findByRole("group", { name: /packs/i });
+    // No pack id can be empty (the contract requires one character), so the
+    // empty string is the unambiguous handle for the unattributed band.
+    expect(bands().map((b) => b.getAttribute("data-pack"))).toEqual([
+      "capital-cities",
+      "core-cities",
+      "flags",
+      "",
+    ]);
+  });
+
+  it("stays readable at seven packs, one band and one legend entry each", async () => {
+    const sevenPacks = ["capital-cities", "continental-countries", "core-cities", "currencies", "flags", "spoken-languages", "core-geo"];
+    stubFetch(
+      sevenPacks.flatMap((packId, p) =>
+        // 1 answer from the first pack, 2 from the second, and so on, so no two
+        // shares are equal and rounding has somewhere to go wrong.
+        Array.from({ length: p + 1 }, (_, i) => ({
+          cardId: `${packId}:card-${i}`,
+          question: `Question ${p}-${i}`,
+          input: "a guess",
+          correct: true,
+          packId,
+          packLabel: packId,
+          askedAt: new Date(Date.UTC(2026, 0, 1, p, i)).toISOString(),
+        })),
+      ),
+    );
+    render(<AnswerLog />);
+
+    expect(await packKeys()).toHaveLength(7);
+    expect(bands()).toHaveLength(7);
+  });
+
+  it("rounds the pack shares so they still account for the whole log", async () => {
+    // Three packs a third each: the shares cannot all round to one decimal and
+    // still sum, and with seven-plus packs the drift is worse than for outcomes.
+    stubFetch([mixedLog[0], mixedLog[3], mixedLog[5]] as AnswerLogData);
+    render(<AnswerLog />);
+
+    const breakdown = await screen.findByRole("group", { name: /packs/i });
+    const shares = [...(breakdown.textContent ?? "").matchAll(/\((\d+\.\d)%\)/g)].map((m) =>
+      Number(m[1]),
+    );
+    expect(shares).toHaveLength(3);
+    expect(shares.reduce((a, b) => a + b, 0)).toBeCloseTo(100, 5);
+  });
+
+  it("exposes every breakdown value as text rather than as picture alone", async () => {
+    stubFetch(mixedLog);
+    render(<AnswerLog />);
+
+    const breakdown = await screen.findByRole("group", { name: /packs/i });
+    // The bar is decorative: the legend already announces every value, and
+    // saying each one twice helps nobody.
+    const bar = breakdown.querySelector(".answer-summary__bar");
+    expect(bar).toHaveAttribute("aria-hidden", "true");
+    expect(await packKeys()).toEqual([
+      "Capital Cities 4 (50.0%)",
+      "Core Cities 2 (25.0%)",
+      "Flags 2 (25.0%)",
+    ]);
+  });
+
+  it("shows no breakdown when the log is empty", async () => {
+    stubFetch([]);
+    render(<AnswerLog />);
+
+    expect(await screen.findByText(/no answers yet/i)).toBeInTheDocument();
+    expect(screen.queryByRole("group", { name: /packs/i })).not.toBeInTheDocument();
   });
 });

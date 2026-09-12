@@ -489,10 +489,13 @@ export function createApp({
 
   // The raw answer log for review, most recent first. The store keeps the log
   // in insertion order (it is an append log); reversing here is the view's
-  // choice, not the store's. Each record's question text is re-derived from its
-  // cardId — the prompt is a deterministic function of the card, so it isn't
-  // stored — and falls back to the raw cardId if the card no longer resolves
-  // (e.g. the pack changed). Parsed through the schema so the seam stays honest.
+  // choice, not the store's. Each record's question text, accepted answer and
+  // owning pack are re-derived from its cardId — all three are deterministic
+  // functions of the card, so none is stored — and the question falls back to
+  // the raw cardId if the card no longer resolves (e.g. the pack changed), while
+  // the other two go absent. Deriving rather than storing is what attributes
+  // every answer ever logged without a migration. Parsed through the schema so
+  // the seam stays honest.
   app.get("/answers", async (c) => {
     const { store: s } = resolve(c);
     return c.json(
@@ -505,6 +508,7 @@ export function createApp({
             ...record,
             question: questionText(pack, record.cardId),
             acceptedAnswer: acceptedAnswerFor(pack, record.cardId),
+            ...ownerPackFields(pack, record.cardId),
           })),
       ),
     );
@@ -673,4 +677,26 @@ function acceptedAnswerFor(pack: Pack, cardId: string): string | undefined {
   } catch {
     return undefined;
   }
+}
+
+/**
+ * Which pack owns a recorded card, re-derived from its id the same way the
+ * prompt and the accepted answer are. A stale id (its card gone from the graph)
+ * has no owner, and the keys are *omitted* rather than set to undefined: the
+ * log entry schema is strict, and an answer whose pack cannot be named must say
+ * so by absence rather than by an empty or invented label.
+ *
+ * The label fails independently of the id: a statement can survive in the graph
+ * while the manifest naming its pack does not, and an id still names the owner
+ * even with nothing prettier to show.
+ *
+ * Ownership is read off the graph and never off the selection, so an answer
+ * from a pack the learner has since deselected still names it — the Answer Log
+ * records what *was* asked.
+ */
+function ownerPackFields(pack: Pack, cardId: string): { packId?: string; packLabel?: string } {
+  const packId = ownerPackId(pack, cardId);
+  if (packId === undefined) return {};
+  const label = pack.packs.get(packId)?.labels.en;
+  return label === undefined ? { packId } : { packId, packLabel: label };
 }

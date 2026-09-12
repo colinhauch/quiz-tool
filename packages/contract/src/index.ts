@@ -253,8 +253,8 @@ export type AnswerResponse = z.infer<typeof answerResponseSchema>;
  * `GET /answers` — one recorded answer in the raw log. Mirrors what the store
  * persists — the card reference, the learner's verbatim input (which may be
  * empty — a blank submission is still an answer), the verdict, and when it was
- * recorded — plus the rendered `question` text and the canonical
- * `acceptedAnswer`, both of which the server re-derives from `cardId` at read
+ * recorded — plus the rendered `question` text, the canonical `acceptedAnswer`
+ * and the owning pack, all of which the server re-derives from `cardId` at read
  * time rather than storing. `acceptedAnswer` is absent when the card no longer
  * resolves (e.g. the pack changed), the same staleness `question` falls back on.
  * This is the only record that a sitting happened; the review view reads nothing
@@ -267,6 +267,16 @@ export const answerLogEntrySchema = z
     input: z.string(),
     correct: z.boolean(),
     acceptedAnswer: z.string().min(1).optional(),
+    /**
+     * The pack that owns this answer's card, derived at read time like
+     * `acceptedAnswer` and absent for the same reason: a card whose pack has
+     * changed no longer resolves. Ownership is never stored, so every answer
+     * ever logged names its pack the moment the derivation ships. `packLabel`
+     * is the pack's display name; it is absent independently, when the graph
+     * holds the statement but not the manifest that names its pack.
+     */
+    packId: z.string().min(1).optional(),
+    packLabel: z.string().min(1).optional(),
     askedAt: z.string().min(1),
   })
   .strict();
