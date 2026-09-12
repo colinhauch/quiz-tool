@@ -25,6 +25,24 @@
   --red-bg: #faf3f3;
   --red-text: #6a3a3a;
 
+  /* Categorical ramp, for data that has categories but no meaning attached to
+     them (the pack breakdown). Deliberately none of the three feedback colours
+     above, which do mean something, and it wraps rather than running out —
+     nothing fixes how many packs there are. Ordered so that consecutive ranks
+     sit in different hue families: adjacent segments are the pair a reader has
+     to tell apart, and two neighbouring blues are the one way this fails. */
+  --colour-0: #27187e;
+  --colour-1: #4e6bd6;
+  --colour-2: #3f8f9e;
+  --colour-3: #9c7bd8;
+  --colour-4: #758bfd;
+  --colour-5: #c98bbe;
+  --colour-6: #6f5aa8;
+  --colour-7: #b08968;
+  /* Off the ramp on purpose: a neutral grey reads as "owned by no pack" rather
+     than as one more category competing with the real ones. */
+  --colour-unowned: #9aa0b4;
+
   --serif: "EB Garamond", Garamond, "Times New Roman", serif;
   --sans: Inter, system-ui, -apple-system, sans-serif;
 }
@@ -896,7 +914,15 @@ body {
   .answer-summary {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     align-items: start;
-    gap: 2.5rem;
+    gap: 2.5rem 2.5rem;
+  }
+
+  /* Outcomes beside totals, the pack breakdown across both (#239). A stacked
+     bar is the one block here that gets better with width, so it takes the
+     whole row rather than becoming a third narrow column. DOM order and visual
+     order stay the same at both widths — on a phone the three simply stack. */
+  .answer-summary__packs {
+    grid-column: 1 / -1;
   }
 }
 
@@ -1046,6 +1072,78 @@ body {
   font-size: 0.78rem;
   font-variant-numeric: normal;
   opacity: 0.65;
+}
+
+/* ── Pack breakdown (#239) ────────────────────────────────
+   A stacked bar, not a second pie: seven packs is past the handful a pie can
+   be read at. Packs carry no meaning of their own, so the ramp is categorical
+   and deliberately avoids the three outcome colours, which do mean something.
+   Assigned by rank and wrapped modulo its length, because the number of packs
+   is not fixed; the legend carries every value as text, so colour is never the
+   only channel. */
+/* The bar stacks above its legend on a phone and stays full width above it at
+   every size: a horizontal bar beside a legend would squeeze the one dimension
+   that carries the data. */
+.answer-summary__plot--stacked {
+  display: block;
+}
+
+.answer-summary__bar {
+  display: flex;
+  gap: 2px;
+  height: 1.75rem;
+  margin-bottom: 1rem;
+  border-radius: 0.25rem;
+  overflow: hidden;
+}
+
+.answer-summary__segment {
+  flex-basis: 0;
+  /* A pack with a handful of answers out of hundreds still gets a visible
+     sliver — it is in the legend, so an invisible segment would look wrong.
+     This and the bar's gap cost the smallest packs a little over-read; the
+     legend carries their exact figures. */
+  min-width: 3px;
+}
+
+.answer-summary__legend--packs {
+  /* Two columns of keys once there is room, so seven packs do not become a
+     long thin list beside a wide bar. */
+  grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
+  gap: 0.4rem 1.5rem;
+}
+
+/* Each rank class carries its colour as one variable, and the two things that
+   wear it read that variable. Adding a colour is one line here plus bumping
+   CATEGORICAL_RAMP in AnswerSummary.tsx, rather than an edit per use. */
+.answer-summary__colour--0 { --colour: var(--colour-0); }
+.answer-summary__colour--1 { --colour: var(--colour-1); }
+.answer-summary__colour--2 { --colour: var(--colour-2); }
+.answer-summary__colour--3 { --colour: var(--colour-3); }
+.answer-summary__colour--4 { --colour: var(--colour-4); }
+.answer-summary__colour--5 { --colour: var(--colour-5); }
+.answer-summary__colour--6 { --colour: var(--colour-6); }
+.answer-summary__colour--7 { --colour: var(--colour-7); }
+.answer-summary__colour--unowned { --colour: var(--colour-unowned); }
+
+.answer-summary__segment,
+.answer-summary__legend--packs .answer-summary__swatch {
+  background: var(--colour);
+}
+
+/* The pack name is the long part of a key, so it wraps and the number stays
+   pinned right rather than being pushed off the end. */
+.answer-summary__legend--packs .answer-summary__key {
+  align-items: baseline;
+}
+
+.answer-summary__legend--packs .answer-summary__key-label {
+  min-width: 0;
+}
+
+.answer-summary__legend--packs .answer-summary__swatch {
+  position: relative;
+  top: 0.15rem;
 }
 
 /* ── Pack picker: a shelf of packs ───────────────────────── */

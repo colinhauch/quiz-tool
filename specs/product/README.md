@@ -18,6 +18,16 @@ Two other shapes were considered. **Due-set driven** — the round is "everythin
 
 **The accuracy screen is navigated to, not arrived at.** This is the real cost, and it is worth naming rather than glossing: the region × relation view has no moment that produces it. The user has to go looking. If it turns out nobody looks, the fix is a reason to look — not necessarily a round.
 
+## Colour in the summary charts means two different things
+
+> **[UNREVIEWED]** — written from the #238/#239 build rather than from a prior decision. The rule that a pie stops working past roughly six categories is the agent's judgement call; confirm it is the line you want drawn.
+
+The My Answers summary carries two charts, and they encode colour under opposite rules. Outcome colour is **semantic** and fixed: correct is green, incorrect is red, and skip is deliberately neither — it is the absence of an attempt, not a worse kind of wrong. Pack colour is **categorical** and means nothing at all; it is assigned by rank off a ramp that wraps, because nothing fixes how many packs there are.
+
+Keeping the two ramps disjoint is the load-bearing part. A pack tinted the green of *correct* would read as a verdict on that pack, which is a claim the chart is not making. The same reasoning rules out the reserved Princeton Orange, which already means "the primary button" everywhere else in the app.
+
+The forms differ for the same reason. A handful of outcomes are a pie; the packs are a horizontal stacked bar, because a pie compares many magnitudes badly — past roughly six categories the small ones become indistinguishable wedges, and [`packs/`](../../packs) holds more than that today. Both charts carry every value as text in their legend, with the drawing itself `aria-hidden`: the legend is the accessible reading, and announcing each number twice helps nobody.
+
 ## Product judgments living elsewhere
 
 Some product decisions are already expressed as architecture in the engine specs. Numeric facts are compared rather than recalled, because approximate magnitude is what people actually know — see [../questions/](../questions/). If this file grows, those may want to move here or be linked from here.

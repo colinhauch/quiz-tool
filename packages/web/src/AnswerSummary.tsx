@@ -24,6 +24,77 @@ function outcomeOf(answer: AnswerLogEntry): Outcome {
   return answer.input.trim() === "" ? "skip" : "incorrect";
 }
 
+/**
+ * The grouping key for answers no pack owns. No real pack id can be empty (the
+ * contract requires at least one character), so it cannot collide, and it is
+ * also the `data-pack` handle the tests read.
+ */
+const UNOWNED = "";
+
+/**
+ * What the breakdown calls answers no pack owns. They get a band of their own
+ * rather than being dropped: dropping them makes every other share wrong, and
+ * the shares are the whole point of the chart.
+ */
+const UNOWNED_LABEL = "Card no longer in any pack";
+
+/** One pack's worth of the log: what to call it, how much of the log it is. */
+type PackTally = { packId: string; label: string; count: number; share: number };
+
+/**
+ * The log grouped by the pack that owns each answer's card, largest first.
+ * Ranked by magnitude rather than by name because the question the chart
+ * answers is "where has my practice gone?"; ties break towards the owned pack,
+ * so the order is a function of the data and not of the log's arrival sequence.
+ *
+ * The pack id is the grouping key even when a label exists — two packs may
+ * share a display name, and the id is what the server resolved.
+ */
+function packTalliesOf(answers: AnswerLogData): PackTally[] {
+  const counts = new Map<string, { label: string | undefined; count: number }>();
+  for (const answer of answers) {
+    const key = answer.packId ?? UNOWNED;
+    const seen = counts.get(key);
+    // First label wins, and a later entry can supply one an earlier entry
+    // lacked: the two fields go absent independently at the seam.
+    if (seen) {
+      seen.count += 1;
+      seen.label ??= answer.packLabel;
+    } else {
+      counts.set(key, { label: answer.packLabel, count: 1 });
+    }
+  }
+
+  const ranked = [...counts].sort(([aId, a], [bId, b]) => {
+    if (a.count !== b.count) return b.count - a.count;
+    if (aId === UNOWNED) return 1;
+    if (bId === UNOWNED) return -1;
+    return labelFor(aId, a.label).localeCompare(labelFor(bId, b.label));
+  });
+
+  const shares = sharesOf(
+    ranked.map(([, entry]) => entry.count),
+    answers.length,
+  );
+  return ranked.map(([packId, entry], i) => ({
+    packId,
+    label: labelFor(packId, entry.label),
+    count: entry.count,
+    share: shares[i] ?? 0,
+  }));
+}
+
+/**
+ * A pack's display name, falling back to its id. The label is absent whenever
+ * the graph held the statement but not the manifest that names its pack — an id
+ * is worse to read but still true, and better than a band labelled with
+ * nothing.
+ */
+function labelFor(packId: string, label: string | undefined): string {
+  if (packId === UNOWNED) return UNOWNED_LABEL;
+  return label ?? packId;
+}
+
 export function AnswerSummary({ answers }: { answers: AnswerLogData }) {
   const counts: Record<Outcome, number> = { correct: 0, incorrect: 0, skip: 0 };
   for (const answer of answers) counts[outcomeOf(answer)] += 1;
@@ -35,6 +106,7 @@ export function AnswerSummary({ answers }: { answers: AnswerLogData }) {
   const distinctCards = new Set(answers.map((answer) => answer.cardId)).size;
   const firstAnsweredAt = earliest(answers);
 
+  const packTallies = packTalliesOf(answers);
   const shares = sharesOf([counts.correct, counts.incorrect, counts.skip], answers.length);
   const slices = (["correct", "incorrect", "skip"] as const)
     .map((outcome, i) => ({ outcome, count: counts[outcome], share: shares[i] ?? 0 }))
@@ -78,17 +150,13 @@ export function AnswerSummary({ answers }: { answers: AnswerLogData }) {
 
           <ul className="answer-summary__legend">
             {slices.map((slice) => (
-              <li
+              <LegendKey
                 key={slice.outcome}
-                className={`answer-summary__key answer-summary__key--${slice.outcome}`}
-              >
-                <span className="answer-summary__swatch" aria-hidden="true" />
-                {/* The spaces are load-bearing: without them a screen reader
-                    runs the label, count and share together as one word. */}
-                <span className="answer-summary__key-label">{OUTCOME_LABEL[slice.outcome]}</span>{" "}
-                <span className="answer-summary__key-count">{slice.count}</span>{" "}
-                <span className="answer-summary__key-share">({formatPercent(slice.share)})</span>
-              </li>
+                colour={`answer-summary__key--${slice.outcome}`}
+                label={OUTCOME_LABEL[slice.outcome]}
+                count={slice.count}
+                share={slice.share}
+              />
             ))}
           </ul>
         </div>
@@ -141,9 +209,100 @@ export function AnswerSummary({ answers }: { answers: AnswerLogData }) {
           </tr>
         </tbody>
       </table>
+
+      {/* A stacked bar rather than a second pie: there are seven packs today,
+          and a pie is a weak form for comparing that many magnitudes — the
+          small slices become indistinguishable wedges. The bar spans the whole
+          grid because it is the one block here that gets better with width. */}
+      <div className="answer-summary__packs" role="group" aria-labelledby="answer-summary-packs">
+        <h3 id="answer-summary-packs">Packs</h3>
+
+        <div className="answer-summary__plot answer-summary__plot--stacked">
+          {/* Segments are sized by the counts, not the rounded shares, so the
+              proportions come from the truth and only the labels are rounded.
+              Two things deliberately break exact proportionality: hairline
+              separators, and a floor that keeps a pack with a handful of
+              answers visible at all. Both cost the smallest packs a pixel or
+              two of over-read; their exact figures sit in the legend below. */}
+          <div className="answer-summary__bar" aria-hidden="true">
+            {packTallies.map((tally, i) => (
+              <span
+                key={tally.packId}
+                data-pack={tally.packId}
+                className={`answer-summary__segment ${colourClass(packTallies, i)}`}
+                style={{ flexGrow: tally.count }}
+              />
+            ))}
+          </div>
+
+          <ul className="answer-summary__legend answer-summary__legend--packs">
+            {packTallies.map((tally, i) => (
+              <LegendKey
+                key={tally.packId}
+                colour={colourClass(packTallies, i)}
+                label={tally.label}
+                count={tally.count}
+                share={tally.share}
+              />
+            ))}
+          </ul>
+        </div>
+      </div>
     </section>
   );
 }
+
+/**
+ * One entry of a chart legend: a swatch, then the label, count and share as
+ * text. Both charts announce their values here and mark the drawing itself
+ * `aria-hidden`, so this markup is the accessible reading of either one — which
+ * is why they share it rather than each keeping a copy.
+ */
+function LegendKey({
+  colour,
+  label,
+  count,
+  share,
+}: {
+  colour: string;
+  label: string;
+  count: number;
+  share: number;
+}) {
+  return (
+    <li className={`answer-summary__key ${colour}`}>
+      <span className="answer-summary__swatch" aria-hidden="true" />
+      {/* The spaces are load-bearing: without them a screen reader runs the
+          label, count and share together as one word. */}
+      <span className="answer-summary__key-label">{label}</span>{" "}
+      <span className="answer-summary__key-count">{count}</span>{" "}
+      <span className="answer-summary__key-share">({formatPercent(share)})</span>
+    </li>
+  );
+}
+
+/**
+ * Which colour a tally wears — worn by both the bar segment and its legend
+ * swatch, so the two can never drift apart. Packs carry no semantics, so the
+ * ramp is categorical and assigned by rank, deliberately avoiding the three
+ * outcome colours, which do mean something. It wraps rather than running out,
+ * because the number of packs is not fixed; the legend carries every value as
+ * text, so colour is never the only way to read the chart.
+ *
+ * The unowned tally is off the ramp and does not consume a rank: it is not a
+ * pack, and letting it take a colour would silently skip one for every learner
+ * who has an unowned answer.
+ */
+function colourClass(tallies: readonly PackTally[], index: number): string {
+  if (tallies[index]?.packId !== UNOWNED) {
+    const rank = tallies.slice(0, index).filter((t) => t.packId !== UNOWNED).length;
+    return `answer-summary__colour--${rank % CATEGORICAL_RAMP}`;
+  }
+  return "answer-summary__colour--unowned";
+}
+
+/** How many colours the ramp holds. Must match `--colour-0…n` in `index.css`. */
+const CATEGORICAL_RAMP = 8;
 
 /**
  * The oldest answer in the log. Folded rather than read off the end, because
