@@ -1,5 +1,6 @@
 import type { AnswerLog as AnswerLogData } from "@geo/contract";
 import { useCallback, useEffect, useState } from "react";
+import { AnswerSummary } from "./AnswerSummary.js";
 import { getAnswers } from "./apiClient.js";
 
 type View =
@@ -33,32 +34,35 @@ export function AnswerLog() {
   }
 
   return (
-    <table className="answer-log">
-      <caption>Your answers, most recent first</caption>
-      <thead>
-        <tr>
-          <th scope="col">Question</th>
-          <th scope="col">Your answer</th>
-          <th scope="col">Correct answer</th>
-          <th scope="col">Result</th>
-        </tr>
-      </thead>
-      <tbody>
-        {view.answers.map((a, i) => (
-          // The log has no stable per-row id in the contract; the card + timestamp
-          // pair is effectively unique, and the index disambiguates any collision.
-          <tr key={`${a.cardId}@${a.askedAt}#${i}`}>
-            <td>{a.question}</td>
-            <td>{a.input || "—"}</td>
-            <td>{a.acceptedAnswer ?? "—"}</td>
-            <td>
-              <span className={`result-pill ${a.correct ? "result-pill--correct" : "result-pill--incorrect"}`}>
-                {a.correct ? "Correct" : "Incorrect"}
-              </span>
-            </td>
+    <>
+      <AnswerSummary answers={view.answers} />
+      <table className="answer-log">
+        <caption>Your answers, most recent first</caption>
+        <thead>
+          <tr>
+            <th scope="col">Question</th>
+            <th scope="col">Your answer</th>
+            <th scope="col">Correct answer</th>
+            <th scope="col">Result</th>
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {view.answers.map((a, i) => (
+            // The log has no stable per-row id in the contract; the card + timestamp
+            // pair is effectively unique, and the index disambiguates any collision.
+            <tr key={`${a.cardId}@${a.askedAt}#${i}`}>
+              <td>{a.question}</td>
+              <td>{a.input || "—"}</td>
+              <td>{a.acceptedAnswer ?? "—"}</td>
+              <td>
+                <span className={`result-pill ${a.correct ? "result-pill--correct" : "result-pill--incorrect"}`}>
+                  {a.correct ? "Correct" : "Incorrect"}
+                </span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </>
   );
 }
