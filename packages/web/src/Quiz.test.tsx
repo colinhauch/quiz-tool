@@ -324,21 +324,26 @@ describe("Quiz", () => {
   });
 
   it("draws the reveal map in the learner's stored projection (#235)", async () => {
-    // The Settings control writes the id; this is the other half of that wiring —
-    // the quiz seeds the reveal map from the same account-synced store.
+    // The Settings control is the only writer of this preference; this is the
+    // other half of that wiring — the quiz reads it to draw the reveal map.
     writeMapProjectionPref("equirectangular");
     stubFetch([tokyo], {
       correct: true,
       acceptedAnswer: "Japan",
       revealVisual: { kind: "map", entityId: "Q1490", lat: 35.6895, lon: 139.6917, label: "Tokyo" },
     });
-    render(<Quiz />);
+    const { container } = render(<Quiz />);
 
     fireEvent.change(await screen.findByLabelText(/your answer/i), { target: { value: "Japan" } });
     fireEvent.click(screen.getByRole("button", { name: /^submit$/i }));
 
     await screen.findByRole("status");
-    expect(screen.getByRole("combobox", { name: /projection/i })).toHaveValue("equirectangular");
+    // Equirectangular's projected sphere bounds are exactly 0 0 360 180 (Equal
+    // Earth's are not), and the pin sits at its closed form (lon+180, 90-lat).
+    expect(container.querySelector("svg")).toHaveAttribute("viewBox", "0 0 360 180");
+    const pin = container.querySelector("circle");
+    expect(Number(pin?.getAttribute("cx"))).toBeCloseTo(139.6917 + 180);
+    expect(Number(pin?.getAttribute("cy"))).toBeCloseTo(90 - 35.6895);
   });
 
   it("shows no map when the answer carries no revealVisual", async () => {
