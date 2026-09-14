@@ -1,4 +1,5 @@
 import type { AnswerLog as AnswerLogData, AnswerLogEntry } from "@geo/contract";
+import { streakOf } from "./streak.js";
 
 /**
  * The three-way reading of an answer's outcome (ADR-0004). It exists only here,
@@ -106,6 +107,11 @@ export function AnswerSummary({ answers }: { answers: AnswerLogData }) {
   const distinctCards = new Set(answers.map((answer) => answer.cardId)).size;
   const firstAnsweredAt = earliest(answers);
 
+  // Read at render, from the same log the rest of the summary uses. The clock is
+  // a real dependency of "today", so it is read here rather than threaded as a
+  // prop; tests fix it with `vi.setSystemTime`.
+  const streak = streakOf(answers, new Date());
+
   const packTallies = packTalliesOf(answers);
   const shares = sharesOf([counts.correct, counts.incorrect, counts.skip], answers.length);
   const slices = (["correct", "incorrect", "skip"] as const)
@@ -115,6 +121,35 @@ export function AnswerSummary({ answers }: { answers: AnswerLogData }) {
 
   return (
     <section className="answer-summary">
+      <table className="answer-summary__streak">
+        <caption>Streak</caption>
+        <tbody>
+          <tr>
+            <th scope="row">Current streak</th>
+            <td>
+              {streak.current} <span className="answer-summary__note">{dayWord(streak.current)}</span>
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">Longest streak</th>
+            <td>
+              {streak.longest} <span className="answer-summary__note">{dayWord(streak.longest)}</span>
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">Today</th>
+            <td>
+              {streak.today.answered} / {streak.today.threshold}{" "}
+              <span className="answer-summary__note">
+                {streak.today.met
+                  ? "answered — today's streak is secured"
+                  : `answered — ${streak.today.threshold - streak.today.answered} to go`}
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
       <div className="answer-summary__chart" role="group" aria-labelledby="answer-summary-outcomes">
         <h3 id="answer-summary-outcomes">Outcomes</h3>
 
@@ -335,6 +370,11 @@ function formatDate(iso: string): string {
 
 function round1(value: number): number {
   return Math.round(value * 10) / 10;
+}
+
+/** "day" / "days", agreeing with a streak length (one day, zero days). */
+function dayWord(count: number): string {
+  return count === 1 ? "day" : "days";
 }
 
 const CENTRE = 50;

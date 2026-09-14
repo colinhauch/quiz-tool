@@ -927,7 +927,8 @@ body {
 }
 
 .answer-summary h3,
-.answer-summary__totals caption {
+.answer-summary__totals caption,
+.answer-summary__streak caption {
   font-family: var(--serif);
   font-size: 1.25rem;
   font-weight: 700;
@@ -1039,32 +1040,47 @@ body {
   opacity: 0.7;
 }
 
-.answer-summary__totals {
+.answer-summary__totals,
+.answer-summary__streak {
   width: 100%;
   border-collapse: collapse;
 }
 
 .answer-summary__totals th,
-.answer-summary__totals td {
+.answer-summary__totals td,
+.answer-summary__streak th,
+.answer-summary__streak td {
   padding: 0.7rem 0;
   border-bottom: 1px solid var(--platinum);
   vertical-align: baseline;
 }
 
-.answer-summary__totals th {
+.answer-summary__totals th,
+.answer-summary__streak th {
   text-align: left;
   font-weight: 600;
   padding-right: 1rem;
 }
 
-.answer-summary__totals td {
+.answer-summary__totals td,
+.answer-summary__streak td {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
 .answer-summary__totals tr:last-child th,
-.answer-summary__totals tr:last-child td {
+.answer-summary__totals tr:last-child td,
+.answer-summary__streak tr:last-child th,
+.answer-summary__streak tr:last-child td {
   border-bottom: none;
+}
+
+/* The streak leads the summary, so it spans both columns at wide width rather
+   than sharing a row with the outcome pie. */
+@media (min-width: 900px) {
+  .answer-summary__streak {
+    grid-column: 1 / -1;
+  }
 }
 
 .answer-summary__note {
