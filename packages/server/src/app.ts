@@ -1,4 +1,5 @@
 import {
+  abilityHistorySchema,
   answerLogSchema,
   answerRequestSchema,
   answerResponseSchema,
@@ -510,6 +511,30 @@ export function createApp({
             acceptedAnswer: acceptedAnswerFor(pack, record.cardId),
             ...ownerPackFields(pack, record.cardId),
           })),
+      ),
+    );
+  });
+
+  // The learner's ability-over-time points (#247), oldest first — the source
+  // for the My Answers ability chart. Where `GET /answers` drops the rating
+  // snapshot as review-irrelevant telemetry, this route *is* that telemetry:
+  // each snapshotted answer yields one point carrying the per-pack ability the
+  // scheduler read at ask time. Answers with no snapshot (no rating store scored
+  // them, or the card had no owning pack) yield no point. Insertion order is ask
+  // order, so unlike `/answers` this is not reversed. The point's pack is the
+  // snapshot's own `packId` — the pack the ability belongs to — and its label is
+  // resolved from that pack's manifest, absent when the manifest doesn't name it
+  // (the same independent failure as `ownerPackFields`).
+  app.get("/ability", async (c) => {
+    const { store: s } = resolve(c);
+    return c.json(
+      abilityHistorySchema.parse(
+        (await s.all()).flatMap((record) => {
+          if (!record.snapshot) return [];
+          const { packId, ability } = record.snapshot;
+          const label = pack.packs.get(packId)?.labels.en;
+          return [{ askedAt: record.askedAt, packId, ability, ...(label === undefined ? {} : { packLabel: label }) }];
+        }),
       ),
     );
   });

@@ -1,6 +1,7 @@
-import type { AnswerLog, AnswerResponse, PackList, QuestionResponse } from "@geo/contract";
+import type { AbilityHistory, AnswerLog, AnswerResponse, PackList, QuestionResponse } from "@geo/contract";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  getAbility,
   getAnswers,
   getEntities,
   getPacks,
@@ -67,6 +68,17 @@ describe("apiClient", () => {
 
     await expect(getAnswers()).resolves.toEqual(log);
     expect(fetchMock).toHaveBeenCalledWith("/api/answers", undefined);
+  });
+
+  it("getAbility fetches GET /api/ability and returns the parsed points", async () => {
+    const history: AbilityHistory = [
+      { askedAt: "2026-08-20T00:00:00.000Z", packId: "capitals", packLabel: "Capital Cities", ability: 1520 },
+    ];
+    const fetchMock = vi.fn(() => Promise.resolve({ json: async () => history }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(getAbility()).resolves.toEqual(history);
+    expect(fetchMock).toHaveBeenCalledWith("/api/ability", undefined);
   });
 
   it("getPacks fetches GET /api/packs and returns the parsed list", async () => {

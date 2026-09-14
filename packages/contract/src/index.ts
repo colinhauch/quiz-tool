@@ -350,6 +350,35 @@ export const answerLogSchema = z.array(answerLogEntrySchema);
 export type AnswerLog = z.infer<typeof answerLogSchema>;
 
 /**
+ * One point on the learner's ability-over-time chart (#247): the per-pack
+ * ability the scheduler read when it asked, and which pack that ability belongs
+ * to. Sourced from the rating snapshot persisted on each answer row, so a point
+ * exists only for answers a rating store scored against an owning pack.
+ *
+ * `packId` is the pack the ability was read from at ask time (the snapshot's own
+ * pack), which is the grouping key for the chart's lines. `packLabel` is that
+ * pack's display name, absent — like on the Answer Log — when the graph holds
+ * the statement but not the manifest that names its pack; the client falls back
+ * to the id. Mirrors the admin `adminAbilityTrajectoryPoint`, but learner-owned
+ * so the two seams evolve apart.
+ */
+export const abilityPointSchema = z
+  .object({
+    askedAt: z.string().min(1),
+    packId: z.string().min(1),
+    packLabel: z.string().min(1).optional(),
+    ability: z.number(),
+  })
+  .strict();
+
+export type AbilityPoint = z.infer<typeof abilityPointSchema>;
+
+/** `GET /ability` response — the learner's ability points, oldest first. */
+export const abilityHistorySchema = z.array(abilityPointSchema);
+
+export type AbilityHistory = z.infer<typeof abilityHistorySchema>;
+
+/**
  * The snapshot a question-feedback report carries: what the learner actually saw
  * on the card, captured at submission time so the operator can investigate even
  * after the underlying pack data changes. Every field is optional because a flag

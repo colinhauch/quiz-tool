@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  abilityHistorySchema,
   answerLogSchema,
   answerRequestSchema,
   answerResponseSchema,
@@ -340,6 +341,41 @@ describe("answerLogSchema", () => {
 
   it("rejects an entry with extra fields", () => {
     expect(answerLogSchema.safeParse([{ ...entry, debug: 1 }]).success).toBe(false);
+  });
+});
+
+describe("abilityHistorySchema", () => {
+  const point = {
+    askedAt: "2026-08-20T00:00:00.000Z",
+    packId: "core-geo",
+    packLabel: "Core Geography",
+    ability: 1520,
+  };
+
+  it("validates a list of ability points", () => {
+    expect(abilityHistorySchema.parse([point])).toEqual([point]);
+  });
+
+  it("accepts an empty history", () => {
+    expect(abilityHistorySchema.parse([])).toEqual([]);
+  });
+
+  it("accepts a point with no packLabel (the manifest may not name the pack)", () => {
+    const { packLabel: _packLabel, ...rest } = point;
+    expect(abilityHistorySchema.safeParse([rest]).success).toBe(true);
+  });
+
+  it("rejects a point with a missing packId", () => {
+    const { packId: _packId, ...rest } = point;
+    expect(abilityHistorySchema.safeParse([rest]).success).toBe(false);
+  });
+
+  it("rejects a point with a non-numeric ability", () => {
+    expect(abilityHistorySchema.safeParse([{ ...point, ability: "1520" }]).success).toBe(false);
+  });
+
+  it("rejects a point with extra fields", () => {
+    expect(abilityHistorySchema.safeParse([{ ...point, debug: 1 }]).success).toBe(false);
   });
 });
 

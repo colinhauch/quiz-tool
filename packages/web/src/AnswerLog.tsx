@@ -1,12 +1,15 @@
-import type { AnswerLog as AnswerLogData } from "@geo/contract";
+import type { AbilityHistory, AnswerLog as AnswerLogData } from "@geo/contract";
 import { useCallback, useEffect, useState } from "react";
+import { AbilityChart } from "./AbilityChart.js";
 import { AnswerSummary } from "./AnswerSummary.js";
-import { getAnswers } from "./apiClient.js";
+import { getAbility, getAnswers } from "./apiClient.js";
 
 type View =
   | { state: "loading" }
   | { state: "error" }
-  | { state: "loaded"; answers: AnswerLogData };
+  // `ability` is null when its route failed: the log still renders, we just
+  // omit the chart rather than show its "no answers yet" state misleadingly.
+  | { state: "loaded"; answers: AnswerLogData; ability: AbilityHistory | null };
 
 export function AnswerLog() {
   const [view, setView] = useState<View>({ state: "loading" });
@@ -14,8 +17,10 @@ export function AnswerLog() {
   const load = useCallback(async () => {
     setView({ state: "loading" });
     try {
-      const answers = await getAnswers();
-      setView({ state: "loaded", answers });
+      // The chart is secondary telemetry: a failed `/ability` degrades to no
+      // chart, but must never take the answer log down with it.
+      const [answers, ability] = await Promise.all([getAnswers(), getAbility().catch(() => null)]);
+      setView({ state: "loaded", answers, ability });
     } catch {
       setView({ state: "error" });
     }
@@ -36,6 +41,7 @@ export function AnswerLog() {
   return (
     <>
       <AnswerSummary answers={view.answers} />
+      {view.ability !== null && <AbilityChart points={view.ability} />}
       <table className="answer-log">
         <caption>Your answers, most recent first</caption>
         <thead>
