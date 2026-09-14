@@ -1,4 +1,4 @@
-import type { AnswerLog as AnswerLogData } from "@geo/contract";
+import type { AbilityHistory, AnswerLog as AnswerLogData } from "@geo/contract";
 import { render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { AnswerLog } from "./AnswerLog.js";
@@ -28,10 +28,15 @@ async function answerRows() {
   return within(table).getAllByRole("row");
 }
 
-function stubFetch(answers: AnswerLogData) {
+// The log now loads two routes — `/api/answers` and `/api/ability` — so the
+// double routes by URL. Ability points default to none; these tests are about
+// the log and its summary, and the ability chart has its own suite.
+function stubFetch(answers: AnswerLogData, ability: AbilityHistory = []) {
   vi.stubGlobal(
     "fetch",
-    vi.fn(() => Promise.resolve({ json: async () => answers })),
+    vi.fn((url: string) =>
+      Promise.resolve({ json: async () => (String(url).includes("/ability") ? ability : answers) }),
+    ),
   );
 }
 
@@ -425,6 +430,50 @@ describe("AnswerLog summary — against the live-data figures from #233", () => 
     const totals = await screen.findByRole("table", { name: /totals/i });
     expect(totals).toHaveTextContent(/Questions attempted\s*312/);
     expect(totals).toHaveTextContent(/Attempted accuracy\s*65\.1%/);
+  });
+});
+
+describe("AnswerLog — ability chart", () => {
+  const abilityPoints: AbilityHistory = [
+    { askedAt: "2026-07-15T09:00:00.000Z", packId: "capital-cities", packLabel: "Capital Cities", ability: 1500 },
+    { askedAt: "2026-07-19T09:00:00.000Z", packId: "capital-cities", packLabel: "Capital Cities", ability: 1560 },
+    { askedAt: "2026-07-19T09:05:00.000Z", packId: "flags", packLabel: "Flags", ability: 1420 },
+  ];
+
+  it("mounts the ability chart beside the summary when the route returns points", async () => {
+    stubFetch(mixedLog, abilityPoints);
+    render(<AnswerLog />);
+
+    const chart = await screen.findByRole("region", { name: /ability over time/i });
+    // Both engaged packs read out of the ranked legend.
+    expect(within(chart).getByText("Capital Cities")).toBeInTheDocument();
+    expect(within(chart).getByText("Flags")).toBeInTheDocument();
+    // It sits above the raw answer table, part of the one dashboard.
+    const table = screen.getByRole("table", { name: /your answers/i });
+    expect(chart.compareDocumentPosition(table)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+
+  it("shows the chart's own empty state when the learner has answers but no snapshots", async () => {
+    stubFetch(mixedLog, []);
+    render(<AnswerLog />);
+
+    const chart = await screen.findByRole("region", { name: /ability over time/i });
+    expect(within(chart).getByText(/no answers yet/i)).toBeInTheDocument();
+  });
+
+  it("omits the chart entirely when the ability route fails", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((url: string) => {
+        if (String(url).includes("/ability")) return Promise.reject(new Error("ability down"));
+        return Promise.resolve({ json: async () => mixedLog });
+      }),
+    );
+    render(<AnswerLog />);
+
+    // The log still renders — the chart just isn't there.
+    await screen.findByRole("group", { name: /outcomes/i });
+    expect(screen.queryByRole("region", { name: /ability over time/i })).not.toBeInTheDocument();
   });
 });
 

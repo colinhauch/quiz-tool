@@ -31,6 +31,11 @@ function stubFetch() {
           ],
         });
       }
+      // The answer view also loads the ability chart; the shell test only needs
+      // the view to mount, so an empty history is enough.
+      if (url === "/api/ability") {
+        return Promise.resolve({ json: async () => [] });
+      }
       return Promise.resolve({
         json: async () => ({
           cardId: "cc:tokyo-japan:object",
