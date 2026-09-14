@@ -428,6 +428,75 @@ describe("AnswerLog summary — against the live-data figures from #233", () => 
   });
 });
 
+describe("AnswerLog summary — daily streak", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  /** `n` correct attempts on the given GMT day at noon. */
+  function fullDays(days: string[]): AnswerLogData {
+    return days.flatMap((day) =>
+      Array.from({ length: 10 }, (_, i) => ({
+        cardId: `cc:card-${day}-${i}:object`,
+        question: `Question ${day}-${i}`,
+        input: "a guess",
+        correct: true,
+        askedAt: `${day}T12:00:00.000Z`,
+      })),
+    );
+  }
+
+  it("shows current streak, longest streak and today's progress", async () => {
+    vi.setSystemTime(new Date("2026-09-14T12:00:00.000Z"));
+    // Today + yesterday satisfied (current 2); an older run of three (longest 3)
+    // broken from the present by the missing 09-12.
+    stubFetch(
+      fullDays(["2026-09-09", "2026-09-10", "2026-09-11", "2026-09-13", "2026-09-14"]),
+    );
+    render(<AnswerLog />);
+
+    const streak = await screen.findByRole("table", { name: /streak/i });
+    expect(within(streak).getByRole("row", { name: /current streak/i })).toHaveTextContent(
+      /Current streak\s*2/,
+    );
+    expect(within(streak).getByRole("row", { name: /longest streak/i })).toHaveTextContent(
+      /Longest streak\s*3/,
+    );
+    expect(within(streak).getByRole("row", { name: /today/i })).toHaveTextContent(/10\s*\/\s*10/);
+  });
+
+  it("keeps the run through yesterday while today is still short, and shows today's partial", async () => {
+    vi.setSystemTime(new Date("2026-09-14T12:00:00.000Z"));
+    const log: AnswerLogData = [
+      ...fullDays(["2026-09-13"]),
+      ...Array.from({ length: 3 }, (_, i) => ({
+        cardId: `cc:today-${i}:object`,
+        question: `Today ${i}`,
+        input: "a guess",
+        correct: true,
+        askedAt: "2026-09-14T12:00:00.000Z",
+      })),
+    ];
+    stubFetch(log);
+    render(<AnswerLog />);
+
+    const streak = await screen.findByRole("table", { name: /streak/i });
+    // In-progress today is not yet a miss: the run ends yesterday.
+    expect(within(streak).getByRole("row", { name: /current streak/i })).toHaveTextContent(
+      /Current streak\s*1/,
+    );
+    expect(within(streak).getByRole("row", { name: /today/i })).toHaveTextContent(/3\s*\/\s*10/);
+  });
+
+  it("shows no streak when the log is empty, without erroring", async () => {
+    stubFetch([]);
+    render(<AnswerLog />);
+
+    expect(await screen.findByText(/no answers yet/i)).toBeInTheDocument();
+    expect(screen.queryByRole("table", { name: /streak/i })).not.toBeInTheDocument();
+  });
+});
+
 /** The drawn bands of the pack breakdown, in document order. */
 function bands(): Element[] {
   return Array.from(document.querySelectorAll("[data-pack]"));
