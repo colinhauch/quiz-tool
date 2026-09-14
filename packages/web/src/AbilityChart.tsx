@@ -1,5 +1,5 @@
 import type { AbilityHistory } from "@geo/contract";
-import { type AbilityDayValue, type AbilitySeries, abilitySeriesOf } from "./abilityChart.js";
+import { type AbilityDayValue, abilitySeriesOf } from "./abilityChart.js";
 
 /**
  * The learner's ability over time (#247/#250): one line per engaged pack on a
@@ -16,7 +16,7 @@ import { type AbilityDayValue, type AbilitySeries, abilitySeriesOf } from "./abi
  * separate ticket; this draws per-pack lines only.
  */
 export function AbilityChart({ points }: { points: AbilityHistory }) {
-  const { days, series } = abilitySeriesOf(points);
+  const { days, series, overall } = abilitySeriesOf(points);
 
   if (series.length === 0) {
     return (
@@ -45,6 +45,11 @@ export function AbilityChart({ points }: { points: AbilityHistory }) {
   const withColour = series.map((s, i) => ({ series: s, colour: colourClass(i) }));
   const ranked = [...withColour].sort((a, b) => b.series.latest - a.series.latest);
 
+  // The overall line always spans the whole axis, so its endpoints are the ends
+  // of the series. `series` is non-empty here, so `overall` is too.
+  const overallFirst = (overall[0] as AbilityDayValue).ability;
+  const overallLatest = (overall[overall.length - 1] as AbilityDayValue).ability;
+
   return (
     <section className="ability-chart" aria-labelledby="ability-chart-title">
       <h3 id="ability-chart-title">Ability over time</h3>
@@ -71,10 +76,24 @@ export function AbilityChart({ points }: { points: AbilityHistory }) {
             ))}
             <line className="ability-chart__axis" x1={0} x2={PLOT_W} y1={PLOT_H} y2={PLOT_H} />
             {withColour.map(({ series: s, colour }) => (
-              <Line key={s.packId} series={s} colour={colour} x={x} y={y} />
+              <Line key={s.packId} values={s.values} variant={colour} x={x} y={y} />
             ))}
+            {/* The overall line rides on top of the per-pack ramp in a heavier,
+                neutral stroke, so it reads as the aggregate rather than one more
+                pack. */}
+            <Line values={overall} variant="ability-chart__overall" x={x} y={y} />
           </g>
         </svg>
+      </div>
+
+      {/* Overall sits above the ranked packs and off the ramp: it is the
+          aggregate, not a competitor in the leaderboard, so it carries a label
+          rather than a rank. */}
+      <div className="ability-chart__overall-key">
+        <span className="ability-chart__swatch ability-chart__swatch--overall" aria-hidden="true" />
+        <span className="ability-chart__key-label">Overall</span>{" "}
+        <span className="ability-chart__key-value">{Math.round(overallLatest)}</span>{" "}
+        <Change values={overall} first={overallFirst} latest={overallLatest} />
       </div>
 
       {/* The ranked legend is the identity carrier: sorted by current ability so
@@ -90,7 +109,7 @@ export function AbilityChart({ points }: { points: AbilityHistory }) {
                 label and numbers together as one word. */}
             <span className="ability-chart__key-label">{s.label}</span>{" "}
             <span className="ability-chart__key-value">{Math.round(s.latest)}</span>{" "}
-            <Change series={s} />
+            <Change values={s.values} first={s.first} latest={s.latest} />
           </li>
         ))}
       </ol>
@@ -98,44 +117,49 @@ export function AbilityChart({ points }: { points: AbilityHistory }) {
   );
 }
 
-/** One pack's line, or a single marker when the pack has just one day of data. */
+/**
+ * One line, or a single marker when there is only one day of data. `variant` is
+ * the class both the line and its marker wear — a per-pack colour class, or the
+ * overall line's distinct class — so the overall line reuses this same
+ * single/multi-day handling.
+ */
 function Line({
-  series,
-  colour,
+  values,
+  variant,
   x,
   y,
 }: {
-  series: AbilitySeries;
-  colour: string;
+  values: AbilityDayValue[];
+  variant: string;
   x: (day: string) => number;
   y: (ability: number) => number;
 }) {
   // A single day is a marker, not a zero-length line (which would draw nothing) —
   // mirroring the admin sparkline's single-point handling.
-  if (series.values.length === 1) {
-    const only = series.values[0] as AbilityDayValue;
+  if (values.length === 1) {
+    const only = values[0] as AbilityDayValue;
     return (
       <circle
-        className={`ability-chart__marker ${colour}`}
+        className={`ability-chart__marker ${variant}`}
         cx={x(only.day).toFixed(1)}
         cy={y(only.ability).toFixed(1)}
         r={3}
       />
     );
   }
-  const pts = series.values.map((v) => `${x(v.day).toFixed(1)},${y(v.ability).toFixed(1)}`);
-  return <polyline className={`ability-chart__line ${colour}`} points={pts.join(" ")} fill="none" />;
+  const pts = values.map((v) => `${x(v.day).toFixed(1)},${y(v.ability).toFixed(1)}`);
+  return <polyline className={`ability-chart__line ${variant}`} points={pts.join(" ")} fill="none" />;
 }
 
 /**
- * The change since the pack's first engaged day, as a signed value with a
- * direction word — the word, not just the arrow glyph, so the reading is
- * unambiguous without colour. A pack with a single day of data has no change to
- * report yet.
+ * The change since a line's first day, as a signed value with a direction word —
+ * the word, not just the arrow glyph, so the reading is unambiguous without
+ * colour. A line with a single day of data has no change to report yet. Shared
+ * by the per-pack keys and the overall key.
  */
-function Change({ series }: { series: AbilitySeries }) {
-  const delta = Math.round(series.latest) - Math.round(series.first);
-  if (series.values.length === 1 || delta === 0) {
+function Change({ values, first, latest }: { values: AbilityDayValue[]; first: number; latest: number }) {
+  const delta = Math.round(latest) - Math.round(first);
+  if (values.length === 1 || delta === 0) {
     return <span className="ability-chart__change ability-chart__change--flat">no change yet</span>;
   }
   const rising = delta > 0;

@@ -59,6 +59,41 @@ describe("AbilityChart", () => {
     expect(screen.getByText("orphan-pack")).toBeInTheDocument();
   });
 
+  it("labels the overall line 'Overall' in the legend, apart from the ranked packs", () => {
+    const points: AbilityHistory = [
+      { askedAt: "2026-08-20T09:00:00.000Z", packId: "a", packLabel: "Pack A", ability: 1500 },
+      { askedAt: "2026-08-20T09:05:00.000Z", packId: "b", packLabel: "Pack B", ability: 1300 },
+    ];
+    render(<AbilityChart points={points} />);
+    // "Overall" is read out, and its current value is the mean (1400).
+    expect(screen.getByText("Overall")).toBeInTheDocument();
+    // It is not one of the ranked pack list items.
+    const rankedLabels = legendItems().map((li) => within(li).getByText(/Pack [AB]|Overall/).textContent);
+    expect(rankedLabels).toEqual(["Pack A", "Pack B"]);
+  });
+
+  it("draws the overall line visually distinct from the per-pack lines", () => {
+    const points: AbilityHistory = [
+      { askedAt: "2026-08-20T09:00:00.000Z", packId: "a", packLabel: "Pack A", ability: 1500 },
+      { askedAt: "2026-08-21T09:00:00.000Z", packId: "a", packLabel: "Pack A", ability: 1600 },
+      { askedAt: "2026-08-21T09:05:00.000Z", packId: "b", packLabel: "Pack B", ability: 1400 },
+    ];
+    const { container } = render(<AbilityChart points={points} />);
+    // The overall polyline carries the distinct class, separate from the ramp.
+    expect(container.querySelector("polyline.ability-chart__overall")).not.toBeNull();
+  });
+
+  it("renders the single-pack case (overall coincides with the pack) without error", () => {
+    const points: AbilityHistory = [
+      { askedAt: "2026-08-20T09:00:00.000Z", packId: "solo", packLabel: "Solo Pack", ability: 1500 },
+      { askedAt: "2026-08-22T09:00:00.000Z", packId: "solo", packLabel: "Solo Pack", ability: 1560 },
+    ];
+    render(<AbilityChart points={points} />);
+    expect(screen.getByText("Overall")).toBeInTheDocument();
+    expect(screen.getByText("Solo Pack")).toBeInTheDocument();
+    expect(legendItems()).toHaveLength(1);
+  });
+
   it("draws a marker rather than a zero-length line for a single day of data", () => {
     const points: AbilityHistory = [
       { askedAt: "2026-08-20T09:00:00.000Z", packId: "capitals", packLabel: "Capital Cities", ability: 1500 },

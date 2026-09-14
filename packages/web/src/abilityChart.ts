@@ -29,7 +29,18 @@ export type AbilitySeries = {
  * only the top-N packs, or filters them, is a slice of `series` here, not a
  * change to this function.
  */
-export type AbilityChartModel = { days: string[]; series: AbilitySeries[] };
+export type AbilityChartModel = {
+  days: string[];
+  series: AbilitySeries[];
+  /**
+   * The all-round line (#251): for each day, the *unweighted* mean of every
+   * engaged pack's held-flat value that day. Unweighted on purpose — weighting
+   * by answer volume would let a high-volume pack dominate and the overall line
+   * would just retrace it. Spans the same day axis as `days`; empty when no pack
+   * is engaged, and coincident with the sole pack's line when only one is.
+   */
+  overall: AbilityDayValue[];
+};
 
 /** The UTC calendar day of an ISO instant, `YYYY-MM-DD`, or null if unparseable. */
 function utcDay(askedAt: string): string | null {
@@ -105,7 +116,16 @@ export function abilitySeriesOf(points: readonly AbilityPoint[]): AbilityChartMo
     })
     .sort((a, b) => a.values[0]!.day.localeCompare(b.values[0]!.day) || a.packId.localeCompare(b.packId));
 
-  return { days, series };
+  // Each day's overall value is the mean of the packs engaged by then — a pack
+  // contributes from its first engaged day (its `values` start there) and its
+  // held-flat value carries the gap days, so this reads straight off `values`.
+  const valueByDay = series.map((s) => new Map(s.values.map((v) => [v.day, v.ability])));
+  const overall: AbilityDayValue[] = days.map((day) => {
+    const engaged = valueByDay.map((m) => m.get(day)).filter((a): a is number => a !== undefined);
+    return { day, ability: engaged.reduce((sum, a) => sum + a, 0) / engaged.length };
+  });
+
+  return { days, series, overall };
 }
 
 /** The earliest day a pack was played — its line's start. */

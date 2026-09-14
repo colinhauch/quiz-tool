@@ -9,7 +9,7 @@ function point(askedAt: string, packId: string, ability: number, packLabel?: str
 
 describe("abilitySeriesOf", () => {
   it("returns no days and no series for empty input", () => {
-    expect(abilitySeriesOf([])).toEqual({ days: [], series: [] });
+    expect(abilitySeriesOf([])).toEqual({ days: [], series: [], overall: [] });
   });
 
   it("keeps the last snapshot of a UTC day, not the first", () => {
@@ -92,6 +92,49 @@ describe("abilitySeriesOf", () => {
   it("falls back to the packId when no point names the pack", () => {
     const model = abilitySeriesOf([point("2026-08-20T09:00:00.000Z", "capitals", 1500)]);
     expect(model.series[0]?.label).toBe("capitals");
+  });
+
+  it("emits an overall series that is the unweighted mean of engaged packs each day", () => {
+    const model = abilitySeriesOf([
+      point("2026-08-20T09:00:00.000Z", "a", 1500),
+      point("2026-08-20T09:05:00.000Z", "b", 1300),
+      point("2026-08-21T09:00:00.000Z", "a", 1600),
+      point("2026-08-21T09:05:00.000Z", "b", 1400),
+    ]);
+    // Both packs engaged both days: overall is the plain mean, not volume-weighted.
+    expect(model.overall).toEqual([
+      { day: "2026-08-20", ability: 1400 },
+      { day: "2026-08-21", ability: 1500 },
+    ]);
+  });
+
+  it("folds each pack's held-flat value into the overall mean, and only from its first engaged day", () => {
+    const model = abilitySeriesOf([
+      point("2026-08-20T09:00:00.000Z", "a", 1500),
+      point("2026-08-21T09:00:00.000Z", "b", 1400),
+      point("2026-08-22T09:00:00.000Z", "a", 1600),
+      point("2026-08-22T09:05:00.000Z", "b", 1000),
+    ]);
+    expect(model.overall).toEqual([
+      // Only "a" is engaged on the 20th ("b" begins on the 21st, no back-fill).
+      { day: "2026-08-20", ability: 1500 },
+      // "a" holds 1500 across the 21st; "b" is 1400 → mean 1450.
+      { day: "2026-08-21", ability: 1450 },
+      // Both fresh: (1600 + 1000) / 2 = 1300.
+      { day: "2026-08-22", ability: 1300 },
+    ]);
+  });
+
+  it("makes the overall line coincide with the only pack when just one is engaged", () => {
+    const model = abilitySeriesOf([
+      point("2026-08-20T09:00:00.000Z", "solo", 1500),
+      point("2026-08-22T09:00:00.000Z", "solo", 1560),
+    ]);
+    expect(model.overall).toEqual(model.series[0]?.values);
+  });
+
+  it("has no overall series when there are no points", () => {
+    expect(abilitySeriesOf([]).overall).toEqual([]);
   });
 
   it("skips a point whose askedAt the browser cannot parse", () => {
