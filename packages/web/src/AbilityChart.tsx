@@ -2,18 +2,20 @@ import type { AbilityHistory } from "@geo/contract";
 import { type AbilityDayValue, abilitySeriesOf } from "./abilityChart.js";
 
 /**
- * The learner's ability over time (#247/#250): one line per engaged pack on a
- * shared θ axis, with a ranked leaderboard legend beneath. Follows the repo's
- * other hand-rolled charts (`AnswerSummary`, the admin `AbilitySparkline`) — no
- * charting dependency, and no hover layer: the SVG is `aria-hidden` decoration
- * and the legend is the accessible reading, carrying every pack's identity and
- * current value as text so the chart never depends on colour alone.
+ * The learner's ability over time (#247/#250/#251): one line per engaged pack on
+ * a shared θ axis, plus a single overall line, with a ranked leaderboard legend
+ * beneath. Follows the repo's other hand-rolled charts (`AnswerSummary`, the
+ * admin `AbilitySparkline`) — no charting dependency, and no hover layer: the
+ * SVG is `aria-hidden` decoration and the legend is the accessible reading,
+ * carrying every line's identity and current value as text so the chart never
+ * depends on colour alone.
  *
  * Built to stay legible as packs multiply. Colour is assigned from the stable
  * series order (`abilitySeriesOf` sorts by first engaged day, never by rank), so
  * the leaderboard can reorder without a pack ever changing colour, and it wraps
- * the 8-step ramp rather than inventing hues. The overall/aggregate line is a
- * separate ticket; this draws per-pack lines only.
+ * the 8-step ramp rather than inventing hues. The overall line (#251) rides on
+ * top in a heavier, neutral stroke, off the ramp, and is labelled "Overall" so
+ * it reads as the aggregate rather than one more pack.
  */
 export function AbilityChart({ points }: { points: AbilityHistory }) {
   const { days, series, overall } = abilitySeriesOf(points);

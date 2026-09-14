@@ -42,6 +42,10 @@
   /* Off the ramp on purpose: a neutral grey reads as "owned by no pack" rather
      than as one more category competing with the real ones. */
   --colour-unowned: #9aa0b4;
+  /* The overall/aggregate line's ink (#251). A near-black neutral, deliberately
+     outside the ramp — and, unlike --indigo, not byte-equal to --colour-0 — so
+     the aggregate never shares a hue with a pack line. */
+  --overall-ink: #1f1d29;
 
   --serif: "EB Garamond", Garamond, "Times New Roman", serif;
   --sans: Inter, system-ui, -apple-system, sans-serif;
@@ -1220,16 +1224,19 @@ body {
   fill: var(--colour);
 }
 
-/* The overall line is off the categorical ramp on purpose: a heavier, neutral
-   ink stroke reads as the aggregate rather than as one more pack. It overrides
-   the per-pack stroke/fill above (same element classes, more specific here). */
+/* The overall line is off the categorical ramp on purpose: a heavier, dashed,
+   neutral-ink stroke reads as the aggregate rather than as one more pack. The
+   dash makes it distinct in texture as well as weight and hue, so it never
+   reads as a pack even where it overlaps one. Overrides the per-pack stroke/fill
+   above (same element classes, more specific here). */
 .ability-chart__line.ability-chart__overall {
-  stroke: var(--indigo);
+  stroke: var(--overall-ink);
   stroke-width: 3.5;
+  stroke-dasharray: 7 4;
 }
 
 .ability-chart__marker.ability-chart__overall {
-  fill: var(--indigo);
+  fill: var(--overall-ink);
 }
 
 /* The ramp: one colour per stable rank, wrapping modulo its length. Adding a
@@ -1261,7 +1268,7 @@ body {
   width: 1.1rem;
   height: 0.28rem;
   border-radius: 0.14rem;
-  background: var(--indigo);
+  background: var(--overall-ink);
   align-self: center;
 }
 
