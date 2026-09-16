@@ -5,6 +5,12 @@ name: CI
 # here, so the supabase-js store integration tests stay local-only for now.
 # The dev->test gate is where slower journey/integration tests will be added
 # later; today every target runs the same fast suite.
+#
+# This workflow does NOT deploy. Worker deploys are handled out-of-band by
+# Cloudflare Workers Builds — one connection per Worker, each watching a single
+# long-lived branch with non-production branch builds off, invoking
+# `@geo/server`'s `deploy:ci`. See docs/deploy/hitl-checklist.md for the exact
+# dashboard topology (a feature-branch PR should not trigger a Worker build).
 
 on:
   pull_request:
