@@ -1,4 +1,5 @@
 import type {
+  AbilityHistory,
   AnswerLog as AnswerLogData,
   AnswerResponse,
   Config,
@@ -96,6 +97,17 @@ export async function submitAnswer(cardId: string, input: string): Promise<Answe
 export async function getAnswers(): Promise<AnswerLogData> {
   const res = await apiFetch("/api/answers");
   return (await res.json()) as AnswerLogData;
+}
+
+/**
+ * Fetches the learner's ability-over-time points (#247), oldest first — the
+ * source for the My Answers ability chart. Separate from {@link getAnswers} by
+ * design: `GET /answers` drops the rating snapshot as review-irrelevant, and
+ * this route is exactly that telemetry.
+ */
+export async function getAbility(): Promise<AbilityHistory> {
+  const res = await apiFetch("/api/ability");
+  return (await res.json()) as AbilityHistory;
 }
 
 /** Fetches the pack catalogue and the learner's current selection. */

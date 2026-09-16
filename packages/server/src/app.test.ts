@@ -2,6 +2,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
+  abilityHistorySchema,
   answerLogSchema,
   answerResponseSchema,
   entityListSchema,
@@ -627,6 +628,74 @@ describe("GET /answers", () => {
     const [entry] = answerLogSchema.parse(await res.json());
     expect(entry?.packId).toBe("test-pack");
     expect(entry).not.toHaveProperty("packLabel");
+  });
+});
+
+describe("GET /ability", () => {
+  /** Records an answer row carrying an ask-time rating snapshot for `packId`. */
+  async function recordWithSnapshot(store: AnswerStore, ability: number, packId: string, at: string) {
+    await store.record({
+      cardId: "S1:object",
+      input: "x",
+      correct: true,
+      askedAt: at,
+      snapshot: { difficulty: 1500, ability, kApplied: 40, packId },
+    });
+  }
+
+  it("returns an empty history before anything is answered, typed via the contract", async () => {
+    const res = await createApp({ pack: fixturePack(), store: memoryStore() }).request("/ability");
+    expect(res.status).toBe(200);
+    expect(abilityHistorySchema.parse(await res.json())).toEqual([]);
+  });
+
+  it("returns one point per snapshotted answer, oldest first", async () => {
+    const store = memoryStore();
+    await recordWithSnapshot(store, 1500, "test-pack", "2026-07-19T12:00:00.000Z");
+    await recordWithSnapshot(store, 1512, "test-pack", "2026-07-19T12:05:00.000Z");
+
+    const res = await createApp({ pack: fixturePack(), store }).request("/ability");
+    expect(abilityHistorySchema.parse(await res.json())).toEqual([
+      { askedAt: "2026-07-19T12:00:00.000Z", packId: "test-pack", packLabel: "Test Pack", ability: 1500 },
+      { askedAt: "2026-07-19T12:05:00.000Z", packId: "test-pack", packLabel: "Test Pack", ability: 1512 },
+    ]);
+  });
+
+  it("omits answers that carry no rating snapshot", async () => {
+    const store = memoryStore();
+    // An answer logged with no rating store scored against it — no snapshot.
+    await store.record({ cardId: "S1:object", input: "x", correct: true, askedAt: "2026-07-19T12:00:00.000Z" });
+    await recordWithSnapshot(store, 1500, "test-pack", "2026-07-19T12:05:00.000Z");
+
+    const res = await createApp({ pack: fixturePack(), store }).request("/ability");
+    const history = abilityHistorySchema.parse(await res.json());
+    expect(history).toEqual([
+      { askedAt: "2026-07-19T12:05:00.000Z", packId: "test-pack", packLabel: "Test Pack", ability: 1500 },
+    ]);
+  });
+
+  it("groups by the snapshot's own pack, not the card's current owner", async () => {
+    // The ability belongs to the pack the scheduler read at ask time; if the
+    // card's ownership later changed, the snapshot's pack is still the truth.
+    const store = memoryStore();
+    await recordWithSnapshot(store, 1500, "since-renamed-pack", "2026-07-19T12:00:00.000Z");
+
+    const res = await createApp({ pack: fixturePack(), store }).request("/ability");
+    const [point] = abilityHistorySchema.parse(await res.json());
+    expect(point?.packId).toBe("since-renamed-pack");
+  });
+
+  it("resolves the pack label from the snapshot's pack, and omits it when the manifest doesn't name it", async () => {
+    const store = memoryStore();
+    await recordWithSnapshot(store, 1500, "test-pack", "2026-07-19T12:00:00.000Z");
+    const named = await createApp({ pack: fixturePack(), store }).request("/ability");
+    expect((abilityHistorySchema.parse(await named.json()))[0]?.packLabel).toBe("Test Pack");
+
+    const unnamed: Pack = { ...fixturePack(), packs: new Map() };
+    const res = await createApp({ pack: unnamed, store }).request("/ability");
+    const [point] = abilityHistorySchema.parse(await res.json());
+    expect(point?.packId).toBe("test-pack");
+    expect(point).not.toHaveProperty("packLabel");
   });
 });
 
