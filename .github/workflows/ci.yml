@@ -42,6 +42,34 @@ jobs:
       - name: Validate packs
         run: pnpm run packs:validate
 
+      # A case-insensitive filename collision (two tracked paths differing only
+      # in case, e.g. abilityChart.ts vs AbilityChart.tsx — #262) cannot surface
+      # on Linux CI's case-sensitive filesystem: both files coexist and every
+      # build/test stays green, while a checkout on macOS/Windows collapses them
+      # and breaks. Detect it directly so the whole class fails the gate here.
+      - name: Check for case-insensitive filename collisions
+        run: |
+          dupes=$(git ls-files | tr '[:upper:]' '[:lower:]' | sort | uniq -d)
+          if [ -n "$dupes" ]; then
+            echo "::error::Case-insensitive filename collision(s) detected (break on macOS/Windows checkouts):"
+            echo "$dupes"
+            exit 1
+          fi
+
+      # Neither typecheck nor tests run the SPA's production bundler, so a break
+      # that only surfaces at `vite build` (a bad import, a bundler-only failure)
+      # could pass the whole suite. Build the web app for real so that class
+      # fails the gate.
+      - name: Build web app
+        run: pnpm --filter @geo/web build
+
+      # Dry-run the Worker deploy: no Cloudflare credentials needed, and it runs
+      # wrangler.toml's [build] hook (bundle-packs + the web build) and compiles
+      # the Worker bundle, so a break in the real deploy path fails CI here rather
+      # than at deploy time. Runs in packages/server (where wrangler.toml lives).
+      - name: Server deploy dry-run
+        run: pnpm --filter @geo/server exec wrangler deploy --dry-run
+
   # Enforces the promotion source: a PR into prod must come from test, and a PR
   # into test must come from dev. PRs into dev have no restriction. Rulesets gate
   # only the base branch, so this required check is how the head branch is
