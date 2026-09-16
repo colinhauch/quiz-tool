@@ -10,7 +10,7 @@
 # runs this Worker for the API and health paths named in `run_worker_first`.
 
 name = "quiz-tool"
-main = "src/worker.ts"
+main = "src/does-not-exist.ts"
 compatibility_date = "2026-08-12"
 # @supabase/supabase-js pulls a few Node built-ins; this shims them on Workers.
 compatibility_flags = ["nodejs_compat"]
