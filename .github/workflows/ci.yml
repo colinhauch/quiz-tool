@@ -5,6 +5,12 @@ name: CI
 # here, so the supabase-js store integration tests stay local-only for now.
 # The dev->test gate is where slower journey/integration tests will be added
 # later; today every target runs the same fast suite.
+#
+# This workflow does NOT deploy. Worker deploys are handled out-of-band by
+# Cloudflare Workers Builds — one connection per Worker, each watching a single
+# long-lived branch with non-production branch builds off, invoking
+# `@geo/server`'s `deploy:ci`. See docs/deploy/hitl-checklist.md for the exact
+# dashboard topology (a feature-branch PR should not trigger a Worker build).
 
 on:
   pull_request:
@@ -41,6 +47,30 @@ jobs:
 
       - name: Validate packs
         run: pnpm run packs:validate
+
+      # A case-insensitive filename collision (e.g. abilityChart.ts vs
+      # AbilityChart.tsx — #262) cannot surface on Linux CI's case-sensitive
+      # filesystem: both files coexist and every build/test stays green, while a
+      # macOS/Windows checkout collapses them and the module resolver picks the
+      # wrong file, breaking `vite build`. The script understands TS/JS module
+      # resolution (it ignores the .ts/.tsx/.js extension, which a plain
+      # lowercase-and-dedupe would miss), so the whole class fails the gate here.
+      - name: Check for case-insensitive filename collisions
+        run: node .github/scripts/check-filename-collisions.mjs
+
+      # Neither typecheck nor tests run the SPA's production bundler, so a break
+      # that only surfaces at `vite build` (a bad import, a bundler-only failure)
+      # could pass the whole suite. Build the web app for real so that class
+      # fails the gate.
+      - name: Build web app
+        run: pnpm --filter @geo/web build
+
+      # Dry-run the Worker deploy: no Cloudflare credentials needed, and it runs
+      # wrangler.toml's [build] hook (bundle-packs + the web build) and compiles
+      # the Worker bundle, so a break in the real deploy path fails CI here rather
+      # than at deploy time. Runs in packages/server (where wrangler.toml lives).
+      - name: Server deploy dry-run
+        run: pnpm --filter @geo/server exec wrangler deploy --dry-run
 
   # Enforces the promotion source: a PR into prod must come from test, and a PR
   # into test must come from dev. PRs into dev have no restriction. Rulesets gate
