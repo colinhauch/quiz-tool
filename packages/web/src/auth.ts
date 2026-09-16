@@ -45,6 +45,10 @@ export interface SupabaseAuthClient {
     email: string;
     options?: { emailRedirectTo?: string };
   }): Promise<{ error: AuthError | null }>;
+  signInWithPassword(params: {
+    email: string;
+    password: string;
+  }): Promise<{ error: AuthError | null }>;
   signOut(): Promise<{ error: AuthError | null }>;
 }
 
@@ -55,6 +59,12 @@ export interface AuthBoundary {
   subscribe(listener: (state: AuthState) => void): () => void;
   signInWithGoogle(): Promise<void>;
   signInWithMagicLink(email: string): Promise<void>;
+  /**
+   * Signs in an existing email+password account. Rejects with the Supabase
+   * `AuthError` on bad credentials so the UI can surface clear copy; a success
+   * arrives (like every other flow) via `onAuthStateChange`, not a return value.
+   */
+  signInWithPassword(email: string, password: string): Promise<void>;
   signOut(): Promise<void>;
   /**
    * Reports that a supposedly-live session was rejected (a 401 the client
@@ -128,6 +138,10 @@ export function createAuthBoundary(client: { auth: SupabaseAuthClient }): AuthBo
         email,
         options: { emailRedirectTo: redirectTo() },
       });
+      if (error) throw error;
+    },
+    async signInWithPassword(email, password) {
+      const { error } = await client.auth.signInWithPassword({ email, password });
       if (error) throw error;
     },
     async signOut() {
@@ -210,6 +224,7 @@ function createDevNoAuthBoundary(): AuthBoundary {
     },
     async signInWithGoogle() {},
     async signInWithMagicLink() {},
+    async signInWithPassword() {},
     async signOut() {},
     handleExpiry() {},
   };

@@ -32,7 +32,23 @@ export function SignInGate({
               ? "Your session has expired. Sign in again to keep going."
               : "Sign in to start answering questions."}
           </p>
+          <p className="sign-in-gate__value-prop">
+            Learn world geography from a living knowledge graph. Sign in to track
+            every answer, see where your knowledge is strong, and pick up right
+            where you left off across devices.
+          </p>
           <AuthWidget boundary={boundary} />
+          <p className="sign-in-gate__legal">
+            By signing in you agree to our{" "}
+            <a href="/terms" className="sign-in-gate__legal-link">
+              Terms
+            </a>{" "}
+            and{" "}
+            <a href="/privacy" className="sign-in-gate__legal-link">
+              Privacy Policy
+            </a>
+            .
+          </p>
         </div>
       </main>
     </>

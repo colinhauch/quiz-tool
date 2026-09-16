@@ -65,6 +65,7 @@ function fakeBoundary(initial: AuthState): AuthBoundary & { set(next: AuthState)
     },
     signInWithGoogle: vi.fn(async () => {}),
     signInWithMagicLink: vi.fn(async () => {}),
+    signInWithPassword: vi.fn(async () => {}),
     signOut: vi.fn(async () => {}),
     handleExpiry: vi.fn(() => set({ status: "signed-out", accessToken: null, email: null, reason: "expired" })),
   };

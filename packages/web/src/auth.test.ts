@@ -1,4 +1,4 @@
-import type { AuthChangeEvent, Session } from "@supabase/supabase-js";
+import type { AuthChangeEvent, AuthError, Session } from "@supabase/supabase-js";
 import { describe, expect, it, vi } from "vitest";
 import { createAuthBoundary, type SupabaseAuthClient } from "./auth.js";
 
@@ -20,6 +20,7 @@ function makeFakeClient() {
     }),
     signInWithOAuth: vi.fn(async () => ({ error: null })),
     signInWithOtp: vi.fn(async () => ({ error: null })),
+    signInWithPassword: vi.fn(async () => ({ error: null })),
     signOut: vi.fn(async () => ({ error: null })),
   };
   return {
@@ -178,5 +179,26 @@ describe("createAuthBoundary", () => {
       email: "learner@example.com",
       options: { emailRedirectTo: expect.stringContaining("/auth/callback") },
     });
+  });
+
+  it("signs in with an email and password", async () => {
+    const client = makeFakeClient();
+    const boundary = createAuthBoundary(client);
+
+    await boundary.signInWithPassword("learner@example.com", "hunter2");
+
+    expect(client.auth.signInWithPassword).toHaveBeenCalledWith({
+      email: "learner@example.com",
+      password: "hunter2",
+    });
+  });
+
+  it("rejects with the Supabase error on bad credentials", async () => {
+    const client = makeFakeClient();
+    const badCreds = { message: "Invalid login credentials" } as AuthError;
+    client.auth.signInWithPassword = vi.fn(async () => ({ error: badCreds }));
+    const boundary = createAuthBoundary(client);
+
+    await expect(boundary.signInWithPassword("learner@example.com", "wrong")).rejects.toBe(badCreds);
   });
 });

@@ -141,35 +141,18 @@ body {
   background: rgba(255, 255, 255, 0.22);
 }
 
-.auth-widget__magic {
+/* The signed-out controls (password form, magic-link, Google) only ever render
+   inside the white sign-in gate card, so their full styling lives in the
+   `.sign-in-gate .auth-widget` scope below. */
+.auth-widget__password {
   display: flex;
-  gap: 0.4rem;
-  align-items: center;
+  flex-direction: column;
+  gap: 0.6rem;
 }
 
-.auth-widget__magic input {
-  padding: 0.4rem 0.6rem;
-  border-radius: 0.3rem;
-  border: 1px solid rgba(241, 242, 246, 0.4);
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--platinum);
-  font-size: 0.85rem;
-  width: 11rem;
-}
-
-.auth-widget__magic input::placeholder {
-  color: rgba(241, 242, 246, 0.6);
-}
-
-.auth-widget__magic button {
-  background: none;
-  border: none;
-  color: var(--periwinkle);
-  font-weight: 600;
-  font-size: 0.8rem;
-  cursor: pointer;
-  text-decoration: underline;
-  white-space: nowrap;
+.auth-widget button:disabled {
+  opacity: 0.6;
+  cursor: default;
 }
 
 .app-nav button {
@@ -229,9 +212,26 @@ body {
 }
 
 .sign-in-gate__message {
-  margin: 0 0 1.75rem;
+  margin: 0 0 0.75rem;
   font-family: var(--serif);
   font-size: 1.35rem;
+  color: var(--indigo);
+}
+
+.sign-in-gate__value-prop {
+  margin: 0 0 1.75rem;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: #4a4f63;
+}
+
+.sign-in-gate__legal {
+  margin: 1.25rem 0 0;
+  font-size: 0.78rem;
+  color: #9aa0b3;
+}
+
+.sign-in-gate__legal-link {
   color: var(--indigo);
 }
 
@@ -257,38 +257,73 @@ body {
   background: #1d1260;
 }
 
-.sign-in-gate .auth-widget__magic {
-  flex-direction: column;
-  align-items: stretch;
-  gap: 0.6rem;
+/* "or" divider between Google and the email flows. */
+.sign-in-gate .auth-widget__divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: #9aa0b3;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
-.sign-in-gate .auth-widget__magic input {
+.sign-in-gate .auth-widget__divider::before,
+.sign-in-gate .auth-widget__divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--periwinkle);
+}
+
+.sign-in-gate .auth-widget__password input {
   width: 100%;
   box-sizing: border-box;
   padding: 0.7rem 0.8rem;
   font-size: 0.95rem;
+  border-radius: 0.375rem;
   background: #fff;
   border: 1px solid var(--periwinkle);
   color: var(--indigo);
 }
 
-.sign-in-gate .auth-widget__magic input::placeholder {
+.sign-in-gate .auth-widget__password input::placeholder {
   color: #9aa0b3;
 }
 
-.sign-in-gate .auth-widget__magic button {
+/* Password sign-in is the primary email action: a solid indigo button. */
+.sign-in-gate .auth-widget__password-submit {
   padding: 0.7rem 1rem;
-  border: 1px solid var(--indigo);
+  border: none;
   border-radius: 0.375rem;
-  background: #fff;
-  color: var(--indigo);
-  font-size: 0.9rem;
-  text-decoration: none;
+  background: var(--indigo);
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
 }
 
-.sign-in-gate .auth-widget__magic button:hover {
-  background: var(--platinum);
+.sign-in-gate .auth-widget__password-submit:hover:not(:disabled) {
+  background: #1d1260;
+}
+
+/* Magic-link is a quiet secondary action — a link-style button. */
+.sign-in-gate .auth-widget__magic {
+  background: none;
+  border: none;
+  padding: 0.2rem;
+  color: var(--indigo);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.sign-in-gate .auth-widget__error {
+  margin: 0;
+  color: #b3261e;
+  font-size: 0.85rem;
+  text-align: left;
 }
 
 /* ── Quiz card ───────────────────────────────────────────── */
@@ -1647,9 +1682,6 @@ body {
   }
   .auth-widget {
     flex-wrap: wrap;
-  }
-  .auth-widget__magic input {
-    width: 8.5rem;
   }
 }
 
