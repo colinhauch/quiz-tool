@@ -15,6 +15,8 @@ function makeFakeBoundary(initial: AuthState): AuthBoundary & { emit: (state: Au
     },
     signInWithGoogle: vi.fn(async () => {}),
     signInWithMagicLink: vi.fn(async () => {}),
+    signInWithPassword: vi.fn(async () => {}),
+    signUpWithPassword: vi.fn(async () => ({ confirmationRequired: false })),
     signOut: vi.fn(async () => {}),
     handleExpiry: vi.fn(),
     emit(next) {

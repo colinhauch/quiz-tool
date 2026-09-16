@@ -21,6 +21,8 @@ function fakeBoundary(state: AuthState): AuthBoundary {
     },
     signInWithGoogle: vi.fn(async () => {}),
     signInWithMagicLink: vi.fn(async () => {}),
+    signInWithPassword: vi.fn(async () => {}),
+    signUpWithPassword: vi.fn(async () => ({ confirmationRequired: false })),
     signOut: vi.fn(async () => {}),
     handleExpiry: vi.fn(),
   };

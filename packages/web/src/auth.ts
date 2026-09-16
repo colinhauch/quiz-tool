@@ -45,6 +45,15 @@ export interface SupabaseAuthClient {
     email: string;
     options?: { emailRedirectTo?: string };
   }): Promise<{ error: AuthError | null }>;
+  signInWithPassword(params: {
+    email: string;
+    password: string;
+  }): Promise<{ error: AuthError | null }>;
+  signUp(params: {
+    email: string;
+    password: string;
+    options?: { emailRedirectTo?: string };
+  }): Promise<{ data: { session: Session | null }; error: AuthError | null }>;
   signOut(): Promise<{ error: AuthError | null }>;
 }
 
@@ -55,6 +64,21 @@ export interface AuthBoundary {
   subscribe(listener: (state: AuthState) => void): () => void;
   signInWithGoogle(): Promise<void>;
   signInWithMagicLink(email: string): Promise<void>;
+  /**
+   * Signs in an existing email+password account. Rejects with the Supabase
+   * `AuthError` on bad credentials so the UI can surface clear copy; a success
+   * arrives (like every other flow) via `onAuthStateChange`, not a return value.
+   */
+  signInWithPassword(email: string, password: string): Promise<void>;
+  /**
+   * Creates a new email+password account. When Supabase has email confirmation
+   * on, no session is issued until the learner clicks the verification link, so
+   * this resolves with `confirmationRequired: true` and no `onAuthStateChange`
+   * fires — the UI must tell them to check their email. When confirmation is
+   * off, a session lands via `onAuthStateChange` and this resolves `false`.
+   * Rejects with the Supabase `AuthError` (e.g. a weak or already-used email).
+   */
+  signUpWithPassword(email: string, password: string): Promise<{ confirmationRequired: boolean }>;
   signOut(): Promise<void>;
   /**
    * Reports that a supposedly-live session was rejected (a 401 the client
@@ -129,6 +153,19 @@ export function createAuthBoundary(client: { auth: SupabaseAuthClient }): AuthBo
         options: { emailRedirectTo: redirectTo() },
       });
       if (error) throw error;
+    },
+    async signInWithPassword(email, password) {
+      const { error } = await client.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+    },
+    async signUpWithPassword(email, password) {
+      const { data, error } = await client.auth.signUp({
+        email,
+        password,
+        options: { emailRedirectTo: redirectTo() },
+      });
+      if (error) throw error;
+      return { confirmationRequired: !data.session };
     },
     async signOut() {
       expired = false;
@@ -210,6 +247,10 @@ function createDevNoAuthBoundary(): AuthBoundary {
     },
     async signInWithGoogle() {},
     async signInWithMagicLink() {},
+    async signInWithPassword() {},
+    async signUpWithPassword() {
+      return { confirmationRequired: false };
+    },
     async signOut() {},
     handleExpiry() {},
   };

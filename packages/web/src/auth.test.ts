@@ -1,4 +1,4 @@
-import type { AuthChangeEvent, Session } from "@supabase/supabase-js";
+import type { AuthChangeEvent, AuthError, Session } from "@supabase/supabase-js";
 import { describe, expect, it, vi } from "vitest";
 import { createAuthBoundary, type SupabaseAuthClient } from "./auth.js";
 
@@ -20,6 +20,8 @@ function makeFakeClient() {
     }),
     signInWithOAuth: vi.fn(async () => ({ error: null })),
     signInWithOtp: vi.fn(async () => ({ error: null })),
+    signInWithPassword: vi.fn(async () => ({ error: null })),
+    signUp: vi.fn(async () => ({ data: { session: null }, error: null })),
     signOut: vi.fn(async () => ({ error: null })),
   };
   return {
@@ -178,5 +180,70 @@ describe("createAuthBoundary", () => {
       email: "learner@example.com",
       options: { emailRedirectTo: expect.stringContaining("/auth/callback") },
     });
+  });
+
+  it("signs in with an email and password", async () => {
+    const client = makeFakeClient();
+    const boundary = createAuthBoundary(client);
+
+    await boundary.signInWithPassword("learner@example.com", "hunter2");
+
+    expect(client.auth.signInWithPassword).toHaveBeenCalledWith({
+      email: "learner@example.com",
+      password: "hunter2",
+    });
+  });
+
+  it("rejects with the Supabase error on bad credentials", async () => {
+    const client = makeFakeClient();
+    const badCreds = { message: "Invalid login credentials" } as AuthError;
+    client.auth.signInWithPassword = vi.fn(async () => ({ error: badCreds }));
+    const boundary = createAuthBoundary(client);
+
+    await expect(boundary.signInWithPassword("learner@example.com", "wrong")).rejects.toBe(badCreds);
+  });
+
+  it("signs up with an email and password via the callback redirect", async () => {
+    const client = makeFakeClient();
+    const boundary = createAuthBoundary(client);
+
+    await boundary.signUpWithPassword("new@example.com", "hunter2");
+
+    expect(client.auth.signUp).toHaveBeenCalledWith({
+      email: "new@example.com",
+      password: "hunter2",
+      options: { emailRedirectTo: expect.stringContaining("/auth/callback") },
+    });
+  });
+
+  it("reports confirmationRequired when signup yields no session", async () => {
+    const client = makeFakeClient(); // fake returns session: null
+    const boundary = createAuthBoundary(client);
+
+    await expect(boundary.signUpWithPassword("new@example.com", "hunter2")).resolves.toEqual({
+      confirmationRequired: true,
+    });
+  });
+
+  it("reports no confirmation needed when signup returns a live session", async () => {
+    const client = makeFakeClient();
+    client.auth.signUp = vi.fn(async () => ({
+      data: { session: fakeSession("tok-new") },
+      error: null,
+    }));
+    const boundary = createAuthBoundary(client);
+
+    await expect(boundary.signUpWithPassword("new@example.com", "hunter2")).resolves.toEqual({
+      confirmationRequired: false,
+    });
+  });
+
+  it("rejects with the Supabase error when signup fails", async () => {
+    const client = makeFakeClient();
+    const taken = { message: "User already registered" } as AuthError;
+    client.auth.signUp = vi.fn(async () => ({ data: { session: null }, error: taken }));
+    const boundary = createAuthBoundary(client);
+
+    await expect(boundary.signUpWithPassword("taken@example.com", "hunter2")).rejects.toBe(taken);
   });
 });
