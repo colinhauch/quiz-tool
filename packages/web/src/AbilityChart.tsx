@@ -1,5 +1,5 @@
 import type { AbilityHistory } from "@geo/contract";
-import { type AbilityDayValue, abilitySeriesOf } from "./abilityChart.js";
+import { type AbilityDayValue, abilitySeriesOf } from "./abilitySeries.js";
 
 /**
  * The learner's ability over time (#247/#250/#251): one line per engaged pack on
