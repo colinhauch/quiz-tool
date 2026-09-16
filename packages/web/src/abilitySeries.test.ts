@@ -1,6 +1,6 @@
 import type { AbilityPoint } from "@geo/contract";
 import { describe, expect, it } from "vitest";
-import { abilitySeriesOf } from "./abilityChart.js";
+import { abilitySeriesOf } from "./abilitySeries.js";
 
 /** A point builder that keeps the tests reading as the behaviour they assert. */
 function point(askedAt: string, packId: string, ability: number, packLabel?: string): AbilityPoint {
