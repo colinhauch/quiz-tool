@@ -1,10 +1,15 @@
 import { describe, expect, it } from "vitest";
 import {
+  abilityHistorySchema,
   answerLogSchema,
   answerRequestSchema,
   answerResponseSchema,
+  configSchema,
   feedbackRequestSchema,
   healthSchema,
+  normalizeEnvironment,
+  preferencesRequestSchema,
+  preferencesSchema,
   questionResponseSchema,
   visualAidSchema,
 } from "./index.js";
@@ -16,6 +21,83 @@ describe("contract", () => {
 
   it("rejects a malformed health payload", () => {
     expect(healthSchema.safeParse({ status: "down" }).success).toBe(false);
+  });
+});
+
+describe("preferencesSchema", () => {
+  it("fills every key with its default from an empty object", () => {
+    expect(preferencesSchema.parse({})).toEqual({
+      autoZoom: true,
+      autocomplete: true,
+      mapProjection: "equal-earth",
+    });
+  });
+
+  it("fills omitted keys with their defaults (whole-blob replace resets them)", () => {
+    expect(preferencesSchema.parse({ autoZoom: false })).toEqual({
+      autoZoom: false,
+      autocomplete: true,
+      mapProjection: "equal-earth",
+    });
+  });
+
+  it("keeps supplied values", () => {
+    expect(preferencesSchema.parse({ autoZoom: false, autocomplete: false, mapProjection: "equirectangular" })).toEqual({
+      autoZoom: false,
+      autocomplete: false,
+      mapProjection: "equirectangular",
+    });
+  });
+
+  it("rejects an unknown key", () => {
+    expect(preferencesSchema.safeParse({ theme: "dark" }).success).toBe(false);
+  });
+
+  it("rejects a wrong type", () => {
+    expect(preferencesSchema.safeParse({ autoZoom: "yes" }).success).toBe(false);
+  });
+
+  it("accepts any mapProjection string (registry resolves it, with default fallback, client-side)", () => {
+    // The schema does not enumerate projection ids: an unknown/legacy id must
+    // parse so the client can fall it back to the default rather than 400.
+    expect(preferencesSchema.parse({ mapProjection: "legacy-mercator" }).mapProjection).toBe("legacy-mercator");
+  });
+});
+
+describe("preferencesRequestSchema", () => {
+  it("parses a partial body into a complete, defaulted blob", () => {
+    expect(preferencesRequestSchema.parse({ preferences: { autocomplete: false } })).toEqual({
+      preferences: { autoZoom: true, autocomplete: false, mapProjection: "equal-earth" },
+    });
+  });
+
+  it("rejects an unknown preference key", () => {
+    expect(preferencesRequestSchema.safeParse({ preferences: { nope: true } }).success).toBe(false);
+  });
+});
+
+describe("normalizeEnvironment", () => {
+  it("passes each recognized Environment through unchanged", () => {
+    expect(normalizeEnvironment("prod")).toBe("prod");
+    expect(normalizeEnvironment("dev")).toBe("dev");
+    expect(normalizeEnvironment("test")).toBe("test");
+    expect(normalizeEnvironment("local")).toBe("local");
+  });
+
+  it("maps anything unrecognized to unknown (fail-safe)", () => {
+    expect(normalizeEnvironment("staging")).toBe("unknown");
+    expect(normalizeEnvironment(undefined)).toBe("unknown");
+    expect(normalizeEnvironment("")).toBe("unknown");
+  });
+});
+
+describe("configSchema", () => {
+  it("round-trips a well-formed config", () => {
+    expect(configSchema.parse({ environment: "dev" })).toEqual({ environment: "dev" });
+  });
+
+  it("rejects an unrecognized environment", () => {
+    expect(configSchema.safeParse({ environment: "staging" }).success).toBe(false);
   });
 });
 
@@ -170,6 +252,22 @@ describe("visualAidSchema", () => {
     expect(visualAidSchema.safeParse(bad).success).toBe(false);
   });
 
+  it("validates a map descriptor carrying a boundaryGeoJSON (#203)", () => {
+    const enriched = {
+      ...map,
+      boundaryGeoJSON: {
+        type: "MultiPolygon",
+        coordinates: [[[[139, 35], [140, 35], [140, 36], [139, 35]]]],
+      },
+    };
+    expect(visualAidSchema.parse(enriched)).toEqual(enriched);
+  });
+
+  it("rejects a boundaryGeoJSON with the wrong geometry tag", () => {
+    const bad = { ...map, boundaryGeoJSON: { type: "Polygon", coordinates: [] } };
+    expect(visualAidSchema.safeParse(bad).success).toBe(false);
+  });
+
   const image = { kind: "image", src: "/flags/jp.svg", alt: "Flag of a country" };
 
   it("validates a well-formed image descriptor (#180)", () => {
@@ -243,6 +341,41 @@ describe("answerLogSchema", () => {
 
   it("rejects an entry with extra fields", () => {
     expect(answerLogSchema.safeParse([{ ...entry, debug: 1 }]).success).toBe(false);
+  });
+});
+
+describe("abilityHistorySchema", () => {
+  const point = {
+    askedAt: "2026-08-20T00:00:00.000Z",
+    packId: "core-geo",
+    packLabel: "Core Geography",
+    ability: 1520,
+  };
+
+  it("validates a list of ability points", () => {
+    expect(abilityHistorySchema.parse([point])).toEqual([point]);
+  });
+
+  it("accepts an empty history", () => {
+    expect(abilityHistorySchema.parse([])).toEqual([]);
+  });
+
+  it("accepts a point with no packLabel (the manifest may not name the pack)", () => {
+    const { packLabel: _packLabel, ...rest } = point;
+    expect(abilityHistorySchema.safeParse([rest]).success).toBe(true);
+  });
+
+  it("rejects a point with a missing packId", () => {
+    const { packId: _packId, ...rest } = point;
+    expect(abilityHistorySchema.safeParse([rest]).success).toBe(false);
+  });
+
+  it("rejects a point with a non-numeric ability", () => {
+    expect(abilityHistorySchema.safeParse([{ ...point, ability: "1520" }]).success).toBe(false);
+  });
+
+  it("rejects a point with extra fields", () => {
+    expect(abilityHistorySchema.safeParse([{ ...point, debug: 1 }]).success).toBe(false);
   });
 });
 

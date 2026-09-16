@@ -7,6 +7,7 @@ import {
   type AnswerRecord,
   createAnswerStore,
   createFeedbackStore,
+  createPreferencesStore,
   createRatingStore,
   createSchedulerStore,
   type FeedbackRecord,
@@ -19,6 +20,36 @@ const answer: AnswerRecord = {
   correct: true,
   askedAt: "2026-07-19T12:00:00.000Z",
 };
+
+describe("createPreferencesStore (in-memory)", () => {
+  it("returns every default for a learner with no stored row", async () => {
+    const store = createPreferencesStore(openDatabase(":memory:"));
+    expect(await store.read()).toEqual({ autoZoom: true, autocomplete: true, mapProjection: "equal-earth" });
+  });
+
+  it("writes the blob and reads it back", async () => {
+    const store = createPreferencesStore(openDatabase(":memory:"));
+    await store.write({ autoZoom: false, autocomplete: false, mapProjection: "equirectangular" });
+    expect(await store.read()).toEqual({ autoZoom: false, autocomplete: false, mapProjection: "equirectangular" });
+  });
+
+  it("replaces wholesale on write", async () => {
+    const store = createPreferencesStore(openDatabase(":memory:"));
+    await store.write({ autoZoom: false, autocomplete: false, mapProjection: "equal-earth" });
+    await store.write({ autoZoom: true, autocomplete: false, mapProjection: "equal-earth" });
+    expect(await store.read()).toEqual({ autoZoom: true, autocomplete: false, mapProjection: "equal-earth" });
+  });
+
+  it("defaults a key missing from an older stored blob", async () => {
+    const db = openDatabase(":memory:");
+    const store = createPreferencesStore(db);
+    // Simulate a blob written before `autocomplete`/`mapProjection` existed.
+    db.prepare("INSERT INTO user_preferences (id, preferences) VALUES (1, ?)").run(
+      JSON.stringify({ autoZoom: false }),
+    );
+    expect(await store.read()).toEqual({ autoZoom: false, autocomplete: true, mapProjection: "equal-earth" });
+  });
+});
 
 describe("createAnswerStore (in-memory)", () => {
   it("writes an answer and reads it back", async () => {
@@ -172,5 +203,110 @@ describe("createAnswerStore (real file)", () => {
     const reader = openDatabase(file);
     expect(await createAnswerStore(reader).all()).toEqual([answer]);
     reader.close();
+  });
+});
+
+/**
+ * A database as it stood before #119 added the rating-snapshot columns to
+ * `answers`. This is what a developer who has been running the app since then
+ * actually has on disk, and `CREATE TABLE IF NOT EXISTS` leaves it untouched.
+ */
+function preSnapshotDatabase(file = ":memory:") {
+  const db = openDatabase(file);
+  db.exec(`
+    CREATE TABLE answers (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      card_id TEXT NOT NULL,
+      input TEXT NOT NULL,
+      correct INTEGER NOT NULL,
+      asked_at TEXT NOT NULL
+    )
+  `);
+  return db;
+}
+
+describe("opening a store over an older database", () => {
+  it("adds the columns an existing table is missing rather than failing to open", async () => {
+    // The bug this replaces: the store's INSERT named card_difficulty, the
+    // table predated it, and the server died at boot with SQLITE_ERROR.
+    const db = preSnapshotDatabase();
+    expect(() => createAnswerStore(db)).not.toThrow();
+  });
+
+  it("keeps the answers already in the older table", async () => {
+    const db = preSnapshotDatabase();
+    db.exec(
+      `INSERT INTO answers (card_id, input, correct, asked_at)
+       VALUES ('cc:tokyo-japan:object', 'Japan', 1, '2026-07-19T12:00:00.000Z')`,
+    );
+
+    // Upgrading is not a reset: the log is append-only and irreplaceable.
+    expect(await createAnswerStore(db).all()).toEqual([answer]);
+  });
+
+  it("reads a pre-upgrade answer as carrying no snapshot, not a broken one", async () => {
+    const db = preSnapshotDatabase();
+    db.exec(
+      `INSERT INTO answers (card_id, input, correct, asked_at)
+       VALUES ('cc:tokyo-japan:object', 'Japan', 1, '2026-07-19T12:00:00.000Z')`,
+    );
+    const [read] = await createAnswerStore(db).all();
+    expect(read?.snapshot).toBeUndefined();
+  });
+
+  it("accepts new answers, snapshot and all, once upgraded", async () => {
+    const store = createAnswerStore(preSnapshotDatabase());
+    const withSnapshot: AnswerRecord = {
+      ...answer,
+      snapshot: { difficulty: 1500, ability: 1520.5, kApplied: 40, packId: "capital-cities" },
+    };
+    await store.record(withSnapshot);
+    expect(await store.all()).toEqual([withSnapshot]);
+  });
+
+  it("upgrades the file on disk, so the next boot has nothing left to do", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "geo-upgrade-"));
+    try {
+      const file = join(dir, "answers.sqlite");
+      const stale = preSnapshotDatabase(file);
+      createAnswerStore(stale);
+      stale.close();
+
+      const reopened = openDatabase(file);
+      const columns = (reopened.pragma("table_info(answers)") as { name: string }[]).map(
+        (c) => c.name,
+      );
+      expect(columns).toContain("card_difficulty");
+      reopened.close();
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("is idempotent — opening an already-current database changes nothing", async () => {
+    const db = openDatabase(":memory:");
+    createAnswerStore(db);
+    const before = (db.pragma("table_info(answers)") as { name: string }[]).map((c) => c.name);
+    createAnswerStore(db);
+    expect((db.pragma("table_info(answers)") as { name: string }[]).map((c) => c.name)).toEqual(
+      before,
+    );
+  });
+
+  it("says what is wrong when a missing column cannot be added", async () => {
+    // SQLite cannot ADD COLUMN a NOT NULL with no default. That is a mistake in
+    // a future schema edit, not something a learner's database can cause — so it
+    // should name the column, rather than surfacing as SQLITE_ERROR at boot.
+    const db = openDatabase(":memory:");
+    db.exec(`
+      CREATE TABLE feedback (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        kind TEXT NOT NULL,
+        card_id TEXT,
+        context TEXT,
+        created_at TEXT NOT NULL
+      )
+    `);
+    expect(() => createFeedbackStore(db)).toThrow(/feedback\.comment/);
   });
 });

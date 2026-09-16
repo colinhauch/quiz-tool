@@ -26,6 +26,16 @@ The rule to preserve: if engine code needs a new query shape, it gets a new repo
 
 Concurrent writers, which we do not have. Server-side querying, which we do not need. Native graph traversal syntax — recursive CTEs are workable but not pleasant, and a deep multi-hop query is meaningfully harder to read in SQL than in Cypher.
 
+## The local file has no migration tool, so the code reconciles it
+
+Postgres gets versioned migrations in `supabase/migrations/`. The local SQLite file gets nothing of the kind, and for a long time it did not notice: every table was created with `CREATE TABLE IF NOT EXISTS`, which is a no-op against a table that already exists and does **not** reconcile its columns.
+
+That is silent until it isn't. A column added to a shipped table left every existing developer database a column short, and the miss surfaced only when a prepared statement hit it — `SQLITE_ERROR: table answers has no column named card_difficulty`, thrown at boot, with the server dead and the UI showing nothing. It took the rating spine (#119) roughly a year to produce that, and it would have recurred on the next column.
+
+The fix is to declare each table's columns once and have the store reconcile on open: create the table when absent, and `ALTER TABLE ADD COLUMN` whatever an existing one lacks. It is not a migration *system* — there is no version number, no down-migration, and no way to express a change that isn't an added column. It is the smallest thing that makes the local file self-healing, and it is deliberately not more: a real migration runner for a single-user throwaway database would be infrastructure in service of nothing.
+
+The constraint it buys, worth knowing before the next schema edit: SQLite cannot `ADD COLUMN` a PRIMARY KEY or UNIQUE column at all, nor a NOT NULL one without a DEFAULT to backfill with. **Any column added to a table that has already shipped must be nullable or defaulted.** The store now says so by name when that is violated, rather than letting it reach a learner as a boot crash.
+
 ## The exit condition
 
 Move `StatementRepo` to a Cypher-speaking store (Kùzu, Neo4j) **when traversals grow deep and varied enough to hurt** — when insight queries are slow at real pack scale, or when recursive CTEs become the thing nobody wants to touch.

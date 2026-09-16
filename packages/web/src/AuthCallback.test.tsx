@@ -26,18 +26,18 @@ function makeFakeBoundary(initial: AuthState): AuthBoundary & { emit: (state: Au
 
 describe("AuthCallback", () => {
   it("shows a signing-in message while waiting", () => {
-    const boundary = makeFakeBoundary({ status: "signed-out", accessToken: null, reason: null });
+    const boundary = makeFakeBoundary({ status: "signed-out", accessToken: null, email: null, reason: null });
     render(<AuthCallback boundary={boundary} onDone={() => {}} />);
 
     expect(screen.getByText(/signing you in/i)).toBeInTheDocument();
   });
 
   it("calls onDone once the boundary reaches signed-in", () => {
-    const boundary = makeFakeBoundary({ status: "signed-out", accessToken: null, reason: null });
+    const boundary = makeFakeBoundary({ status: "signed-out", accessToken: null, email: null, reason: null });
     const onDone = vi.fn();
     render(<AuthCallback boundary={boundary} onDone={onDone} />);
 
-    act(() => boundary.emit({ status: "signed-in", accessToken: "tok-abc", reason: null }));
+    act(() => boundary.emit({ status: "signed-in", accessToken: "tok-abc", email: null, reason: null }));
 
     expect(onDone).toHaveBeenCalledOnce();
   });

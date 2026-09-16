@@ -1,6 +1,7 @@
 import type { VisualAid as VisualAidData } from "@geo/contract";
 import { ImageAid } from "./ImageAid.js";
 import { MapAid } from "./MapAid.js";
+import type { ProjectionId } from "./projection.js";
 
 /**
  * The generic visual slot — used for both the prompt-time and reveal-time
@@ -15,15 +16,21 @@ import { MapAid } from "./MapAid.js";
  *
  * `autoZoom` is the learner's persisted auto-zoom preference, forwarded to the
  * map; the slot itself is otherwise oblivious to what any descriptor does.
+ *
+ * `projectionId` is the learner's account-synced map projection, forwarded to the
+ * map. A caller that omits it gets the default projection; the choice itself is
+ * made in Settings (#235), never here.
  */
 export function VisualAid({
   visual,
   slot,
   autoZoom,
+  projectionId,
 }: {
   visual: VisualAidData | undefined;
   slot?: "prompt" | "reveal";
   autoZoom?: boolean;
+  projectionId?: ProjectionId;
 }) {
   if (!visual) return null;
 
@@ -37,7 +44,9 @@ export function VisualAid({
             label={visual.label}
             localGeoJSON={visual.localGeoJSON}
             regionExtent={visual.regionExtent}
+            boundaryGeoJSON={visual.boundaryGeoJSON}
             autoZoom={autoZoom}
+            projectionId={projectionId}
           />
         );
       case "image":

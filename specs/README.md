@@ -118,7 +118,7 @@ When you add, split, or promote a spec, update the table below.
 | [questions/](questions/) | mixed | Turning facts into questions via pack-provided generator code. README reviewed (MVP scope marked); distractors.md, template-shape.md, open-questions.md unreviewed. |
 | [learning/](learning/) | unreviewed | What the user knows and what to ask next: the answer log, scheduling, insight and gap analysis. |
 | [storage/](storage/) | unreviewed | Persistence choices: why this database, what we liked, what would make us move. Includes the reference SQL schema. |
-| [product/](product/) | reviewed | Product and UX concepts. Why a sitting has no boundary, and what that buys. |
+| [product/](product/) | mixed | Product and UX concepts. Why a sitting has no boundary, and what that buys. Reviewed except the section on what colour means in the My Answers summary charts. |
 | [deployment/](deployment/) | mixed | How this ships and runs. Why the MVP is a local web app, and what that commits us to. Reviewed except the packs-are-bundled section, rewritten from an open question to a decision. |
 | [tooling/](tooling/) | mixed | Pack authoring and the Wikidata import pipeline. Constrains the pack format today; built post-MVP. [mvp-bootstrap.md](tooling/mvp-bootstrap.md) is reviewed except its second-pack (`capitals`) section; the README is a stub and unreviewed. |
 | [open-questions.md](open-questions.md) | reviewed | Undecided questions at the architecture level, spanning more than one concept. |

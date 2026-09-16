@@ -5,6 +5,7 @@ import { loadAllPacks } from "./pack-loader.js";
 import {
   createAnswerStore,
   createFeedbackStore,
+  createPreferencesStore,
   createRatingStore,
   createSchedulerStore,
   createSelectionStore,
@@ -24,9 +25,25 @@ const selection = createSelectionStore(db);
 const rating = createRatingStore(db);
 const scheduler = createSchedulerStore(db);
 const feedback = createFeedbackStore(db);
+const preferences = createPreferencesStore(db);
 
 serve(
-  { fetch: createApp({ pack, store, selection, rating, scheduler, feedback, catalog }).fetch, port },
+  {
+    fetch: createApp({
+      pack,
+      store,
+      selection,
+      rating,
+      scheduler,
+      feedback,
+      preferences,
+      catalog,
+      // Local Node dev is labeled `local`, yet overridable to test another
+      // environment's badge locally.
+      deployEnv: process.env.DEPLOY_ENV ?? "local",
+    }).fetch,
+    port,
+  },
   (info) => {
   console.log(`geo-quiz server listening on http://localhost:${info.port}`);
 });

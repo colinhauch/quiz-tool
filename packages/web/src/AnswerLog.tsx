@@ -1,11 +1,15 @@
-import type { AnswerLog as AnswerLogData } from "@geo/contract";
+import type { AbilityHistory, AnswerLog as AnswerLogData } from "@geo/contract";
 import { useCallback, useEffect, useState } from "react";
-import { getAnswers } from "./apiClient.js";
+import { AbilityChart } from "./AbilityChart.js";
+import { AnswerSummary } from "./AnswerSummary.js";
+import { getAbility, getAnswers } from "./apiClient.js";
 
 type View =
   | { state: "loading" }
   | { state: "error" }
-  | { state: "loaded"; answers: AnswerLogData };
+  // `ability` is null when its route failed: the log still renders, we just
+  // omit the chart rather than show its "no answers yet" state misleadingly.
+  | { state: "loaded"; answers: AnswerLogData; ability: AbilityHistory | null };
 
 export function AnswerLog() {
   const [view, setView] = useState<View>({ state: "loading" });
@@ -13,8 +17,10 @@ export function AnswerLog() {
   const load = useCallback(async () => {
     setView({ state: "loading" });
     try {
-      const answers = await getAnswers();
-      setView({ state: "loaded", answers });
+      // The chart is secondary telemetry: a failed `/ability` degrades to no
+      // chart, but must never take the answer log down with it.
+      const [answers, ability] = await Promise.all([getAnswers(), getAbility().catch(() => null)]);
+      setView({ state: "loaded", answers, ability });
     } catch {
       setView({ state: "error" });
     }
@@ -33,32 +39,36 @@ export function AnswerLog() {
   }
 
   return (
-    <table className="answer-log">
-      <caption>Your answers, most recent first</caption>
-      <thead>
-        <tr>
-          <th scope="col">Question</th>
-          <th scope="col">Your answer</th>
-          <th scope="col">Correct answer</th>
-          <th scope="col">Result</th>
-        </tr>
-      </thead>
-      <tbody>
-        {view.answers.map((a, i) => (
-          // The log has no stable per-row id in the contract; the card + timestamp
-          // pair is effectively unique, and the index disambiguates any collision.
-          <tr key={`${a.cardId}@${a.askedAt}#${i}`}>
-            <td>{a.question}</td>
-            <td>{a.input || "—"}</td>
-            <td>{a.acceptedAnswer ?? "—"}</td>
-            <td>
-              <span className={`result-pill ${a.correct ? "result-pill--correct" : "result-pill--incorrect"}`}>
-                {a.correct ? "Correct" : "Incorrect"}
-              </span>
-            </td>
+    <>
+      <AnswerSummary answers={view.answers} />
+      {view.ability !== null && <AbilityChart points={view.ability} />}
+      <table className="answer-log">
+        <caption>Your answers, most recent first</caption>
+        <thead>
+          <tr>
+            <th scope="col">Question</th>
+            <th scope="col">Your answer</th>
+            <th scope="col">Correct answer</th>
+            <th scope="col">Result</th>
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {view.answers.map((a, i) => (
+            // The log has no stable per-row id in the contract; the card + timestamp
+            // pair is effectively unique, and the index disambiguates any collision.
+            <tr key={`${a.cardId}@${a.askedAt}#${i}`}>
+              <td>{a.question}</td>
+              <td>{a.input || "—"}</td>
+              <td>{a.acceptedAnswer ?? "—"}</td>
+              <td>
+                <span className={`result-pill ${a.correct ? "result-pill--correct" : "result-pill--incorrect"}`}>
+                  {a.correct ? "Correct" : "Incorrect"}
+                </span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </>
   );
 }

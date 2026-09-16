@@ -1,24 +1,35 @@
 import type { VisualAid as VisualAidData } from "@geo/contract";
-import { useEffect, useRef, useState } from "react";
-import { WORLD_LAND_PATH } from "./world-map.generated.js";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { WORLD_LAND_PATHS } from "./world-map.generated.js";
 import {
-  WORLD_ASPECT,
-  WORLD_VIEW,
-  extentToView,
+  type View,
+  extentToViewFor,
+  geometryViewFor,
   fitAspect,
   interpolateView,
+  worldViewFor,
   zoomAtTime,
 } from "./mapZoom.js";
+import {
+  DEFAULT_PROJECTION_ID,
+  type ProjectionId,
+  makeProjector,
+} from "./projection.js";
 
 /**
- * The reveal map: one animated equirectangular viewport that shows both the
- * global and the regional scale over time in a single box (spec #152, #156).
+ * The reveal map: one animated viewport (Equal Earth by default, #219) that
+ * shows both the global and the regional scale over time in a single box (spec
+ * #152, #156).
  *
- * Two detail layers, one coordinate space (#155): the baked 110m
- * `WORLD_LAND_PATH` is the base; the server-sent `localGeoJSON` — hi-res land
- * clipped for the pinned region — is projected with the *same* point math
- * (`x = lon + 180`, `y = 90 - lat`) and composited on top, so the two align by
- * construction.
+ * Layers, one coordinate space (#155, #203): the baked 110m `WORLD_LAND_PATH` —
+ * selected for the active projection (#219) — is
+ * the base; the server-sent `localGeoJSON` — hi-res land clipped for the pinned
+ * region — is composited on top; and for a country, the `boundaryGeoJSON` outline
+ * (spec #203) draws above that as a translucent highlight + stroke, below the
+ * pin/label. All three go through the *same* shared `projection` module (#217),
+ * so they align by construction. When a boundary is present it
+ * also becomes the zoom target (its padded bbox), so the reveal frames the real
+ * country instead of the coarse `regionExtent` window.
  *
  * Zoom is a 1-D track (see `mapZoom`): the `viewBox` is the linear interpolation
  * between the whole-world frame (`t = 0`) and the regional target (`t = 1`). The
@@ -55,7 +66,7 @@ import {
 type MapProps = Omit<
   Pick<
     Extract<VisualAidData, { kind: "map" }>,
-    "lat" | "lon" | "label" | "localGeoJSON" | "regionExtent"
+    "lat" | "lon" | "label" | "localGeoJSON" | "regionExtent" | "boundaryGeoJSON"
   >,
   "lat" | "lon" | "label"
 > & {
@@ -64,6 +75,9 @@ type MapProps = Omit<
   label?: string;
   /** Whether the map auto-zooms (oscillates global⟷regional). Default off. */
   autoZoom?: boolean;
+  /** The projection to render in — the learner's account-synced choice, picked
+   * in Settings (#235). Defaults to Equal Earth. */
+  projectionId?: ProjectionId;
   /** Pause at global scale before easing in. Tunable. */
   idleMs?: number;
   /** Duration of each ease in / ease out. Tunable. */
@@ -72,13 +86,19 @@ type MapProps = Omit<
   holdMs?: number;
 };
 
-const WIDTH = WORLD_VIEW.w;
 const IDLE_MS = 500;
 const FLY_MS = 900;
 const HOLD_MS = 3000;
 
-function project(lat: number, lon: number) {
-  return { x: lon + 180, y: 90 - lat };
+/** Framing margin around the boundary bbox, as a fraction of each span (#203). */
+const BOUNDARY_PAD_FRAC = 0.08;
+
+/** Grow a projected view outward by `frac` of each side — breathing room so a
+ * framed boundary doesn't sit flush against the frame edge. */
+function padView(v: View, frac: number): View {
+  const dx = v.w * frac;
+  const dy = v.h * frac;
+  return { x: v.x - dx, y: v.y - dy, w: v.w + 2 * dx, h: v.h + 2 * dy };
 }
 
 /** Guarded — jsdom and old browsers lack `matchMedia`; then assume motion is ok. */
@@ -90,40 +110,49 @@ function prefersReducedMotion(): boolean {
   }
 }
 
-/** A GeoJSON MultiPolygon → an SVG path in the same lon/lat-derived space. */
-function geoToPath(geo: NonNullable<MapProps["localGeoJSON"]>): string {
-  const parts: string[] = [];
-  for (const polygon of geo.coordinates) {
-    for (const ring of polygon) {
-      ring.forEach((vertex, i) => {
-        const { x, y } = project(vertex[1] ?? 0, vertex[0] ?? 0);
-        parts.push(`${i === 0 ? "M" : "L"}${x.toFixed(3)},${y.toFixed(3)}`);
-      });
-      parts.push("Z");
-    }
-  }
-  return parts.join("");
-}
-
 export function MapAid({
   lat,
   lon,
   label,
   localGeoJSON,
   regionExtent,
+  boundaryGeoJSON,
   autoZoom = false,
+  projectionId = DEFAULT_PROJECTION_ID,
   idleMs = IDLE_MS,
   flyMs = FLY_MS,
   holdMs = HOLD_MS,
 }: MapProps) {
-  const hasCoords = lat !== undefined && lon !== undefined;
+  // The chosen projection, bound to its coordinate helpers. Rebuilt only when the
+  // projection changes — the `fitExtent`/`geoPath` solve is not free to redo per
+  // render — so pins, overlays, boundary, land, and the zoom frame all move to
+  // the new projection together, in one coordinate space.
+  const projector = useMemo(() => makeProjector(projectionId), [projectionId]);
+  const worldView = useMemo(() => worldViewFor(projector), [projector]);
+  const worldAspect = worldView.w / worldView.h;
+  // The baked land silhouette for the active projection (#219). Picked by id so it
+  // shares the exact projection the pins/overlays/boundary go through.
+  const worldLandPath = WORLD_LAND_PATHS[projector.id];
 
-  // The zoom target: the regional extent grown to the world's aspect ratio, so
-  // the frame's shape (and on-screen height) never changes as it zooms. There
-  // is nothing to zoom toward without a pinned coordinate.
-  const regionView = hasCoords && regionExtent
-    ? fitAspect(extentToView(regionExtent), WORLD_ASPECT)
-    : null;
+  const hasCoords = lat !== undefined && lon !== undefined;
+  // A boundary with no polygons (every ring was sub-pixel at its framing — e.g.
+  // an all-atoll archipelago) carries no shape and no usable bbox, so treat it
+  // as absent: draw nothing and frame by `regionExtent`. The import already
+  // withholds such boundaries; this guards against one slipping through.
+  const hasBoundary = !!boundaryGeoJSON && boundaryGeoJSON.coordinates.length > 0;
+
+  // The zoom target: a rectangle grown to the world's aspect ratio, so the
+  // frame's shape (and on-screen height) never changes as it zooms. When a
+  // country boundary is present (spec #203) we frame its real extent — padded
+  // bbox — so the outline fills the card; otherwise the coarse type-based
+  // `regionExtent`. Nothing to zoom toward without a pinned coordinate.
+  const regionView = !hasCoords
+    ? null
+    : hasBoundary
+      ? fitAspect(padView(geometryViewFor(projector, boundaryGeoJSON!), BOUNDARY_PAD_FRAC), worldAspect)
+      : regionExtent
+        ? fitAspect(extentToViewFor(projector, regionExtent), worldAspect)
+        : null;
   const canZoom = regionView !== null;
 
   // Zoom position on the 1-D track: 0 = global, 1 = regional. With reduced
@@ -164,12 +193,12 @@ export function MapAid({
 
   // The viewBox is the framing rectangle in projected space, interpolated along
   // the track. Without a regional target it is simply the whole world.
-  const view = regionView ? interpolateView(WORLD_VIEW, regionView, t) : WORLD_VIEW;
+  const view = regionView ? interpolateView(worldView, regionView, t) : worldView;
 
   // Marks are authored in full-world units; scale them by how zoomed-in the
   // frame is so pin/label/coords stay roughly the same on-screen size at any
   // extent. Strokes use non-scaling-stroke instead (constant pixel width).
-  const s = view.w / WIDTH;
+  const s = view.w / worldView.w;
 
   return (
     <div className="map-aid-viewport">
@@ -181,11 +210,20 @@ export function MapAid({
         aria-label={hasCoords ? `Map showing the location of ${label}` : "World map"}
       >
         <rect className="map-aid__ocean" x={view.x} y={view.y} width={view.w} height={view.h} />
-        <path className="map-aid__land" d={WORLD_LAND_PATH} vectorEffect="non-scaling-stroke" />
+        <path className="map-aid__land" d={worldLandPath} vectorEffect="non-scaling-stroke" />
         {hasCoords && localGeoJSON && (
           <path
             className="map-aid__local"
-            d={geoToPath(localGeoJSON)}
+            d={projector.geoPathString(localGeoJSON)}
+            vectorEffect="non-scaling-stroke"
+          />
+        )}
+        {/* The country's real outline (#203): translucent highlight + solid
+            stroke, above the coarse coastline overlay, below the pin/label. */}
+        {hasCoords && hasBoundary && (
+          <path
+            className="map-aid__boundary"
+            d={projector.geoPathString(boundaryGeoJSON!)}
             vectorEffect="non-scaling-stroke"
           />
         )}
@@ -199,7 +237,7 @@ export function MapAid({
         />
 
         {hasCoords && (
-          <MapMarks lat={lat} lon={lon} label={label} view={view} scale={s} />
+          <MapMarks lat={lat} lon={lon} label={label} view={view} scale={s} project={projector.project} />
         )}
       </svg>
 
@@ -233,12 +271,14 @@ function MapMarks({
   label,
   view,
   scale: s,
+  project,
 }: {
   lat: number;
   lon: number;
   label: string | undefined;
   view: { x: number; y: number; w: number; h: number };
   scale: number;
+  project: (lat: number, lon: number) => { x: number; y: number };
 }) {
   const { x, y } = project(lat, lon);
   const pad = 4 * s;

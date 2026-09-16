@@ -9,6 +9,11 @@
  * Pure and total, like `wikidata-coordinate.ts`: no IO, no network, no throw.
  * The heavy Natural Earth source is loaded by the import script and passed in,
  * which keeps this unit-testable against tiny synthetic land.
+ *
+ * This is the *coastline window* half of the reveal map. Its sibling
+ * `country-boundary.ts` (spec #203) precomputes the country's real
+ * administrative outline (`boundaryGeoJSON`), an additive layer that draws over
+ * this one and, when present, supersedes `regionExtent` as the zoom target.
  */
 import type { GeoMultiPolygon, RegionExtent } from "@geo/engine";
 

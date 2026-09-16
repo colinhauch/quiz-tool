@@ -16,14 +16,16 @@ export type AuthStatus = "signed-out" | "signed-in";
  */
 export type SignedOutReason = "expired" | null;
 
-/** The boundary's observable state: whether a learner is signed in, and their current access token. */
+/** The boundary's observable state: whether a learner is signed in, their current access token, and their email. */
 export interface AuthState {
   status: AuthStatus;
   accessToken: string | null;
+  /** The signed-in learner's email, off the Supabase session; `null` when signed out (Settings displays it read-only). */
+  email: string | null;
   reason: SignedOutReason;
 }
 
-const SIGNED_OUT: AuthState = { status: "signed-out", accessToken: null, reason: null };
+const SIGNED_OUT: AuthState = { status: "signed-out", accessToken: null, email: null, reason: null };
 
 /**
  * The slice of `supabase-js`'s auth client this boundary actually calls. Kept
@@ -87,9 +89,19 @@ export function createAuthBoundary(client: { auth: SupabaseAuthClient }): AuthBo
   const publish = (session: Session | null) => {
     if (session?.access_token) {
       expired = false;
-      setState({ status: "signed-in", accessToken: session.access_token, reason: null });
+      setState({
+        status: "signed-in",
+        accessToken: session.access_token,
+        email: session.user?.email ?? null,
+        reason: null,
+      });
     } else {
-      setState({ status: "signed-out", accessToken: null, reason: expired ? "expired" : null });
+      setState({
+        status: "signed-out",
+        accessToken: null,
+        email: null,
+        reason: expired ? "expired" : null,
+      });
     }
   };
 
@@ -129,7 +141,7 @@ export function createAuthBoundary(client: { auth: SupabaseAuthClient }): AuthBo
       if (expired) return;
       expired = true;
       // Reflect the interruption immediately, before Supabase's own event lands.
-      setState({ status: "signed-out", accessToken: null, reason: "expired" });
+      setState({ status: "signed-out", accessToken: null, email: null, reason: "expired" });
       // Clear the stale session so its dead token stops being attached; the
       // resulting SIGNED_OUT event re-publishes, preserving `expired`.
       void client.auth.signOut();
@@ -184,7 +196,12 @@ export function readSignedIn(): boolean {
  * nothing to sign back in with, so it just stays signed in.
  */
 function createDevNoAuthBoundary(): AuthBoundary {
-  const state: AuthState = { status: "signed-in", accessToken: "dev-no-auth", reason: null };
+  const state: AuthState = {
+    status: "signed-in",
+    accessToken: "dev-no-auth",
+    email: null,
+    reason: null,
+  };
   return {
     getState: () => state,
     subscribe(listener) {

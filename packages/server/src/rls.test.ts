@@ -194,6 +194,49 @@ describe.skipIf(!ready)("RLS: answers, pack_selection, pack_selection_state", ()
     expect(stillThere).toEqual([{ state: { included: ["capital-cities"] } }]);
   });
 
+  it("user A cannot read or write user B's user_preferences", async () => {
+    const a = await signedInUser(admin);
+    const b = await signedInUser(admin);
+    createdUserIds.push(a.id, b.id);
+
+    await admin.from("user_preferences").insert({ user_id: b.id, preferences: { autoZoom: false } });
+
+    const { data: seen } = await a.client.from("user_preferences").select("*");
+    expect(seen).toEqual([]);
+
+    const { error: insertErr } = await a.client
+      .from("user_preferences")
+      .insert({ user_id: b.id, preferences: { autoZoom: true } });
+    expect(insertErr?.code).toBe("42501");
+
+    const { data: stillThere } = await admin
+      .from("user_preferences")
+      .select("preferences")
+      .eq("user_id", b.id);
+    expect(stillThere).toEqual([{ preferences: { autoZoom: false } }]);
+  });
+
+  it("user A cannot reassign their user_preferences row to user B (forged update)", async () => {
+    const a = await signedInUser(admin);
+    const b = await signedInUser(admin);
+    createdUserIds.push(a.id, b.id);
+
+    const { error: insertErr } = await a.client
+      .from("user_preferences")
+      .insert({ preferences: { autoZoom: false } });
+    expect(insertErr).toBeNull();
+
+    const { error: updateErr } = await a.client
+      .from("user_preferences")
+      .update({ user_id: b.id })
+      .eq("user_id", a.id);
+    expect(updateErr).not.toBeNull();
+    expect(updateErr?.code).toBe("42501");
+
+    const { data: row } = await admin.from("user_preferences").select("user_id").eq("user_id", a.id);
+    expect(row).toEqual([{ user_id: a.id }]);
+  });
+
   it("card_difficulty is global: any authenticated user reads and upserts it", async () => {
     const a = await signedInUser(admin);
     const b = await signedInUser(admin);
